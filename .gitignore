@@ -24,3 +24,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Material de referencia local que no forma parte del proyecto (prototipos, prompts)
+docs/FueraDelProyecto/

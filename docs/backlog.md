@@ -22,7 +22,10 @@
 | Borrado | **Lógico** (papelera, restaurable) y **físico** (definitivo), este último **solo desde la papelera** y con confirmación. Solo Admin. |
 | Trazabilidad | Todo registro guarda quién y cuándo lo creó, modificó y borró (RNF-01). |
 | HTTPS | Obligatorio en **producción**. En desarrollo local se usa HTTP en `localhost`. |
-| Exportación | **JSON y Excel.** La librería de Excel se aprobará al llegar a la historia. |
+| Exportación | **JSON y CSV compatible con Excel** (como el prototipo; sin dependencias nuevas). |
+| Prototipo | El MVP generaliza el prototipo "Gestor de cursos": curso → proyecto, unidad → fase, actividad → tarea. Detalle en ADR-0002 §1.1. |
+| Campos | "Plataforma" pasa a ser **Área** (texto libre). Tareas con **estados** Pendiente / En curso / Hecha y **tipos genéricos** (Tarea, Reunión, Entregable, Revisión, Investigación, Examen). |
+| Integración | Con la futura app de estudio (gestor de cursos + Lexika), **en ambas direcciones** (API + webhooks). Diseño en ADR-0002 §7. |
 | Capacidad | 5–10 h/semana → unos **21 puntos por sprint** de 2 semanas. |
 
 ## Requisitos no funcionales (aplican a todas las historias)
@@ -50,25 +53,31 @@
 | 7 | HU-04 | Invitar miembros con un rol (permisos por defecto del rol) | Workspaces | 5 | 🔴 | 2 |
 | 8 | HU-01 | Aceptar una invitación y crear mi contraseña | Usuarios | 3 | 🔴 | 2 |
 | 9 | HU-05 | Crear y editar proyectos (fechas, estado, prioridad, clasificación) | Proyectos | 5 | 🔴 | 2 |
-| 10 | HU-08 | Crear, asignar y completar tareas | Tareas | 5 | 🔴 | 2 |
-| 11 | HU-06 | Ver % de avance y días restantes | Proyectos | 3 | 🔴 | 2 |
-| 12 | HU-09 | Tabla de proyectos con filtros | Vistas | 5 | 🔴 | 3 |
-| 13 | HU-10 | Tablero Kanban por estado | Vistas | 5 | 🔴 | 3 |
+| 10 | HU-08 | Crear y asignar tareas, y moverlas entre Pendiente, En curso y Hecha | Tareas | 5 | 🔴 | 2 |
+| 11 | HU-06 | Ver % de avance, minutos pendientes y días restantes | Proyectos | 3 | 🔴 | 2 |
+| 12 | HU-09 | Tabla de proyectos con filtros (área, clasificación, estado, prioridad, fecha fin) | Vistas | 5 | 🔴 | 3 |
+| 13 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 3 |
 | 14 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 3 |
 | 15 | HU-07 | Dividir un proyecto en fases o entregables | Proyectos | 3 | 🟡 | 3 |
 | 16 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 3 |
 | 17 | HU-17 | Activar o desactivar acciones concretas por usuario | Permisos | 8 | 🟡 | 4 |
 | 18 | HU-15 | Papelera: borrado lógico, restaurar y borrado definitivo | Datos | 5 | 🟡 | 4 |
-| 19 | HU-13 | Exportar datos en JSON y Excel | Respaldo | 5 | 🟡 | 4 |
+| 19 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 4 |
 | 20 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 4 |
 | 21 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 5 |
 | 22 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 5 |
 | 23 | HU-12 | Gráficas por mes de término y por estado | Reportes | 5 | 🟢 | 5 |
-| 24 | HU-14 | Importar desde JSON o Excel (actualizar o reemplazar) | Respaldo | 8 | 🟢 | 6 |
+| 24 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 6 |
+| 25 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 26 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 7 |
+| 27 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 7 |
+| 28 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 29 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 8 |
+| 30 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 8 |
 
 **MVP (objetivo 1 del acta, cierre del Sprint 3):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue.
 
-**Backlog futuro (acta):** Gantt, registro de riesgos, interesados, bitácora de auditoría, notificaciones, webhooks, tokens de API para apps externas, integración con la app de estudio.
+**Backlog futuro (acta):** Gantt, registro de riesgos, interesados, bitácora de auditoría, notificaciones. (Tokens de API, webhooks e integración con la app de estudio ya están en la épica Integraciones, del 25 al 30.)
 
 ---
 
@@ -141,4 +150,6 @@ _Como usuario, quiero crear un espacio de trabajo, para organizar mis proyectos.
 - **HU-15 · Papelera:** borrar lleva a la papelera (lógico); el Admin restaura o borra definitivamente desde ella, confirmando con el nombre del registro; el borrado definitivo de un proyecto incluye sus fases y tareas.
 - **HU-16 · Visibilidad:** un proyecto puede marcarse como restringido, con una lista de usuarios autorizados; los demás no lo ven en ninguna vista, búsqueda ni exportación.
 - **HU-17 · Permisos por usuario:** catálogo de permisos (crear, editar, borrar, exportar, importar...); cada rol trae valores por defecto y el Admin los ajusta por usuario.
-- **HU-13 · Exportar:** JSON (respaldo completo) y Excel (una hoja por entidad); respeta la visibilidad y excluye lo borrado. ⚠️ Requiere aprobar una librería de Excel.
+- **HU-13 · Exportar:** JSON (respaldo completo) y CSV con BOM UTF-8 (una fila por tarea, compatible con el formato del prototipo); respeta la visibilidad y excluye lo borrado. Sin dependencias nuevas.
+- **HU-14 · Importar:** JSON o CSV, incluidos los respaldos del prototipo; "Actualizar" busca coincidencias por ID o, si no hay, por nombre sin distinguir mayúsculas; "Reemplazar" pide doble confirmación y manda lo anterior a la papelera; fechas normalizadas a AAAA-MM-DD (ambiguas = día/mes/año).
+- **Integraciones (TEC-08 a HU-20):** diseño en ADR-0002 §7.

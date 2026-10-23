@@ -39,7 +39,7 @@ Cada una se propondrá en su PR, con el porqué. Solo se instalará con la aprob
 |---|---|---|
 | TEC-01 | `prisma`, `@prisma/client` | ✅ Prisma |
 | TEC-02 | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` | ✅ helmet, CORS, rate limiting |
-| HU-02 | librería Argon2, `@fastify/cookie` | ✅ Argon2 y sesiones con cookie (plugin de soporte) |
+| HU-02 | `argon2` (✅ probado en Windows), `@fastify/cookie` | ✅ Argon2 y sesiones con cookie (plugin de soporte) |
 | TEC-03 | `@tanstack/react-query`, shadcn/ui y sus dependencias | ✅ |
 | TEC-03 | **enrutador** (React Router o TanStack Router) | ⚠️ No lo nombra: decisión pendiente |
 

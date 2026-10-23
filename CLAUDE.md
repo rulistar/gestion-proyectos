@@ -23,7 +23,9 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 - **Borrado lógico** (papelera, restaurable) y **físico solo desde la papelera**, solo Admin. Lo borrado no aparece en listados, exportaciones ni gráficas.
 - **RNF-01 trazabilidad**: toda entidad lleva `createdById/createdAt/updatedById/updatedAt` (+ `deletedById/deletedAt`).
 - **HTTPS obligatorio en producción** (HSTS, cookies `Secure`); HTTP en localhost.
-- **Exportar en JSON y Excel** (la librería de Excel está pendiente de aprobación).
+- **Exportar en JSON y CSV compatible con Excel** (como el prototipo; sin librería de Excel).
+- **El MVP generaliza el prototipo "Gestor de cursos"**: curso → proyecto, unidad → fase, actividad → tarea. Campos, estados y reglas de cálculo en ADR-0002 §1.1.
+- **Integración con la app de estudio** (gestor de cursos + Lexika) en ambas direcciones; cada sistema es dueño de sus datos (ADR-0002 §7).
 
 ## Stack (ADR-0001)
 
