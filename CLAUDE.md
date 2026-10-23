@@ -31,6 +31,7 @@ Aplicación web para gestionar proyectos personales y de un equipo pequeño (wor
 
 - **Vite 7, no 8**: Vite 8 usa rolldown, cuyo binario nativo (`.node`) es bloqueado por _Smart App Control_ de Windows en la PC del usuario ("An Application Control policy has blocked this file"). Vite 7 usa rollup/esbuild, que sí cargan. Por eso `@vitejs/plugin-react` está en v5. Dependabot ignora esos majors.
 - **TypeScript ~6.0**: typescript-eslint 8 exige `typescript <6.1`. TypeScript 7 aún no es compatible.
+- **`@types/node` en 24.x**: debe coincidir con la versión de Node (`.nvmrc` = 24). Si se sube Node, subir ambos juntos. Dependabot ignora sus majors.
 - **pnpm bloquea scripts de instalación** por defecto; los permitidos están en `allowBuilds` de `pnpm-workspace.yaml` (solo `esbuild`). Aprobar uno nuevo: `pnpm approve-builds <paquete>`, y solo si es necesario.
 
 ## Estructura
