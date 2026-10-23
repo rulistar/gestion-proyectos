@@ -19,6 +19,9 @@
     "format:check": "prettier --check .",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @gestion/api db:migrate",
+    "db:studio": "pnpm --filter @gestion/api db:studio",
+    "db:reset": "pnpm --filter @gestion/api db:reset",
     "prepare": "husky"
   },
   "lint-staged": {

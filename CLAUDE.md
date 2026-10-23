@@ -29,17 +29,17 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 
 ## Stack (ADR-0001)
 
-| Capa          | Tecnología                                                                                                  | Estado                                    |
-| ------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                                                          | ✅ instalado                              |
-| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                                                             | ✅ instalado                              |
-| Backend       | Fastify 5 + TypeScript                                                                                      | ✅ instalado                              |
-| Validación    | Zod 4 (compartido en `packages/shared`)                                                                     | ✅ instalado                              |
-| Base de datos | PostgreSQL 17 (Docker Compose)                                                                              | ✅ compose                                |
-| Pruebas       | Vitest (unitarias)                                                                                          | ✅ instalado                              |
-| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged                                                | ✅ instalado                              |
-| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                                                         | ✅ configurado                            |
-| Pendientes    | Prisma, TanStack Query, shadcn/ui, helmet, CORS, rate-limit, Swagger/OpenAPI, Argon2 + sesiones, Playwright | ⏳ se instalan en la historia que los use |
+| Capa          | Tecnología                                                                                          | Estado                                    |
+| ------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                                                  | ✅ instalado                              |
+| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                                                     | ✅ instalado                              |
+| Backend       | Fastify 5 + TypeScript                                                                              | ✅ instalado                              |
+| Validación    | Zod 4 (compartido en `packages/shared`)                                                             | ✅ instalado                              |
+| Base de datos | PostgreSQL 17 (Docker Compose) + Prisma 7.10 (`@prisma/adapter-pg` + `pg`)                          | ✅ instalado                              |
+| Pruebas       | Vitest (unitarias + integración contra PostgreSQL real)                                             | ✅ instalado                              |
+| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged                                        | ✅ instalado                              |
+| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                                                 | ✅ configurado                            |
+| Pendientes    | TanStack Query, shadcn/ui, helmet, CORS, rate-limit, Swagger/OpenAPI, Argon2 + sesiones, Playwright | ⏳ se instalan en la historia que los use |
 
 **No agregar dependencias fuera del ADR sin preguntar al usuario.**
 
@@ -48,7 +48,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 - **Vite 7, no 8**: Vite 8 usa rolldown, cuyo binario nativo (`.node`) es bloqueado por _Smart App Control_ de Windows en la PC del usuario ("An Application Control policy has blocked this file"). Vite 7 usa rollup/esbuild, que sí cargan. Por eso `@vitejs/plugin-react` está en v5. Dependabot ignora esos majors.
 - **TypeScript ~6.0**: typescript-eslint 8 exige `typescript <6.1`. TypeScript 7 aún no es compatible.
 - **`@types/node` en 24.x**: debe coincidir con la versión de Node (`.nvmrc` = 24). Si se sube Node, subir ambos juntos. Dependabot ignora sus majors.
-- **pnpm bloquea scripts de instalación** por defecto; los permitidos están en `allowBuilds` de `pnpm-workspace.yaml` (solo `esbuild`). Aprobar uno nuevo: `pnpm approve-builds <paquete>`, y solo si es necesario.
+- **pnpm bloquea scripts de instalación** por defecto; los permitidos están en `allowBuilds` de `pnpm-workspace.yaml` (`esbuild`, `prisma`, `@prisma/engines`). Aprobar uno nuevo: `pnpm approve-builds <paquete>`, y solo si es necesario.
 
 ## Estructura
 
@@ -60,6 +60,12 @@ apps/
     src/server.ts       arranque + cierre ordenado
     src/config/env.ts   variables de entorno validadas con Zod (falla al inicio si son inválidas)
     src/modules/<mod>/  un módulo por funcionalidad: <mod>.routes.ts, <mod>.test.ts, ...
+    src/db/client.ts    createDb(): PrismaClient con el adaptador pg; se inyecta en buildApp({ db }) → app.db
+    src/db/audit.ts     auditCreate/auditUpdate/auditSoftDelete/auditRestore + filtro notDeleted (RNF-01, RNF-05)
+    src/generated/      cliente de Prisma generado (ignorado por Git; se regenera en pnpm install)
+    src/test/           BD de pruebas: global-setup (crea + migra), test-db (createTestDb, resetDb)
+    prisma/             schema.prisma + migrations/ (versionadas en Git)
+    prisma.config.ts    configuración de Prisma 7 (carga el .env de la raíz)
 packages/
   shared/             esquemas Zod + tipos (z.infer) usados por web y api
 docs/                 acta, ADRs, backlog (no los reformatea Prettier)
@@ -75,7 +81,10 @@ docker-compose.yml    PostgreSQL local
 - `@gestion/shared` se resuelve al **código fuente** (`src/*.ts`) en desarrollo, tests, typecheck y build de la web mediante la condición de export `@gestion/source`. Solo `node dist/server.js` (producción) usa el `dist` compilado. Si se agrega otra herramienta, configurarle esa condición.
 - Imports relativos en api y shared con extensión `.js` (módulos ESM `NodeNext`). En web no hace falta (`Bundler`).
 - Imports de solo tipos: `import type` (regla de ESLint).
-- Pruebas junto al código: `*.test.ts`. Probar endpoints con `buildApp().inject()`, sin red.
+- Pruebas junto al código: `*.test.ts`. Probar endpoints con `buildApp({ db }).inject()`, sin red.
+- **Las pruebas de la API necesitan PostgreSQL** (`pnpm db:up`). Usan una BD aparte, `<DATABASE_URL>_test` (o `TEST_DATABASE_URL`), que `global-setup.ts` crea y migra sola; se niegan a correr contra una BD que no termine en `_test`. Se ejecutan en serie (`fileParallelism: false`) y cada archivo limpia con `resetDb()`.
+- **Prisma**: toda tabla nueva sigue el ADR-0002 (UUID v7 `@default(uuid(7)) @db.Uuid`, `@@map`/`@map` en snake_case, `@db.Timestamptz(3)`, campos de trazabilidad con relaciones a `User`). Toda consulta normal incluye `notDeleted`. Índices únicos que deben ignorar la papelera: `@@unique([...], where: { deletedAt: null })` (preview feature `partialIndexes`).
+- Cambiar el esquema → `pnpm db:migrate` (crea la migración con un nombre descriptivo) → incluir la carpeta de la migración en el commit. Nunca editar una migración ya fusionada en `main`.
 
 ## Comandos (desde la raíz)
 
@@ -83,8 +92,11 @@ docker-compose.yml    PostgreSQL local
 pnpm install           # instala todo (también activa los hooks de Husky)
 pnpm db:up             # levanta PostgreSQL (requiere .env)
 pnpm db:down           # detiene PostgreSQL (los datos persisten en el volumen)
+pnpm db:migrate        # crea/aplica migraciones en la BD de desarrollo (prisma migrate dev)
+pnpm db:studio         # explorador visual de la BD (Prisma Studio)
+pnpm db:reset          # ⚠️ borra y recrea la BD de desarrollo aplicando todas las migraciones
 pnpm dev               # api (:3000) + web (:5173) en paralelo
-pnpm test              # Vitest en todos los paquetes
+pnpm test              # Vitest en todos los paquetes (requiere pnpm db:up)
 pnpm lint              # ESLint   | pnpm lint:fix
 pnpm format            # Prettier | pnpm format:check
 pnpm typecheck         # tsc --noEmit en todos los paquetes

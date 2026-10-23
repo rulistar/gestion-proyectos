@@ -1,12 +1,27 @@
 import Fastify, { type FastifyServerOptions } from 'fastify';
+import type { Db } from './db/client.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /** Cliente de base de datos, disponible en rutas y plugins como `app.db` */
+    db: Db;
+  }
+}
+
+export interface BuildAppOptions extends FastifyServerOptions {
+  db: Db;
+}
 
 /**
  * Construye la instancia de Fastify sin abrir un puerto.
  * Separarlo de server.ts permite probar la app con `app.inject()`.
+ * La base de datos se recibe desde fuera: quien la crea (server.ts o las pruebas) la cierra.
  */
-export function buildApp(options: FastifyServerOptions = {}) {
+export function buildApp({ db, ...options }: BuildAppOptions) {
   const app = Fastify(options);
+
+  app.decorate('db', db);
 
   // Cada módulo registra sus rutas bajo el prefijo versionado de la API
   void app.register(healthRoutes, { prefix: '/api/v1' });

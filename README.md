@@ -26,7 +26,10 @@ cp .env.example .env
 # 3. Levantar PostgreSQL en Docker
 pnpm db:up
 
-# 4. Arrancar API y web en modo desarrollo
+# 4. Crear las tablas (aplica las migraciones)
+pnpm db:migrate
+
+# 5. Arrancar API y web en modo desarrollo
 pnpm dev
 ```
 
@@ -37,15 +40,18 @@ Para detener: `Ctrl+C` en la terminal de `pnpm dev`, y `pnpm db:down` para la ba
 
 ## Scripts
 
-| Comando             | Qué hace                                     |
-| ------------------- | -------------------------------------------- |
-| `pnpm dev`          | API y web en paralelo con recarga automática |
-| `pnpm test`         | Ejecuta las pruebas (Vitest)                 |
-| `pnpm lint`         | Revisa el código con ESLint                  |
-| `pnpm format`       | Formatea con Prettier                        |
-| `pnpm typecheck`    | Verifica tipos de TypeScript                 |
-| `pnpm build`        | Compila todos los paquetes                   |
-| `pnpm db:up / down` | Inicia / detiene PostgreSQL                  |
+| Comando             | Qué hace                                            |
+| ------------------- | --------------------------------------------------- |
+| `pnpm dev`          | API y web en paralelo con recarga automática        |
+| `pnpm test`         | Ejecuta las pruebas (Vitest); requiere `pnpm db:up` |
+| `pnpm lint`         | Revisa el código con ESLint                         |
+| `pnpm format`       | Formatea con Prettier                               |
+| `pnpm typecheck`    | Verifica tipos de TypeScript                        |
+| `pnpm build`        | Compila todos los paquetes                          |
+| `pnpm db:up / down` | Inicia / detiene PostgreSQL                         |
+| `pnpm db:migrate`   | Crea o aplica migraciones de la base de datos       |
+| `pnpm db:studio`    | Abre un explorador visual de la base de datos       |
+| `pnpm db:reset`     | ⚠️ Borra y recrea la base de datos de desarrollo    |
 
 ## Estructura
 

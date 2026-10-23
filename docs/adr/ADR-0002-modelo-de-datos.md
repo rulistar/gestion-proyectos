@@ -258,7 +258,8 @@ Todas las **entidades de negocio** (`Workspace`, `Membership`, `Invitation`, `Pr
 - **Cascada lógica:** si un proyecto va a la papelera, sus fases y tareas **desaparecen con él** sin marcarlas una por una (se ocultan porque su padre está borrado). Al restaurar el proyecto, vuelven.
 - **Físico:** solo desde la papelera, solo Admin y con confirmación. Las claves foráneas usan `onDelete: Cascade` hacia los hijos (proyecto → fases → tareas → accesos).
 - **Cómo se garantiza el filtro:** cada módulo tiene un **repositorio** (funciones de acceso a datos) que incluye `deletedAt: null` de forma explícita, y **pruebas** que verifican que lo borrado no aparece. Se descartó una extensión automática de Prisma porque no cubre todos los tipos de consulta y oculta la regla.
-- **Unicidad con borrado lógico:** "un usuario solo puede ser miembro una vez de un workspace" debe aplicar solo a los registros **no borrados**. Se implementa con un **índice único parcial** (`WHERE deleted_at IS NULL`) escrito en SQL dentro de la migración, porque Prisma no lo expresa directamente.
+- **Unicidad con borrado lógico:** "un usuario solo puede ser miembro una vez de un workspace" debe aplicar solo a los registros **no borrados**. Se implementa con un **índice único parcial** (`WHERE deleted_at IS NULL`).
+  - _Nota de implementación (TEC-01, 2026-10-23):_ Prisma 7.10 sí lo expresa en el esquema con la función en vista previa `partialIndexes` (`@@unique([...], where: { deletedAt: null })`). Se usa eso en lugar de SQL manual: así Prisma conoce el índice y no lo elimina en migraciones futuras.
 
 **Excepciones (no tienen borrado lógico):**
 
