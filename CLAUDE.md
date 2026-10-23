@@ -10,6 +10,20 @@ Aplicación web para gestionar proyectos personales y de un equipo pequeño (wor
 - Metodología: PMI + Scrum (sprints de 2 semanas). **Nada entra sin historia de usuario.**
 - El usuario está aprendiendo el stack: explicar el porqué de cada cambio, de forma breve.
 - Presupuesto de infraestructura: $0 (capas gratuitas).
+- Backlog priorizado: [docs/backlog.md](docs/backlog.md) · Sprint actual: [docs/sprints/](docs/sprints/).
+- Flujo: el usuario es el Product Owner; se trabaja una rama + un PR por elemento del backlog. `main` está protegida (PR + 3 checks de CI en verde).
+
+## Decisiones de producto (PO, 2026-10-23)
+
+Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/backlog.md).
+
+- **Registro solo por invitación**; el primer Admin se crea con `setup:admin`.
+- **Roles por workspace** (Admin, Miembro, Lector) vía `Membership`, más **ajustes de permisos por usuario**.
+- **Visibilidad**: proyectos públicos (todo el workspace) o restringidos (lista de usuarios). Los Admin ven todo.
+- **Borrado lógico** (papelera, restaurable) y **físico solo desde la papelera**, solo Admin. Lo borrado no aparece en listados, exportaciones ni gráficas.
+- **RNF-01 trazabilidad**: toda entidad lleva `createdById/createdAt/updatedById/updatedAt` (+ `deletedById/deletedAt`).
+- **HTTPS obligatorio en producción** (HSTS, cookies `Secure`); HTTP en localhost.
+- **Exportar en JSON y Excel** (la librería de Excel está pendiente de aprobación).
 
 ## Stack (ADR-0001)
 
