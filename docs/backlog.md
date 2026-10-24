@@ -1,7 +1,7 @@
 # Product Backlog
 
 > Lista priorizada de todo lo que el producto debe hacer. La ordena el **Product Owner**. Nada entra al desarrollo sin estar aquí (acta, riesgo "crecimiento desordenado del alcance").
-> Última actualización: 2026-10-23 (planificación del Sprint 1).
+> Última actualización: 2026-10-24 (planificación del Sprint 2).
 
 ## Cómo leer este documento
 
@@ -27,6 +27,7 @@
 | Campos | "Plataforma" pasa a ser **Área** (texto libre). Tareas con **estados** Pendiente / En curso / Hecha y **tipos genéricos** (Tarea, Reunión, Entregable, Revisión, Investigación, Examen). |
 | Integración | Con la futura app de estudio (gestor de cursos + Lexika), **en ambas direcciones** (API + webhooks). Diseño en ADR-0002 §7. |
 | Capacidad | 5–10 h/semana → unos **21 puntos por sprint** de 2 semanas. |
+| Invitaciones (2026-10-24) | La app muestra un **enlace para copiar** (sin correo automático), de **un solo uso** y válido **48 horas**. |
 
 ## Requisitos no funcionales (aplican a todas las historias)
 
@@ -146,10 +147,71 @@ _Como usuario, quiero crear un espacio de trabajo, para organizar mis proyectos.
 - [x] Listado de "mis workspaces", donde solo aparecen aquellos de los que soy miembro.
 - [x] Cumple RNF-01 (queda registrado quién lo creó y cuándo).
 
+### Sprint 2
+
+Orden de trabajo elegido por el PO: HU-05 → HU-08 → HU-06 → HU-04 → HU-01.
+
+#### HU-05 · Crear y editar proyectos (5 pts)
+
+_Como miembro de un workspace, quiero crear y editar proyectos, para organizar mi trabajo con fechas, estado y prioridad._
+
+- [ ] Desde el inicio entro a un workspace y veo sus proyectos (no se muestran los borrados).
+- [ ] Tabla `Project` con su migración: nombre, área, clasificación, estado, prioridad, fechas de inicio y fin, y notas (ADR-0002 §1.1). La visibilidad queda en `WORKSPACE`; los proyectos restringidos llegan con HU-16.
+- [ ] Catálogo de permisos en `packages/shared` (ADR-0002 §5) y `requirePermission()` en la API: comprueba que el usuario es miembro del workspace y que su rol tiene el permiso.
+- [ ] Crear y editar: Admin y Miembro. Un Lector solo ve (`403` si lo intenta). Quien no es miembro recibe `404`.
+- [ ] Formulario validado con un esquema compartido: nombre obligatorio y fecha de fin igual o posterior a la de inicio.
+- [ ] Estados y prioridades con sus etiquetas en español y los colores del prototipo.
+- [ ] Cumple RNF-01 y tiene pruebas de autorización por rol.
+
+#### HU-08 · Crear, asignar y mover tareas (5 pts)
+
+_Como miembro, quiero crear tareas, asignarlas y moverlas entre Pendiente, En curso y Hecha, para saber qué falta y quién lo hace._
+
+- [ ] Tabla `Task` con su migración: título, tipo, estado, minutos estimados, fechas, responsable, `completedAt` y `workspaceId` (ADR-0002).
+- [ ] Vista de un proyecto con sus tareas agrupadas por estado.
+- [ ] Crear y editar tareas: Admin y Miembro. El Lector solo ve.
+- [ ] Tipos genéricos: Tarea, Reunión, Entregable, Revisión, Investigación, Examen.
+- [ ] El responsable debe ser un miembro activo del workspace (si no, `400`).
+- [ ] Cambiar el estado con un selector. Al pasar a Hecha se rellena `completedAt`; al salir de Hecha se vacía.
+- [ ] No se pueden ver ni modificar tareas de otro workspace (`404`).
+- [ ] Cumple RNF-01 y tiene pruebas.
+
+#### HU-06 · Ver el avance de un proyecto (3 pts)
+
+_Como miembro, quiero ver el % de avance, los minutos pendientes y los días restantes de cada proyecto, para saber cómo va sin contar tareas a mano._
+
+- [ ] % de avance = tareas Hechas ÷ total (0 % si no hay tareas).
+- [ ] Minutos pendientes = suma de los minutos estimados de las tareas que no están Hechas.
+- [ ] Días restantes respecto a la fecha de fin: "Faltan N día(s)", "Termina hoy", "Vencido hace N día(s)" o "Sin fecha". "Hoy" se calcula en la zona horaria del usuario.
+- [ ] Las tareas borradas no cuentan (RNF-05).
+- [ ] Se muestra en la lista de proyectos y en la vista del proyecto.
+- [ ] Reglas de cálculo como funciones puras con pruebas de los casos límite.
+
+#### HU-04 · Invitar miembros con un rol (5 pts)
+
+_Como Admin, quiero invitar a personas a mi workspace con un rol, para trabajar en equipo._
+
+- [ ] Tabla `Invitation` con su migración (ADR-0002); solo se guarda el **hash** del token.
+- [ ] Solo el Admin (`member.manage`) invita, indicando el correo y el rol (Admin, Miembro o Lector).
+- [ ] La app muestra **una sola vez** el enlace para copiarlo (decisión del PO: sin correo automático).
+- [ ] El enlace es de un solo uso y caduca a las **48 horas**.
+- [ ] Error claro si el correo ya es miembro o ya tiene una invitación pendiente.
+- [ ] Lista de miembros y de invitaciones pendientes; el Admin puede revocar una invitación.
+- [ ] Cumple RNF-01 y tiene pruebas (incluida la de que un Miembro o Lector no puede invitar).
+
+#### HU-01 · Aceptar una invitación (3 pts)
+
+_Como persona invitada, quiero abrir el enlace y crear mi contraseña, para entrar al workspace con el rol asignado._
+
+- [ ] Página pública que lee el token del enlace y muestra a qué workspace y con qué rol me invitan.
+- [ ] Si el correo no tiene cuenta: defino mi nombre y mi contraseña (12+ caracteres, Argon2id) y quedo con la sesión iniciada.
+- [ ] Si el correo ya tiene cuenta: inicio sesión con él y la invitación se suma como un workspace más.
+- [ ] Al aceptar se crea la membresía con el rol de la invitación y se marca `acceptedAt`, todo en una transacción.
+- [ ] Un enlace caducado, usado o revocado muestra un mensaje claro sin revelar datos.
+- [ ] Límite de intentos en el endpoint de aceptar; tiene pruebas.
+
 ### Sprints siguientes (criterios por detallar en su planificación)
 
-- **HU-04 · Invitar miembros:** el Admin genera una invitación con correo y rol; enlace de un solo uso con caducidad; aplica los permisos por defecto del rol.
-- **HU-01 · Aceptar invitación:** la persona invitada abre el enlace, define su contraseña y queda como miembro con el rol asignado.
 - **HU-15 · Papelera:** borrar lleva a la papelera (lógico); el Admin restaura o borra definitivamente desde ella, confirmando con el nombre del registro; el borrado definitivo de un proyecto incluye sus fases y tareas.
 - **HU-16 · Visibilidad:** un proyecto puede marcarse como restringido, con una lista de usuarios autorizados; los demás no lo ven en ninguna vista, búsqueda ni exportación.
 - **HU-17 · Permisos por usuario:** catálogo de permisos (crear, editar, borrar, exportar, importar...); cada rol trae valores por defecto y el Admin los ajusta por usuario.
