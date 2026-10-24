@@ -118,14 +118,16 @@ Criterios de aceptación:
 
 _Como usuario, quiero iniciar y cerrar sesión de forma segura, para proteger mi información._
 
-- [ ] Inicio de sesión con correo y contraseña; contraseña verificada con Argon2id.
-- [ ] Sesión guardada en la base de datos; el navegador solo recibe una cookie `HttpOnly`, `SameSite=Lax` y `Secure` en producción.
-- [ ] Se genera un ID de sesión nuevo en cada inicio de sesión.
-- [ ] Mensaje de error **genérico** ("correo o contraseña incorrectos"), para no revelar si un correo existe.
-- [ ] Límite de intentos fallidos por IP y correo.
-- [ ] Cerrar sesión invalida la sesión **en el servidor**, no solo en el navegador.
-- [ ] La sesión expira por inactividad; el tiempo se configura por variable de entorno.
-- [ ] `GET /api/v1/auth/me` devuelve el usuario actual, o `401` sin sesión.
+> API terminada (`/api/v1/auth/login`, `/logout`, `/me`). Falta la pantalla de login, que llega después de TEC-03.
+
+- [x] Inicio de sesión con correo y contraseña; contraseña verificada con Argon2id.
+- [x] Sesión guardada en la base de datos; el navegador solo recibe una cookie `HttpOnly`, `SameSite=Lax` y `Secure` en producción.
+- [x] Se genera un ID de sesión nuevo en cada inicio de sesión.
+- [x] Mensaje de error **genérico** ("correo o contraseña incorrectos"), para no revelar si un correo existe.
+- [x] Límite de intentos fallidos por IP y correo.
+- [x] Cerrar sesión invalida la sesión **en el servidor**, no solo en el navegador.
+- [x] La sesión expira por inactividad; el tiempo se configura por variable de entorno.
+- [x] `GET /api/v1/auth/me` devuelve el usuario actual, o `401` sin sesión.
 - [ ] Pantalla de inicio de sesión en la web.
 
 #### TEC-03 · Base del frontend (3 pts)

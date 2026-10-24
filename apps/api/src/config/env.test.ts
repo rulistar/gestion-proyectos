@@ -13,6 +13,7 @@ describe('loadEnv', () => {
       DATABASE_URL,
       CORS_ORIGINS: ['http://localhost:5173'],
       TRUST_PROXY: false,
+      SESSION_IDLE_MINUTES: 60,
     });
   });
 
