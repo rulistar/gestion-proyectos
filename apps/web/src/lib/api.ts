@@ -9,7 +9,7 @@ export class ApiError extends Error {
 }
 
 interface ApiOptions<T> {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Esquema de `@gestion/shared` que valida la respuesta: no se confía a ciegas en lo que llega */
   schema?: { parse(data: unknown): T };

@@ -1,5 +1,6 @@
 import { createWorkspaceRequestSchema } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useCurrentUser } from '@/lib/auth';
 import { ROLE_LABELS, useCreateWorkspace, workspacesQueryOptions } from '@/lib/workspaces';
 
-/** Inicio: mis workspaces y crear uno nuevo (HU-03). Los proyectos llegan en el Sprint 2 */
+/** Inicio: mis workspaces (cada uno lleva a sus proyectos) y crear uno nuevo (HU-03) */
 export function HomePage() {
   const user = useCurrentUser();
   // La ruta ya los cargó (loader), así que aquí están disponibles al instante
@@ -24,9 +25,17 @@ export function HomePage() {
         <CardContent>
           <ul className="divide-y rounded-md border bg-background">
             {workspaces.map((workspace) => (
-              <li key={workspace.id} className="flex items-center justify-between px-4 py-3">
-                <span className="font-medium">{workspace.name}</span>
-                <span className="text-sm text-muted-foreground">{ROLE_LABELS[workspace.role]}</span>
+              <li key={workspace.id}>
+                <Link
+                  to="/w/$workspaceId"
+                  params={{ workspaceId: workspace.id }}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-muted"
+                >
+                  <span className="font-medium">{workspace.name}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {ROLE_LABELS[workspace.role]}
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

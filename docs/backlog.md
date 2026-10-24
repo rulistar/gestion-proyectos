@@ -155,13 +155,13 @@ Orden de trabajo elegido por el PO: HU-05 → HU-08 → HU-06 → HU-04 → HU-0
 
 _Como miembro de un workspace, quiero crear y editar proyectos, para organizar mi trabajo con fechas, estado y prioridad._
 
-- [ ] Desde el inicio entro a un workspace y veo sus proyectos (no se muestran los borrados).
-- [ ] Tabla `Project` con su migración: nombre, área, clasificación, estado, prioridad, fechas de inicio y fin, y notas (ADR-0002 §1.1). La visibilidad queda en `WORKSPACE`; los proyectos restringidos llegan con HU-16.
-- [ ] Catálogo de permisos en `packages/shared` (ADR-0002 §5) y `requirePermission()` en la API: comprueba que el usuario es miembro del workspace y que su rol tiene el permiso.
-- [ ] Crear y editar: Admin y Miembro. Un Lector solo ve (`403` si lo intenta). Quien no es miembro recibe `404`.
-- [ ] Formulario validado con un esquema compartido: nombre obligatorio y fecha de fin igual o posterior a la de inicio.
-- [ ] Estados y prioridades con sus etiquetas en español y los colores del prototipo.
-- [ ] Cumple RNF-01 y tiene pruebas de autorización por rol.
+- [x] Desde el inicio entro a un workspace y veo sus proyectos (no se muestran los borrados).
+- [x] Tabla `Project` con su migración: nombre, área, clasificación, estado, prioridad, fechas de inicio y fin, y notas (ADR-0002 §1.1). La visibilidad queda en `WORKSPACE`; los proyectos restringidos llegan con HU-16.
+- [x] Catálogo de permisos en `packages/shared` (ADR-0002 §5) y `requirePermission()` en la API: comprueba que el usuario es miembro del workspace y que su rol tiene el permiso.
+- [x] Crear y editar: Admin y Miembro. Un Lector solo ve (`403` si lo intenta). Quien no es miembro recibe `404`.
+- [x] Formulario validado con un esquema compartido: nombre obligatorio y fecha de fin igual o posterior a la de inicio.
+- [x] Estados y prioridades con sus etiquetas en español y los colores del prototipo.
+- [x] Cumple RNF-01 y tiene pruebas de autorización por rol.
 
 #### HU-08 · Crear, asignar y mover tareas (5 pts)
 

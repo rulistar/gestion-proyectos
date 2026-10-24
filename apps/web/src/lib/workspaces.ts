@@ -19,6 +19,13 @@ export const workspacesQueryOptions = queryOptions({
   queryFn: () => apiFetch('/workspaces', { schema: workspaceListSchema }),
 });
 
+/** Un workspace con mi rol en él (para saber qué botones mostrar; la API decide igualmente) */
+export const workspaceQueryOptions = (workspaceId: string) =>
+  queryOptions({
+    queryKey: ['workspaces', workspaceId],
+    queryFn: () => apiFetch(`/workspaces/${workspaceId}`, { schema: workspaceSummarySchema }),
+  });
+
 export function useCreateWorkspace() {
   const queryClient = useQueryClient();
   return useMutation({

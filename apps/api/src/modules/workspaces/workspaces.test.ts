@@ -1,9 +1,9 @@
 import { workspaceListSchema, workspaceSummarySchema } from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
-import { auditCreate, auditSoftDelete } from '../../db/audit.js';
+import { auditSoftDelete } from '../../db/audit.js';
 import { createTestDb, resetDb } from '../../test/test-db.js';
-import { createSession, SESSION_COOKIE } from '../auth/session.js';
+import { addMember, userWithSession as createUser } from '../../test/users.js';
 
 const db = createTestDb();
 const app = buildApp({ db });
@@ -17,12 +17,7 @@ beforeEach(async () => {
   await resetDb(db);
 });
 
-/** Usuario con sesión iniciada (sin pasar por el login: eso ya lo prueba auth.test.ts) */
-async function userWithSession(email: string) {
-  const user = await db.user.create({ data: { email, name: email, ...auditCreate(null) } });
-  const token = await createSession(db, { userId: user.id, idleMinutes: 60 });
-  return { user, cookies: { [SESSION_COOKIE]: token } };
-}
+const userWithSession = (email: string) => createUser(db, email);
 
 function createWs(cookies: Record<string, string>, name: unknown) {
   return app.inject({ method: 'POST', url: '/api/v1/workspaces', cookies, payload: { name } });
@@ -110,5 +105,38 @@ describe('GET /workspaces', () => {
 
     const list = workspaceListSchema.parse((await listWs(ana.cookies)).json());
     expect(list).toEqual([kept]);
+  });
+});
+
+describe('GET /workspaces/:workspaceId', () => {
+  it('devuelve el workspace con mi rol en él', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const luis = await userWithSession('luis@example.com');
+    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Equipo')).json());
+    await addMember(db, ws.id, luis.user.id, 'VIEWER');
+
+    const asAna = await app.inject({ url: `/api/v1/workspaces/${ws.id}`, cookies: ana.cookies });
+    const asLuis = await app.inject({ url: `/api/v1/workspaces/${ws.id}`, cookies: luis.cookies });
+
+    expect(asAna.json()).toEqual({ id: ws.id, name: 'Equipo', role: 'ADMIN' });
+    expect(asLuis.json()).toEqual({ id: ws.id, name: 'Equipo', role: 'VIEWER' });
+  });
+
+  it('responde 404 a quien no es miembro y a un ID no válido (no revela si existe)', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const luis = await userWithSession('luis@example.com');
+    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'De Ana')).json());
+
+    const notMember = await app.inject({
+      url: `/api/v1/workspaces/${ws.id}`,
+      cookies: luis.cookies,
+    });
+    const invalid = await app.inject({
+      url: '/api/v1/workspaces/no-es-un-id',
+      cookies: ana.cookies,
+    });
+
+    expect(notMember.statusCode).toBe(404);
+    expect(invalid.statusCode).toBe(404);
   });
 });

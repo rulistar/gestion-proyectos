@@ -8,16 +8,22 @@ import {
 } from '@tanstack/react-router';
 import { ApiError } from '@/lib/api';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
-import { workspacesQueryOptions } from '@/lib/workspaces';
+import { projectQueryOptions, projectsQueryOptions } from '@/lib/projects';
+import { workspaceQueryOptions, workspacesQueryOptions } from '@/lib/workspaces';
 import { AppLayout } from '@/routes/app-layout';
+import { ErrorPage } from '@/routes/error-page';
 import { HomePage } from '@/routes/home-page';
 import { LoginPage } from '@/routes/login-page';
+import { ProjectPage } from '@/routes/project-page';
+import { WorkspacePage } from '@/routes/workspace-page';
 
 /*
  * Rutas definidas en código (ADR-0003):
  *
- *   /            protegida (layout "app": barra superior + página)
- *   /login       pública; si ya hay sesión, redirige a /
+ *   /                          protegidas (layout "app": barra superior + página):
+ *   /w/$workspaceId              inicio, un workspace con sus proyectos
+ *   /w/$workspaceId/p/$projectId y un proyecto
+ *   /login                     pública; si ya hay sesión, redirige a /
  */
 
 /**
@@ -92,12 +98,40 @@ const homeRoute = createRoute({
   component: HomePage,
 });
 
-const routeTree = rootRoute.addChildren([loginRoute, appRoute.addChildren([homeRoute])]);
+const workspaceRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId',
+  loader: ({ context, params }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(projectsQueryOptions(params.workspaceId)),
+    ]),
+  component: WorkspacePage,
+});
+
+const projectRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/p/$projectId',
+  loader: ({ context, params }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(
+        projectQueryOptions(params.workspaceId, params.projectId),
+      ),
+    ]),
+  component: ProjectPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  loginRoute,
+  appRoute.addChildren([homeRoute, workspaceRoute, projectRoute]),
+]);
 
 export const router = createRouter({
   routeTree,
   context: { queryClient },
   defaultPreload: 'intent', // carga la página al pasar el ratón por un enlace
+  defaultErrorComponent: ErrorPage, // p. ej. un workspace que no existe o del que no soy miembro
 });
 
 // Registra el tipo del router: así <Link to="..."> y navigate() se verifican al compilar

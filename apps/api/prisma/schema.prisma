@@ -1,6 +1,6 @@
 // Modelo de datos — ver docs/adr/ADR-0002-modelo-de-datos.md
 // Convenciones: UUID v7, tablas/columnas en snake_case, timestamptz, trazabilidad (RNF-01).
-// Sprint 1: User, Session, Workspace, Membership. El resto del modelo se agrega en su sprint.
+// Sprint 1: User, Session, Workspace, Membership. Sprint 2: Project. El resto se agrega en su sprint.
 
 generator client {
   provider            = "prisma-client"
@@ -37,6 +37,31 @@ enum MembershipRole {
   @@map("membership_role")
 }
 
+enum ProjectStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PAUSED
+  CANCELLED
+  DONE
+
+  @@map("project_status")
+}
+
+enum ProjectPriority {
+  HIGH
+  MEDIUM
+  LOW
+
+  @@map("project_priority")
+}
+
+enum ProjectVisibility {
+  WORKSPACE // lo ve todo el workspace
+  RESTRICTED // solo los Admin y los usuarios de ProjectAccess (HU-16)
+
+  @@map("project_visibility")
+}
+
 /// Persona (o app externa) con cuenta. Nunca se borra físicamente: se desactiva.
 model User {
   id            String     @id @default(uuid(7)) @db.Uuid
@@ -70,6 +95,9 @@ model User {
   membershipsCreated Membership[] @relation("MembershipCreatedBy")
   membershipsUpdated Membership[] @relation("MembershipUpdatedBy")
   membershipsDeleted Membership[] @relation("MembershipDeletedBy")
+  projectsCreated    Project[]    @relation("ProjectCreatedBy")
+  projectsUpdated    Project[]    @relation("ProjectUpdatedBy")
+  projectsDeleted    Project[]    @relation("ProjectDeletedBy")
 
   @@map("users")
 }
@@ -107,6 +135,7 @@ model Workspace {
   deletedBy   User?     @relation("WorkspaceDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
 
   memberships Membership[]
+  projects    Project[]
 
   @@map("workspaces")
 }
@@ -134,4 +163,35 @@ model Membership {
   @@unique([workspaceId, userId], map: "memberships_workspace_user_active_key", where: { deletedAt: null })
   @@index([userId])
   @@map("memberships")
+}
+
+/// Proyecto (el "curso" del prototipo, ADR-0002 §1.1).
+model Project {
+  id             String            @id @default(uuid(7)) @db.Uuid
+  workspaceId    String            @map("workspace_id") @db.Uuid
+  workspace      Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name           String
+  /// Texto libre (antes "Plataforma"): Personal, Trabajo, Estudio...
+  area           String?
+  classification String?
+  status         ProjectStatus     @default(NOT_STARTED)
+  priority       ProjectPriority   @default(MEDIUM)
+  visibility     ProjectVisibility @default(WORKSPACE)
+  /// Fechas sin hora: "termina el 15 de noviembre"
+  startDate      DateTime?         @map("start_date") @db.Date
+  endDate        DateTime?         @map("end_date") @db.Date
+  notes          String?
+
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+  createdBy   User?     @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User?     @relation("ProjectUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  deletedBy   User?     @relation("ProjectDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId])
+  @@map("projects")
 }

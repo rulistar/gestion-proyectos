@@ -60,6 +60,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
+                        (/, /w/$workspaceId, /w/$workspaceId/p/$projectId). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
     src/lib/<mod>.ts    queryOptions + mutaciones de cada módulo (p. ej. workspaces.ts); la ruta precarga con loader
@@ -75,7 +76,9 @@ apps/
       auth/password.ts    hashPassword/verifyPassword (Argon2id)
       auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
-      workspaces/         GET/POST /workspaces: mis workspaces y crear uno (quien lo crea = Admin; HU-03)
+      workspaces/         GET/POST /workspaces, GET /workspaces/:id (quien lo crea = Admin; HU-03)
+      workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
+      projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05)
       setup/              createFirstAdmin: primer Admin + workspace "workpers" (TEC-07)
     src/cli/            comandos de terminal (setup-admin.ts → pnpm setup:admin)
     src/db/client.ts    createDb(): PrismaClient con el adaptador pg; se inyecta en buildApp({ db }) → app.db
@@ -101,6 +104,7 @@ docker-compose.yml    PostgreSQL local
 - Imports de solo tipos: `import type` (regla de ESLint).
 - Pruebas junto al código: `*.test.ts`. Probar endpoints con `buildApp({ db }).inject()`, sin red.
 - **Rutas que exigen sesión**: `{ preHandler: requireAuth }` (de `modules/auth/session.ts`); el usuario queda en `request.auth.userId`. Sin sesión válida → 401.
+- **Rutas de un workspace** (`/workspaces/:workspaceId/...`): después de `requireAuth`, `{ preHandler: requirePermission('project.create') }` (de `modules/workspaces/access.ts`). No miembro o ID inválido → 404 (no revela que existe); rol sin permiso → 403. El catálogo de permisos por rol está en `packages/shared` (`roleHasPermission`); la web lo usa solo para ocultar botones. Toda consulta filtra también por `workspaceId` (un ID de otro workspace da 404).
 - **Las pruebas de la API necesitan PostgreSQL** (`pnpm db:up`). Usan una BD aparte, `<DATABASE_URL>_test` (o `TEST_DATABASE_URL`), que `global-setup.ts` crea y migra sola; se niegan a correr contra una BD que no termine en `_test`. Se ejecutan en serie (`fileParallelism: false`) y cada archivo limpia con `resetDb()`.
 - **Prisma**: toda tabla nueva sigue el ADR-0002 (UUID v7 `@default(uuid(7)) @db.Uuid`, `@@map`/`@map` en snake_case, `@db.Timestamptz(3)`, campos de trazabilidad con relaciones a `User`). Toda consulta normal incluye `notDeleted`. Índices únicos que deben ignorar la papelera: `@@unique([...], where: { deletedAt: null })` (preview feature `partialIndexes`).
 - Cambiar el esquema → `pnpm db:migrate` (crea la migración con un nombre descriptivo) → incluir la carpeta de la migración en el commit. Nunca editar una migración ya fusionada en `main`.
@@ -111,7 +115,7 @@ docker-compose.yml    PostgreSQL local
 pnpm install           # instala todo (también activa los hooks de Husky)
 pnpm db:up             # levanta PostgreSQL (requiere .env)
 pnpm db:down           # detiene PostgreSQL (los datos persisten en el volumen)
-pnpm db:migrate        # crea/aplica migraciones en la BD de desarrollo (prisma migrate dev)
+pnpm db:migrate        # crea/aplica migraciones y regenera el cliente de Prisma (Prisma 7 ya no lo hace solo)
 pnpm db:studio         # explorador visual de la BD (Prisma Studio)
 pnpm db:reset          # ⚠️ borra y recrea la BD de desarrollo aplicando todas las migraciones
 pnpm setup:admin       # crea el primer Admin (interactivo; solo si no hay usuarios)

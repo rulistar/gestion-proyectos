@@ -2,6 +2,7 @@ import { createWorkspaceRequestSchema } from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyPluginCallback } from 'fastify';
 import { requireAuth } from '../auth/session.js';
+import { requireMembership } from './access.js';
 import { createWorkspace, listWorkspacesForUser } from './workspaces.service.js';
 
 export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => {
@@ -10,6 +11,16 @@ export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => 
 
   app.get('/workspaces', async (request) => {
     return listWorkspacesForUser(app.db, request.auth!.userId);
+  });
+
+  // Un workspace del que soy miembro, con mi rol en él (404 si no lo soy)
+  app.get('/workspaces/:workspaceId', { preHandler: requireMembership }, async (request) => {
+    const { workspaceId, role } = request.membership!;
+    const workspace = await app.db.workspace.findUniqueOrThrow({
+      where: { id: workspaceId },
+      select: { id: true, name: true },
+    });
+    return { ...workspace, role };
   });
 
   app.post('/workspaces', async (request, reply) => {
