@@ -29,17 +29,18 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 
 ## Stack (ADR-0001)
 
-| Capa          | Tecnología                                                                                          | Estado                                    |
-| ------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                                                  | ✅ instalado                              |
-| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                                                     | ✅ instalado                              |
-| Backend       | Fastify 5 + TypeScript                                                                              | ✅ instalado                              |
-| Validación    | Zod 4 (compartido en `packages/shared`)                                                             | ✅ instalado                              |
-| Base de datos | PostgreSQL 17 (Docker Compose) + Prisma 7.10 (`@prisma/adapter-pg` + `pg`)                          | ✅ instalado                              |
-| Pruebas       | Vitest (unitarias + integración contra PostgreSQL real)                                             | ✅ instalado                              |
-| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged                                        | ✅ instalado                              |
-| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                                                 | ✅ configurado                            |
-| Pendientes    | TanStack Query, shadcn/ui, helmet, CORS, rate-limit, Swagger/OpenAPI, Argon2 + sesiones, Playwright | ⏳ se instalan en la historia que los use |
+| Capa          | Tecnología                                                                 | Estado                                    |
+| ------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
+| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                         | ✅ instalado                              |
+| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                            | ✅ instalado                              |
+| Backend       | Fastify 5 + TypeScript                                                     | ✅ instalado                              |
+| Validación    | Zod 4 (compartido en `packages/shared`)                                    | ✅ instalado                              |
+| Base de datos | PostgreSQL 17 (Docker Compose) + Prisma 7.10 (`@prisma/adapter-pg` + `pg`) | ✅ instalado                              |
+| Pruebas       | Vitest (unitarias + integración contra PostgreSQL real)                    | ✅ instalado                              |
+| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged               | ✅ instalado                              |
+| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                        | ✅ configurado                            |
+| Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)         | ✅ instalado                              |
+| Pendientes    | TanStack Query, shadcn/ui, Swagger/OpenAPI, Argon2 + sesiones, Playwright  | ⏳ se instalan en la historia que los use |
 
 **No agregar dependencias fuera del ADR sin preguntar al usuario.**
 
@@ -59,6 +60,8 @@ apps/
     src/app.ts          buildApp(): crea la instancia sin abrir puerto (testeable con app.inject)
     src/server.ts       arranque + cierre ordenado
     src/config/env.ts   variables de entorno validadas con Zod (falla al inicio si son inválidas)
+    src/security.ts     helmet, CORS (CORS_ORIGINS), rate limit y HTTPS/HSTS en producción (TEC-02).
+                        Rutas sensibles (login): `config: { rateLimit: authRateLimit }`
     src/modules/<mod>/  un módulo por funcionalidad: <mod>.routes.ts, <mod>.test.ts, ...
     src/db/client.ts    createDb(): PrismaClient con el adaptador pg; se inyecta en buildApp({ db }) → app.db
     src/db/audit.ts     auditCreate/auditUpdate/auditSoftDelete/auditRestore + filtro notDeleted (RNF-01, RNF-05)

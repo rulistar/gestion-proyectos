@@ -11,7 +11,26 @@ describe('loadEnv', () => {
       API_PORT: 3000,
       LOG_LEVEL: 'info',
       DATABASE_URL,
+      CORS_ORIGINS: ['http://localhost:5173'],
+      TRUST_PROXY: false,
     });
+  });
+
+  it('convierte CORS_ORIGINS en una lista y TRUST_PROXY en booleano', () => {
+    const env = loadEnv({
+      DATABASE_URL,
+      CORS_ORIGINS: 'https://app.ejemplo.com, https://otra.ejemplo.com',
+      TRUST_PROXY: 'true',
+    });
+
+    expect(env.CORS_ORIGINS).toEqual(['https://app.ejemplo.com', 'https://otra.ejemplo.com']);
+    expect(env.TRUST_PROXY).toBe(true);
+  });
+
+  it('rechaza un origen CORS con ruta', () => {
+    expect(() => loadEnv({ DATABASE_URL, CORS_ORIGINS: 'https://app.ejemplo.com/inicio' })).toThrow(
+      /CORS_ORIGINS/,
+    );
   });
 
   it('falla con un mensaje claro si falta DATABASE_URL', () => {
