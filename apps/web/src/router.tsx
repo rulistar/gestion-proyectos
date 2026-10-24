@@ -9,7 +9,12 @@ import {
 import { ApiError } from '@/lib/api';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
 import { projectQueryOptions, projectsQueryOptions } from '@/lib/projects';
-import { workspaceQueryOptions, workspacesQueryOptions } from '@/lib/workspaces';
+import { tasksQueryOptions } from '@/lib/tasks';
+import {
+  membersQueryOptions,
+  workspaceQueryOptions,
+  workspacesQueryOptions,
+} from '@/lib/workspaces';
 import { AppLayout } from '@/routes/app-layout';
 import { ErrorPage } from '@/routes/error-page';
 import { HomePage } from '@/routes/home-page';
@@ -118,6 +123,8 @@ const projectRoute = createRoute({
       context.queryClient.ensureQueryData(
         projectQueryOptions(params.workspaceId, params.projectId),
       ),
+      context.queryClient.ensureQueryData(tasksQueryOptions(params.workspaceId, params.projectId)),
+      context.queryClient.ensureQueryData(membersQueryOptions(params.workspaceId)),
     ]),
   component: ProjectPage,
 });

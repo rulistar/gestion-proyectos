@@ -1,4 +1,5 @@
 import {
+  memberListSchema,
   workspaceListSchema,
   workspaceSummarySchema,
   type CreateWorkspaceRequest,
@@ -24,6 +25,13 @@ export const workspaceQueryOptions = (workspaceId: string) =>
   queryOptions({
     queryKey: ['workspaces', workspaceId],
     queryFn: () => apiFetch(`/workspaces/${workspaceId}`, { schema: workspaceSummarySchema }),
+  });
+
+/** Miembros activos del workspace (p. ej. para elegir el responsable de una tarea) */
+export const membersQueryOptions = (workspaceId: string) =>
+  queryOptions({
+    queryKey: ['workspaces', workspaceId, 'members'],
+    queryFn: () => apiFetch(`/workspaces/${workspaceId}/members`, { schema: memberListSchema }),
   });
 
 export function useCreateWorkspace() {

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { FastifyPluginCallback } from 'fastify';
 import { requireAuth } from '../auth/session.js';
 import { requireMembership } from './access.js';
-import { createWorkspace, listWorkspacesForUser } from './workspaces.service.js';
+import { createWorkspace, listMembers, listWorkspacesForUser } from './workspaces.service.js';
 
 export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => {
   // Todas las rutas de este módulo exigen sesión
@@ -22,6 +22,10 @@ export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => 
     });
     return { ...workspace, role };
   });
+
+  app.get('/workspaces/:workspaceId/members', { preHandler: requireMembership }, async (request) =>
+    listMembers(app.db, request.membership!.workspaceId),
+  );
 
   app.post('/workspaces', async (request, reply) => {
     const parsed = createWorkspaceRequestSchema.safeParse(request.body);

@@ -64,6 +64,7 @@ apps/
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
     src/lib/<mod>.ts    queryOptions + mutaciones de cada módulo (p. ej. workspaces.ts); la ruta precarga con loader
+    src/lib/use-schema-form.ts  formularios validados con el esquema de shared (FormData + errores por campo)
     src/components/ui/  componentes de shadcn/ui (copiados, sin el CLI; se pueden modificar)
     src/routes/         una página por archivo; leen la ruta con getRouteApi() para no importar router.tsx
   api/                Fastify — monolito modular
@@ -76,9 +77,11 @@ apps/
       auth/password.ts    hashPassword/verifyPassword (Argon2id)
       auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
-      workspaces/         GET/POST /workspaces, GET /workspaces/:id (quien lo crea = Admin; HU-03)
+      workspaces/         GET/POST /workspaces, GET /workspaces/:id y /:id/members (quien lo crea = Admin; HU-03)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05)
+      tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status (HU-08)
+    src/db/dates.ts     columnas date ↔ "AAAA-MM-DD" (siempre en UTC)
       setup/              createFirstAdmin: primer Admin + workspace "workpers" (TEC-07)
     src/cli/            comandos de terminal (setup-admin.ts → pnpm setup:admin)
     src/db/client.ts    createDb(): PrismaClient con el adaptador pg; se inyecta en buildApp({ db }) → app.db
@@ -115,7 +118,7 @@ docker-compose.yml    PostgreSQL local
 pnpm install           # instala todo (también activa los hooks de Husky)
 pnpm db:up             # levanta PostgreSQL (requiere .env)
 pnpm db:down           # detiene PostgreSQL (los datos persisten en el volumen)
-pnpm db:migrate        # crea/aplica migraciones y regenera el cliente de Prisma (Prisma 7 ya no lo hace solo)
+pnpm db:migrate        # crea/aplica migraciones; después postdb:migrate regenera el cliente (Prisma 7 ya no lo hace solo)
 pnpm db:studio         # explorador visual de la BD (Prisma Studio)
 pnpm db:reset          # ⚠️ borra y recrea la BD de desarrollo aplicando todas las migraciones
 pnpm setup:admin       # crea el primer Admin (interactivo; solo si no hay usuarios)

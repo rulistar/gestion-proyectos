@@ -1,11 +1,13 @@
 import { projectInputSchema, type Project, type ProjectInput } from '@gestion/shared';
-import { useState, type FormEvent, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import type { ReactNode } from 'react';
+import { FieldError } from '@/components/field-error';
+import { FormActions } from '@/components/form-actions';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { PROJECT_PRIORITIES, PROJECT_STATUSES } from '@/lib/projects';
+import { useSchemaForm } from '@/lib/use-schema-form';
 
 const FIELDS = [
   'name',
@@ -17,8 +19,6 @@ const FIELDS = [
   'endDate',
   'notes',
 ] as const;
-type Field = (typeof FIELDS)[number];
-type FieldErrors = Partial<Record<Field, string>>;
 
 interface ProjectFormProps {
   /** Valores iniciales al editar; sin ellos el formulario está vacío (crear) */
@@ -44,126 +44,80 @@ export function ProjectForm({
   status,
   onSubmit,
 }: ProjectFormProps) {
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const values = new FormData(form);
-    const parsed = projectInputSchema.safeParse(
-      Object.fromEntries(FIELDS.map((field) => [field, values.get(field)])),
-    );
-    if (!parsed.success) {
-      const errors: FieldErrors = {};
-      for (const issue of parsed.error.issues) {
-        const field = issue.path[0] as Field;
-        errors[field] ??= issue.message;
-      }
-      setFieldErrors(errors);
-      return;
-    }
-    setFieldErrors({});
-    onSubmit(parsed.data, form);
-  }
-
-  /** Props comunes de cada campo: id, name y el enlace accesible con su mensaje de error */
-  function field(name: Field) {
-    const id = `project-${name}`;
-    return {
-      id,
-      name,
-      'aria-invalid': Boolean(fieldErrors[name]),
-      'aria-describedby': fieldErrors[name] ? `${id}-error` : undefined,
-    };
-  }
-
-  function errorFor(name: Field) {
-    const message = fieldErrors[name];
-    return (
-      message && (
-        <p id={`project-${name}-error`} className="text-sm text-destructive">
-          {message}
-        </p>
-      )
-    );
-  }
+  const form = useSchemaForm(projectInputSchema, FIELDS, onSubmit);
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
+    <form onSubmit={form.onSubmit} noValidate>
       <fieldset disabled={readOnly || isPending} className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2 sm:col-span-2">
-          <Label htmlFor="project-name">Nombre</Label>
-          <Input {...field('name')} defaultValue={project?.name} maxLength={120} />
-          {errorFor('name')}
+          <Label htmlFor={form.idOf('name')}>Nombre</Label>
+          <Input {...form.field('name')} defaultValue={project?.name} maxLength={120} />
+          <FieldError {...form.errorProps('name')} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="project-area">Área</Label>
+          <Label htmlFor={form.idOf('area')}>Área</Label>
           <Input
-            {...field('area')}
+            {...form.field('area')}
             defaultValue={project?.area ?? ''}
             maxLength={80}
             placeholder="Personal, Trabajo, Estudio…"
           />
-          {errorFor('area')}
+          <FieldError {...form.errorProps('area')} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="project-classification">Clasificación</Label>
+          <Label htmlFor={form.idOf('classification')}>Clasificación</Label>
           <Input
-            {...field('classification')}
+            {...form.field('classification')}
             defaultValue={project?.classification ?? ''}
             maxLength={80}
           />
-          {errorFor('classification')}
+          <FieldError {...form.errorProps('classification')} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="project-status">Estado</Label>
-          <NativeSelect {...field('status')} defaultValue={project?.status ?? 'NOT_STARTED'}>
+          <Label htmlFor={form.idOf('status')}>Estado</Label>
+          <NativeSelect {...form.field('status')} defaultValue={project?.status ?? 'NOT_STARTED'}>
             {Object.entries(PROJECT_STATUSES).map(([value, { label }]) => (
               <option key={value} value={value}>
                 {label}
               </option>
             ))}
           </NativeSelect>
-          {errorFor('status')}
+          <FieldError {...form.errorProps('status')} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="project-priority">Prioridad</Label>
-          <NativeSelect {...field('priority')} defaultValue={project?.priority ?? 'MEDIUM'}>
+          <Label htmlFor={form.idOf('priority')}>Prioridad</Label>
+          <NativeSelect {...form.field('priority')} defaultValue={project?.priority ?? 'MEDIUM'}>
             {Object.entries(PROJECT_PRIORITIES).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
             ))}
           </NativeSelect>
-          {errorFor('priority')}
+          <FieldError {...form.errorProps('priority')} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="project-startDate">Fecha de inicio</Label>
-          <Input {...field('startDate')} type="date" defaultValue={project?.startDate ?? ''} />
-          {errorFor('startDate')}
+          <Label htmlFor={form.idOf('startDate')}>Fecha de inicio</Label>
+          <Input {...form.field('startDate')} type="date" defaultValue={project?.startDate ?? ''} />
+          <FieldError {...form.errorProps('startDate')} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="project-endDate">Fecha de fin</Label>
-          <Input {...field('endDate')} type="date" defaultValue={project?.endDate ?? ''} />
-          {errorFor('endDate')}
+          <Label htmlFor={form.idOf('endDate')}>Fecha de fin</Label>
+          <Input {...form.field('endDate')} type="date" defaultValue={project?.endDate ?? ''} />
+          <FieldError {...form.errorProps('endDate')} />
         </div>
         <div className="grid gap-2 sm:col-span-2">
-          <Label htmlFor="project-notes">Notas</Label>
-          <Textarea {...field('notes')} defaultValue={project?.notes ?? ''} maxLength={2000} />
-          {errorFor('notes')}
+          <Label htmlFor={form.idOf('notes')}>Notas</Label>
+          <Textarea {...form.field('notes')} defaultValue={project?.notes ?? ''} maxLength={2000} />
+          <FieldError {...form.errorProps('notes')} />
         </div>
 
         {!readOnly && (
-          <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-            <Button type="submit">{isPending ? 'Guardando…' : submitLabel}</Button>
-            {error ? (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            ) : (
-              status
-            )}
-          </div>
+          <FormActions
+            submitLabel={submitLabel}
+            isPending={isPending}
+            error={error}
+            status={status}
+          />
         )}
       </fieldset>
     </form>
