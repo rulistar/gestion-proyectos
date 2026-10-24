@@ -7,7 +7,25 @@ const envSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/, error: 'Debe ser una URL postgresql://' }),
+  // Lista separada por comas: "https://app.ejemplo.com,https://otra.ejemplo.com"
+  CORS_ORIGINS: z
+    .string()
+    .default('http://localhost:5173')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.url({ protocol: /^https?$/ }).refine(isOrigin, 'Debe ser solo un origen'))),
+  // true solo detrás del proxy del hosting: así se confía en X-Forwarded-For / X-Forwarded-Proto
+  TRUST_PROXY: z.stringbool().default(false),
 });
+
+/** Un origen es protocolo + dominio + puerto, sin ruta ni barra final */
+function isOrigin(value: string): boolean {
+  return new URL(value).origin === value;
+}
 
 export type Env = z.infer<typeof envSchema>;
 

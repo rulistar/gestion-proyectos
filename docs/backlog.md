@@ -101,11 +101,11 @@ Criterios de aceptación:
 
 #### TEC-02 · Seguridad HTTP (3 pts)
 
-- [ ] Cabeceras de seguridad (helmet), con HSTS activo solo en producción.
-- [ ] En producción, toda petición HTTP se redirige a HTTPS (respetando el proxy del hosting).
-- [ ] CORS limitado a los orígenes de una variable de entorno (`CORS_ORIGINS`).
-- [ ] Límite de peticiones global, y uno más estricto en el login.
-- [ ] Pruebas que verifican las cabeceras y el límite.
+- [x] Cabeceras de seguridad (helmet), con HSTS activo solo en producción.
+- [x] En producción, toda petición HTTP se redirige a HTTPS (respetando el proxy del hosting).
+- [x] CORS limitado a los orígenes de una variable de entorno (`CORS_ORIGINS`).
+- [x] Límite de peticiones global, y uno más estricto en el login (`authRateLimit`, se aplica a la ruta en HU-02).
+- [x] Pruebas que verifican las cabeceras y el límite.
 
 #### TEC-07 · Crear el primer Admin (2 pts)
 
