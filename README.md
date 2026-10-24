@@ -29,7 +29,10 @@ pnpm db:up
 # 4. Crear las tablas (aplica las migraciones)
 pnpm db:migrate
 
-# 5. Arrancar API y web en modo desarrollo
+# 5. Crear el primer administrador (solo una vez; pide nombre, correo y contraseña)
+pnpm setup:admin
+
+# 6. Arrancar API y web en modo desarrollo
 pnpm dev
 ```
 
@@ -52,6 +55,7 @@ Para detener: `Ctrl+C` en la terminal de `pnpm dev`, y `pnpm db:down` para la ba
 | `pnpm db:migrate`   | Crea o aplica migraciones de la base de datos       |
 | `pnpm db:studio`    | Abre un explorador visual de la base de datos       |
 | `pnpm db:reset`     | ⚠️ Borra y recrea la base de datos de desarrollo    |
+| `pnpm setup:admin`  | Crea el primer Admin (solo en una BD sin usuarios)  |
 
 ## Estructura
 

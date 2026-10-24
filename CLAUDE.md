@@ -40,7 +40,8 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 | Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged               | ✅ instalado                              |
 | CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                        | ✅ configurado                            |
 | Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)         | ✅ instalado                              |
-| Pendientes    | TanStack Query, shadcn/ui, Swagger/OpenAPI, Argon2 + sesiones, Playwright  | ⏳ se instalan en la historia que los use |
+| Contraseñas   | `argon2` 0.45 (Argon2id, binario nativo; TEC-07)                           | ✅ instalado                              |
+| Pendientes    | TanStack Query, shadcn/ui, Swagger/OpenAPI, sesiones (cookie), Playwright  | ⏳ se instalan en la historia que los use |
 
 **No agregar dependencias fuera del ADR sin preguntar al usuario.**
 
@@ -49,7 +50,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 - **Vite 7, no 8**: Vite 8 usa rolldown, cuyo binario nativo (`.node`) es bloqueado por _Smart App Control_ de Windows en la PC del usuario ("An Application Control policy has blocked this file"). Vite 7 usa rollup/esbuild, que sí cargan. Por eso `@vitejs/plugin-react` está en v5. Dependabot ignora esos majors.
 - **TypeScript ~6.0**: typescript-eslint 8 exige `typescript <6.1`. TypeScript 7 aún no es compatible.
 - **`@types/node` en 24.x**: debe coincidir con la versión de Node (`.nvmrc` = 24). Si se sube Node, subir ambos juntos. Dependabot ignora sus majors.
-- **pnpm bloquea scripts de instalación** por defecto; los permitidos están en `allowBuilds` de `pnpm-workspace.yaml` (`esbuild`, `prisma`, `@prisma/engines`). Aprobar uno nuevo: `pnpm approve-builds <paquete>`, y solo si es necesario.
+- **pnpm bloquea scripts de instalación** por defecto; los permitidos están en `allowBuilds` de `pnpm-workspace.yaml` (`esbuild`, `prisma`, `@prisma/engines`, `argon2`). Aprobar uno nuevo: `pnpm approve-builds <paquete>`, y solo si es necesario.
 
 ## Estructura
 
@@ -63,6 +64,9 @@ apps/
     src/security.ts     helmet, CORS (CORS_ORIGINS), rate limit y HTTPS/HSTS en producción (TEC-02).
                         Rutas sensibles (login): `config: { rateLimit: authRateLimit }`
     src/modules/<mod>/  un módulo por funcionalidad: <mod>.routes.ts, <mod>.test.ts, ...
+      auth/password.ts    hashPassword/verifyPassword (Argon2id)
+      setup/              createFirstAdmin: primer Admin + workspace "workpers" (TEC-07)
+    src/cli/            comandos de terminal (setup-admin.ts → pnpm setup:admin)
     src/db/client.ts    createDb(): PrismaClient con el adaptador pg; se inyecta en buildApp({ db }) → app.db
     src/db/audit.ts     auditCreate/auditUpdate/auditSoftDelete/auditRestore + filtro notDeleted (RNF-01, RNF-05)
     src/generated/      cliente de Prisma generado (ignorado por Git; se regenera en pnpm install)
@@ -98,6 +102,7 @@ pnpm db:down           # detiene PostgreSQL (los datos persisten en el volumen)
 pnpm db:migrate        # crea/aplica migraciones en la BD de desarrollo (prisma migrate dev)
 pnpm db:studio         # explorador visual de la BD (Prisma Studio)
 pnpm db:reset          # ⚠️ borra y recrea la BD de desarrollo aplicando todas las migraciones
+pnpm setup:admin       # crea el primer Admin (interactivo; solo si no hay usuarios)
 pnpm dev               # api (:3000) + web (:5173) en paralelo
 pnpm test              # Vitest en todos los paquetes (requiere pnpm db:up)
 pnpm lint              # ESLint   | pnpm lint:fix
