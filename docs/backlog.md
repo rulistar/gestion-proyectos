@@ -91,13 +91,13 @@ Primero se documenta y se aprueba el diseño en **ADR-0002**, y después se impl
 
 Criterios de aceptación:
 
-- [ ] ADR-0002 aprobado por el PO: entidades, relaciones, permisos y borrado lógico.
-- [ ] Prisma instalado en `apps/api`; `DATABASE_URL` validada en `config/env.ts`.
-- [ ] Entidades iniciales: `User`, `Workspace`, `Membership` (usuario + workspace + rol), `Session`.
-- [ ] El diseño contempla, aunque se implementen después: ajustes de permisos por usuario (HU-17), proyectos restringidos (HU-16) e invitaciones (HU-04).
-- [ ] RNF-01 en todas las entidades; `deletedAt` y `deletedById` donde aplique el borrado lógico.
-- [ ] Migración versionada aplicada con `pnpm --filter @gestion/api db:migrate`.
-- [ ] El CI levanta PostgreSQL como servicio y ejecuta las pruebas de integración contra él.
+- [x] ADR-0002 aprobado por el PO: entidades, relaciones, permisos y borrado lógico.
+- [x] Prisma instalado en `apps/api`; `DATABASE_URL` validada en `config/env.ts`.
+- [x] Entidades iniciales: `User`, `Workspace`, `Membership` (usuario + workspace + rol), `Session`.
+- [x] El diseño contempla, aunque se implementen después: ajustes de permisos por usuario (HU-17), proyectos restringidos (HU-16) e invitaciones (HU-04).
+- [x] RNF-01 en todas las entidades; `deletedAt` y `deletedById` donde aplique el borrado lógico.
+- [x] Migración versionada aplicada con `pnpm --filter @gestion/api db:migrate`.
+- [x] El CI levanta PostgreSQL como servicio y ejecuta las pruebas de integración contra él.
 
 #### TEC-02 · Seguridad HTTP (3 pts)
 

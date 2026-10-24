@@ -1,10 +1,16 @@
 import { buildApp } from './app.js';
 import { loadEnv } from './config/env.js';
+import { createDb } from './db/client.js';
 
 const env = loadEnv();
-const app = buildApp({ logger: { level: env.LOG_LEVEL } });
+const db = createDb(env.DATABASE_URL);
+const app = buildApp({ db, logger: { level: env.LOG_LEVEL } });
 
-// Cierre ordenado: termina las peticiones en curso antes de salir
+// Cierre ordenado: termina las peticiones en curso y libera las conexiones a la BD antes de salir
+app.addHook('onClose', async () => {
+  await db.$disconnect();
+});
+
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => {
     app.log.info(`${signal} recibido, cerrando servidor`);

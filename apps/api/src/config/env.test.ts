@@ -1,0 +1,28 @@
+import { describe, expect, it } from 'vitest';
+import { loadEnv } from './env.js';
+
+const DATABASE_URL = 'postgresql://usuario:clave@localhost:5432/gestion';
+
+describe('loadEnv', () => {
+  it('aplica valores por defecto cuando solo se define DATABASE_URL', () => {
+    expect(loadEnv({ DATABASE_URL })).toEqual({
+      NODE_ENV: 'development',
+      API_HOST: '127.0.0.1',
+      API_PORT: 3000,
+      LOG_LEVEL: 'info',
+      DATABASE_URL,
+    });
+  });
+
+  it('falla con un mensaje claro si falta DATABASE_URL', () => {
+    expect(() => loadEnv({})).toThrow(/DATABASE_URL/);
+  });
+
+  it('rechaza una DATABASE_URL que no sea de PostgreSQL', () => {
+    expect(() => loadEnv({ DATABASE_URL: 'mysql://localhost/db' })).toThrow(/postgresql/);
+  });
+
+  it('rechaza un puerto inválido', () => {
+    expect(() => loadEnv({ DATABASE_URL, API_PORT: 'abc' })).toThrow(/API_PORT/);
+  });
+});
