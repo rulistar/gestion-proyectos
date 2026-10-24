@@ -1,8 +1,9 @@
 import { loginRequestSchema, type CurrentUser } from '@gestion/shared';
 import type { FastifyPluginCallback, FastifyRequest } from 'fastify';
 import type { Db } from '../../db/client.js';
-import { auditUpdate, notDeleted } from '../../db/audit.js';
+import { auditUpdate } from '../../db/audit.js';
 import { authRateLimit } from '../../security.js';
+import { listWorkspacesForUser } from '../workspaces/workspaces.service.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { createSession, deleteSession, requireAuth, SESSION_COOKIE } from './session.js';
 
@@ -26,22 +27,13 @@ function loginRateLimitKey(request: FastifyRequest): string {
 }
 
 async function getCurrentUser(db: Db, userId: string): Promise<CurrentUser> {
-  const user = await db.user.findUniqueOrThrow({
-    where: { id: userId },
-    include: {
-      memberships: {
-        where: { ...notDeleted, workspace: notDeleted },
-        include: { workspace: { select: { id: true, name: true } } },
-        orderBy: { createdAt: 'asc' },
-      },
-    },
-  });
+  const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     isSystemAdmin: user.isSystemAdmin,
-    workspaces: user.memberships.map((m) => ({ ...m.workspace, role: m.role })),
+    workspaces: await listWorkspacesForUser(db, userId),
   };
 }
 

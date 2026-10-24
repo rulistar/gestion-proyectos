@@ -62,6 +62,7 @@ apps/
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
+    src/lib/<mod>.ts    queryOptions + mutaciones de cada módulo (p. ej. workspaces.ts); la ruta precarga con loader
     src/components/ui/  componentes de shadcn/ui (copiados, sin el CLI; se pueden modificar)
     src/routes/         una página por archivo; leen la ruta con getRouteApi() para no importar router.tsx
   api/                Fastify — monolito modular
@@ -74,6 +75,7 @@ apps/
       auth/password.ts    hashPassword/verifyPassword (Argon2id)
       auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
+      workspaces/         GET/POST /workspaces: mis workspaces y crear uno (quien lo crea = Admin; HU-03)
       setup/              createFirstAdmin: primer Admin + workspace "workpers" (TEC-07)
     src/cli/            comandos de terminal (setup-admin.ts → pnpm setup:admin)
     src/db/client.ts    createDb(): PrismaClient con el adaptador pg; se inyecta en buildApp({ db }) → app.db

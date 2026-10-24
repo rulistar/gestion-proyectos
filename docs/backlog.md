@@ -141,10 +141,10 @@ _Como usuario, quiero iniciar y cerrar sesión de forma segura, para proteger mi
 
 _Como usuario, quiero crear un espacio de trabajo, para organizar mis proyectos._
 
-- [ ] Formulario con nombre, validado con un esquema compartido.
-- [ ] Quien lo crea queda como **Admin** de ese workspace.
-- [ ] Listado de "mis workspaces", donde solo aparecen aquellos de los que soy miembro.
-- [ ] Cumple RNF-01 (queda registrado quién lo creó y cuándo).
+- [x] Formulario con nombre, validado con un esquema compartido.
+- [x] Quien lo crea queda como **Admin** de ese workspace.
+- [x] Listado de "mis workspaces", donde solo aparecen aquellos de los que soy miembro.
+- [x] Cumple RNF-01 (queda registrado quién lo creó y cuándo).
 
 ### Sprints siguientes (criterios por detallar en su planificación)
 
