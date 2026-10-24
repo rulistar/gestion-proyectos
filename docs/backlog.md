@@ -109,9 +109,10 @@ Criterios de aceptación:
 
 #### TEC-07 · Crear el primer Admin (2 pts)
 
-- [ ] Comando `pnpm --filter @gestion/api setup:admin` que pide nombre, correo y contraseña de forma **interactiva** (la contraseña no queda en el historial de la terminal ni se muestra en pantalla).
-- [ ] Solo funciona si todavía no existe ningún usuario; si no, se niega y lo explica.
-- [ ] La contraseña cumple la política mínima (12+ caracteres) y se guarda con hash Argon2id.
+- [x] Comando `pnpm --filter @gestion/api setup:admin` que pide nombre, correo y contraseña de forma **interactiva** (la contraseña no queda en el historial de la terminal ni se muestra en pantalla).
+- [x] Solo funciona si todavía no existe ningún usuario; si no, se niega y lo explica.
+- [x] La contraseña cumple la política mínima (12+ caracteres) y se guarda con hash Argon2id.
+- [x] Crea también el workspace inicial **"workpers"** con el Admin como miembro (decisión del PO).
 
 #### HU-02 · Iniciar y cerrar sesión (5 pts)
 
