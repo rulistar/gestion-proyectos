@@ -5,7 +5,7 @@ import {
   type TaskStatus,
   type TaskType,
 } from '@gestion/shared';
-import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
 
 export const TASK_STATUSES: Record<TaskStatus, string> = {
@@ -26,7 +26,7 @@ export const TASK_TYPES: Record<TaskType, string> = {
 const tasksPath = (workspaceId: string, projectId: string) =>
   `/workspaces/${workspaceId}/projects/${projectId}/tasks`;
 
-/** La clave cuelga de la del proyecto: al cambiar una tarea se refresca también su proyecto */
+/** La clave cuelga de la del proyecto */
 const tasksKey = (workspaceId: string, projectId: string) => [
   'workspaces',
   workspaceId,
@@ -34,6 +34,11 @@ const tasksKey = (workspaceId: string, projectId: string) => [
   projectId,
   'tasks',
 ];
+
+/** Una tarea cambia el avance de su proyecto (HU-06): se refrescan proyectos y tareas del workspace */
+function invalidateProjects(queryClient: QueryClient, workspaceId: string) {
+  return queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId, 'projects'] });
+}
 
 export const tasksQueryOptions = (workspaceId: string, projectId: string) =>
   queryOptions({
@@ -50,7 +55,7 @@ export function useCreateTask(workspaceId: string, projectId: string) {
         body: data,
         schema: taskSchema,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tasksKey(workspaceId, projectId) }),
+    onSuccess: () => invalidateProjects(queryClient, workspaceId),
   });
 }
 
@@ -63,7 +68,7 @@ export function useUpdateTask(workspaceId: string, projectId: string, taskId: st
         body: data,
         schema: taskSchema,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tasksKey(workspaceId, projectId) }),
+    onSuccess: () => invalidateProjects(queryClient, workspaceId),
   });
 }
 
@@ -76,6 +81,6 @@ export function useMoveTask(workspaceId: string, projectId: string, taskId: stri
         body: { status },
         schema: taskSchema,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tasksKey(workspaceId, projectId) }),
+    onSuccess: () => invalidateProjects(queryClient, workspaceId),
   });
 }

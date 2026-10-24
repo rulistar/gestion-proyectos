@@ -1,4 +1,4 @@
-import type { Project, ProjectInput } from '@gestion/shared';
+import { summarizeTasks, type Project, type ProjectInput, type TaskStatus } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
@@ -14,15 +14,23 @@ const projectSelect = {
   startDate: true,
   endDate: true,
   notes: true,
+  // Para calcular el avance (HU-06); las tareas en la papelera no cuentan (RNF-05)
+  tasks: { where: notDeleted, select: { status: true, estimatedMinutes: true } },
 } as const;
 
-function toProject(
-  row: {
-    startDate: Date | null;
-    endDate: Date | null;
-  } & Omit<Project, 'startDate' | 'endDate'>,
-): Project {
-  return { ...row, startDate: toIsoDate(row.startDate), endDate: toIsoDate(row.endDate) };
+type ProjectRow = Omit<Project, 'startDate' | 'endDate' | 'progress'> & {
+  startDate: Date | null;
+  endDate: Date | null;
+  tasks: { status: TaskStatus; estimatedMinutes: number | null }[];
+};
+
+function toProject({ tasks, ...row }: ProjectRow): Project {
+  return {
+    ...row,
+    startDate: toIsoDate(row.startDate),
+    endDate: toIsoDate(row.endDate),
+    progress: summarizeTasks(tasks),
+  };
 }
 
 function toData(input: ProjectInput) {

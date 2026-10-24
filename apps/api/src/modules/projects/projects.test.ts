@@ -1,7 +1,7 @@
 import { projectListSchema, projectSchema, type MembershipRole } from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
-import { auditSoftDelete } from '../../db/audit.js';
+import { auditCreate, auditSoftDelete } from '../../db/audit.js';
 import { createTestDb, resetDb } from '../../test/test-db.js';
 import { addMember, userWithSession } from '../../test/users.js';
 import { createWorkspace } from '../workspaces/workspaces.service.js';
@@ -90,6 +90,7 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
       startDate: '2026-11-01',
       endDate: null,
       notes: null,
+      progress: { totalTasks: 0, doneTasks: 0, percent: 0, pendingMinutes: 0 },
     });
   });
 
@@ -143,6 +144,39 @@ describe('GET /workspaces/:workspaceId/projects', () => {
     const response = await app.inject({ url: url(ws.id), cookies: lector.cookies });
 
     expect(projectListSchema.parse(response.json())).toEqual([kept]);
+  });
+});
+
+describe('avance del proyecto (HU-06)', () => {
+  it('calcula % y minutos pendientes sin contar las tareas en la papelera', async () => {
+    const { ana, ws } = await setup();
+    const project = await createOk(ana.cookies, ws.id, { name: 'Curso' });
+    const task = (status: 'PENDING' | 'DONE', estimatedMinutes: number, deleted = false) =>
+      db.task.create({
+        data: {
+          workspaceId: ws.id,
+          projectId: project.id,
+          title: 'T',
+          status,
+          estimatedMinutes,
+          ...auditCreate(ana.user.id),
+          ...(deleted && auditSoftDelete(ana.user.id)),
+        },
+      });
+    await task('DONE', 60);
+    await task('PENDING', 30);
+    await task('PENDING', 500, true); // en la papelera: no cuenta
+
+    const list = projectListSchema.parse(
+      (await app.inject({ url: url(ws.id), cookies: ana.cookies })).json(),
+    );
+    const detail = projectSchema.parse(
+      (await app.inject({ url: url(ws.id, project.id), cookies: ana.cookies })).json(),
+    );
+
+    const expected = { totalTasks: 2, doneTasks: 1, percent: 50, pendingMinutes: 30 };
+    expect(list[0]?.progress).toEqual(expected);
+    expect(detail.progress).toEqual(expected);
   });
 });
 

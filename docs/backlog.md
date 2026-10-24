@@ -180,12 +180,12 @@ _Como miembro, quiero crear tareas, asignarlas y moverlas entre Pendiente, En cu
 
 _Como miembro, quiero ver el % de avance, los minutos pendientes y los días restantes de cada proyecto, para saber cómo va sin contar tareas a mano._
 
-- [ ] % de avance = tareas Hechas ÷ total (0 % si no hay tareas).
-- [ ] Minutos pendientes = suma de los minutos estimados de las tareas que no están Hechas.
-- [ ] Días restantes respecto a la fecha de fin: "Faltan N día(s)", "Termina hoy", "Vencido hace N día(s)" o "Sin fecha". "Hoy" se calcula en la zona horaria del usuario.
-- [ ] Las tareas borradas no cuentan (RNF-05).
-- [ ] Se muestra en la lista de proyectos y en la vista del proyecto.
-- [ ] Reglas de cálculo como funciones puras con pruebas de los casos límite.
+- [x] % de avance = tareas Hechas ÷ total (0 % si no hay tareas).
+- [x] Minutos pendientes = suma de los minutos estimados de las tareas que no están Hechas.
+- [x] Días restantes respecto a la fecha de fin: "Faltan N día(s)", "Termina hoy", "Vencido hace N día(s)" o "Sin fecha". "Hoy" se calcula en la zona horaria del usuario.
+- [x] Las tareas borradas no cuentan (RNF-05).
+- [x] Se muestra en la lista de proyectos y en la vista del proyecto.
+- [x] Reglas de cálculo como funciones puras con pruebas de los casos límite.
 
 #### HU-04 · Invitar miembros con un rol (5 pts)
 
