@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     // Resuelve @gestion/shared a su código fuente TS (Vite lo compila directamente)
     conditions: ['@gestion/source', ...defaultClientConditions],
+    // "@/components/ui/button" → src/components/ui/button (convención de shadcn/ui)
+    alias: { '@': '/src' },
   },
   server: {
     port: 5173,
