@@ -5,6 +5,7 @@ import type { Db } from './db/client.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { projectsRoutes } from './modules/projects/projects.routes.js';
+import { tasksRoutes } from './modules/tasks/tasks.routes.js';
 import { workspacesRoutes } from './modules/workspaces/workspaces.routes.js';
 import { registerSecurity, type SecurityOptions } from './security.js';
 
@@ -58,6 +59,7 @@ export function buildApp({
   void app.register(authRoutes, { prefix: '/api/v1' });
   void app.register(workspacesRoutes, { prefix: '/api/v1' });
   void app.register(projectsRoutes, { prefix: '/api/v1' });
+  void app.register(tasksRoutes, { prefix: '/api/v1' });
 
   return app;
 }

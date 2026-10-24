@@ -167,14 +167,14 @@ _Como miembro de un workspace, quiero crear y editar proyectos, para organizar m
 
 _Como miembro, quiero crear tareas, asignarlas y moverlas entre Pendiente, En curso y Hecha, para saber qué falta y quién lo hace._
 
-- [ ] Tabla `Task` con su migración: título, tipo, estado, minutos estimados, fechas, responsable, `completedAt` y `workspaceId` (ADR-0002).
-- [ ] Vista de un proyecto con sus tareas agrupadas por estado.
-- [ ] Crear y editar tareas: Admin y Miembro. El Lector solo ve.
-- [ ] Tipos genéricos: Tarea, Reunión, Entregable, Revisión, Investigación, Examen.
-- [ ] El responsable debe ser un miembro activo del workspace (si no, `400`).
-- [ ] Cambiar el estado con un selector. Al pasar a Hecha se rellena `completedAt`; al salir de Hecha se vacía.
-- [ ] No se pueden ver ni modificar tareas de otro workspace (`404`).
-- [ ] Cumple RNF-01 y tiene pruebas.
+- [x] Tabla `Task` con su migración: título, tipo, estado, minutos estimados, fechas, responsable, `completedAt` y `workspaceId` (ADR-0002).
+- [x] Vista de un proyecto con sus tareas agrupadas por estado.
+- [x] Crear y editar tareas: Admin y Miembro. El Lector solo ve.
+- [x] Tipos genéricos: Tarea, Reunión, Entregable, Revisión, Investigación, Examen.
+- [x] El responsable debe ser un miembro activo del workspace (si no, `400`).
+- [x] Cambiar el estado con un selector. Al pasar a Hecha se rellena `completedAt`; al salir de Hecha se vacía.
+- [x] No se pueden ver ni modificar tareas de otro workspace (`404`).
+- [x] Cumple RNF-01 y tiene pruebas.
 
 #### HU-06 · Ver el avance de un proyecto (3 pts)
 

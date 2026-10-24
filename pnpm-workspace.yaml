@@ -6,3 +6,5 @@ allowBuilds:
   argon2: true
   esbuild: true
   prisma: true
+# Ejecuta los scripts post<nombre> (postdb:migrate regenera el cliente de Prisma tras migrar)
+enablePrePostScripts: true

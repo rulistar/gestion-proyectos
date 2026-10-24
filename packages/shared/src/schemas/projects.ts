@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { endAfterStart, endAfterStartError, optionalDate, optionalText } from './common.js';
 
 export const projectStatusSchema = z.enum([
   'NOT_STARTED',
@@ -12,27 +13,6 @@ export type ProjectStatus = z.infer<typeof projectStatusSchema>;
 export const projectPrioritySchema = z.enum(['HIGH', 'MEDIUM', 'LOW']);
 export type ProjectPriority = z.infer<typeof projectPrioritySchema>;
 
-/** Texto opcional: se recorta y, si queda vacío, se guarda como null */
-function optionalText(max: number) {
-  return z
-    .string()
-    .trim()
-    .max(max, `Máximo ${max} caracteres`)
-    .nullish()
-    .transform((value) => value || null);
-}
-
-/**
- * Fecha sin hora en formato AAAA-MM-DD (lo que envía un <input type="date">).
- * Un campo vacío ("") cuenta como "sin fecha".
- */
-const optionalDate = z
-  .preprocess(
-    (value) => (value === '' ? null : value),
-    z.iso.date('Fecha no válida (AAAA-MM-DD)').nullish(),
-  )
-  .transform((value) => value ?? null);
-
 /** Cuerpo de POST y PUT /workspaces/:workspaceId/projects (HU-05) */
 export const projectInputSchema = z
   .object({
@@ -45,11 +25,7 @@ export const projectInputSchema = z
     endDate: optionalDate,
     notes: optionalText(2000),
   })
-  // Las fechas AAAA-MM-DD se pueden comparar como texto
-  .refine((p) => !p.startDate || !p.endDate || p.endDate >= p.startDate, {
-    message: 'La fecha de fin no puede ser anterior a la de inicio',
-    path: ['endDate'],
-  });
+  .refine(endAfterStart, endAfterStartError);
 export type ProjectInput = z.infer<typeof projectInputSchema>;
 
 export const projectSchema = z.object({

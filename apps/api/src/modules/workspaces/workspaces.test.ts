@@ -1,4 +1,4 @@
-import { workspaceListSchema, workspaceSummarySchema } from '@gestion/shared';
+import { memberListSchema, workspaceListSchema, workspaceSummarySchema } from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { auditSoftDelete } from '../../db/audit.js';
@@ -105,6 +105,34 @@ describe('GET /workspaces', () => {
 
     const list = workspaceListSchema.parse((await listWs(ana.cookies)).json());
     expect(list).toEqual([kept]);
+  });
+});
+
+describe('GET /workspaces/:workspaceId/members', () => {
+  it('lista los miembros activos por nombre, sin los desactivados ni los que salieron', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Equipo')).json());
+    const luis = await userWithSession('luis@example.com');
+    const eva = await userWithSession('eva@example.com');
+    const leo = await userWithSession('leo@example.com');
+    await addMember(db, ws.id, luis.user.id, 'VIEWER');
+    await addMember(db, ws.id, eva.user.id, 'MEMBER');
+    await addMember(db, ws.id, leo.user.id, 'MEMBER');
+    await db.user.update({ where: { id: eva.user.id }, data: { status: 'DISABLED' } });
+    await db.membership.updateMany({
+      where: { userId: leo.user.id },
+      data: auditSoftDelete(ana.user.id),
+    });
+
+    const response = await app.inject({
+      url: `/api/v1/workspaces/${ws.id}/members`,
+      cookies: luis.cookies,
+    });
+
+    expect(memberListSchema.parse(response.json())).toEqual([
+      { userId: ana.user.id, name: 'ana@example.com', role: 'ADMIN' },
+      { userId: luis.user.id, name: 'luis@example.com', role: 'VIEWER' },
+    ]);
   });
 });
 

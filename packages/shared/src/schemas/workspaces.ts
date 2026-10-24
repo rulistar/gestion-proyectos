@@ -23,3 +23,14 @@ export type WorkspaceSummary = z.infer<typeof workspaceSummarySchema>;
 
 /** Respuesta de GET /workspaces */
 export const workspaceListSchema = z.array(workspaceSummarySchema);
+
+/** Un miembro activo del workspace (por ejemplo, para elegir el responsable de una tarea) */
+export const memberSchema = z.object({
+  userId: z.uuid(),
+  name: z.string(),
+  role: membershipRoleSchema,
+});
+export type Member = z.infer<typeof memberSchema>;
+
+/** Respuesta de GET /workspaces/:workspaceId/members */
+export const memberListSchema = z.array(memberSchema);
