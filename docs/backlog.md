@@ -118,7 +118,7 @@ Criterios de aceptación:
 
 _Como usuario, quiero iniciar y cerrar sesión de forma segura, para proteger mi información._
 
-> API terminada (`/api/v1/auth/login`, `/logout`, `/me`). Falta la pantalla de login, que llega después de TEC-03.
+> API (`/api/v1/auth/login`, `/logout`, `/me`) y pantalla de login (en TEC-03).
 
 - [x] Inicio de sesión con correo y contraseña; contraseña verificada con Argon2id.
 - [x] Sesión guardada en la base de datos; el navegador solo recibe una cookie `HttpOnly`, `SameSite=Lax` y `Secure` en producción.
@@ -128,14 +128,14 @@ _Como usuario, quiero iniciar y cerrar sesión de forma segura, para proteger mi
 - [x] Cerrar sesión invalida la sesión **en el servidor**, no solo en el navegador.
 - [x] La sesión expira por inactividad; el tiempo se configura por variable de entorno.
 - [x] `GET /api/v1/auth/me` devuelve el usuario actual, o `401` sin sesión.
-- [ ] Pantalla de inicio de sesión en la web.
+- [x] Pantalla de inicio de sesión en la web.
 
 #### TEC-03 · Base del frontend (3 pts)
 
-- [ ] Enrutador con rutas públicas (login) y protegidas (redirigen al login sin sesión).
-- [ ] Layout base: barra superior con usuario y cierre de sesión, y área de contenido.
-- [ ] TanStack Query configurado para las llamadas a la API.
-- [ ] shadcn/ui inicializado con los primeros componentes (botón, input, formulario).
+- [x] Enrutador con rutas públicas (login) y protegidas (redirigen al login sin sesión). TanStack Router, ver ADR-0003.
+- [x] Layout base: barra superior con usuario y cierre de sesión, y área de contenido.
+- [x] TanStack Query configurado para las llamadas a la API.
+- [x] shadcn/ui inicializado con los primeros componentes (botón, input, etiqueta, tarjeta; el formulario usa el esquema Zod compartido, sin react-hook-form).
 
 #### HU-03 · Crear un espacio de trabajo (3 pts)
 

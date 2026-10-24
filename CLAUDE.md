@@ -42,7 +42,8 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 | Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)         | ✅ instalado                              |
 | Contraseñas   | `argon2` 0.45 (Argon2id, binario nativo; TEC-07)                           | ✅ instalado                              |
 | Sesiones      | `@fastify/cookie` (cookie HttpOnly + sesión en BD; HU-02)                  | ✅ instalado                              |
-| Pendientes    | TanStack Query, shadcn/ui, Swagger/OpenAPI, Playwright                     | ⏳ se instalan en la historia que los use |
+| Web (TEC-03)  | TanStack Router (ADR-0003), TanStack Query, shadcn/ui (copiado a mano)     | ✅ instalado                              |
+| Pendientes    | Swagger/OpenAPI, Playwright                                                | ⏳ se instalan en la historia que los use |
 
 **No agregar dependencias fuera del ADR sin preguntar al usuario.**
 
@@ -58,6 +59,11 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 ```
 apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
+    src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
+    src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
+    src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
+    src/components/ui/  componentes de shadcn/ui (copiados, sin el CLI; se pueden modificar)
+    src/routes/         una página por archivo; leen la ruta con getRouteApi() para no importar router.tsx
   api/                Fastify — monolito modular
     src/app.ts          buildApp(): crea la instancia sin abrir puerto (testeable con app.inject)
     src/server.ts       arranque + cierre ordenado
@@ -89,7 +95,7 @@ docker-compose.yml    PostgreSQL local
 - Módulos previstos (ADR): `auth`, `workspaces`, `projects`, `tasks`, `reports`, `integrations`.
 - Un esquema Zod en `packages/shared` es la fuente de verdad del contrato; el tipo TS se deriva con `z.infer`.
 - `@gestion/shared` se resuelve al **código fuente** (`src/*.ts`) en desarrollo, tests, typecheck y build de la web mediante la condición de export `@gestion/source`. Solo `node dist/server.js` (producción) usa el `dist` compilado. Si se agrega otra herramienta, configurarle esa condición.
-- Imports relativos en api y shared con extensión `.js` (módulos ESM `NodeNext`). En web no hace falta (`Bundler`).
+- Imports relativos en api y shared con extensión `.js` (módulos ESM `NodeNext`). En web no hace falta (`Bundler`) y se usa el alias `@/` → `src/`.
 - Imports de solo tipos: `import type` (regla de ESLint).
 - Pruebas junto al código: `*.test.ts`. Probar endpoints con `buildApp({ db }).inject()`, sin red.
 - **Rutas que exigen sesión**: `{ preHandler: requireAuth }` (de `modules/auth/session.ts`); el usuario queda en `request.auth.userId`. Sin sesión válida → 401.

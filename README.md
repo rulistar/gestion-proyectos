@@ -36,7 +36,7 @@ pnpm setup:admin
 pnpm dev
 ```
 
-- Web: http://localhost:5173 (debe mostrar "Estado de la API: conectada")
+- Web: http://localhost:5173 (pide iniciar sesión con el Admin creado en el paso 5)
 - API: http://localhost:3000/api/v1/health
 
 Para detener: `Ctrl+C` en la terminal de `pnpm dev`, y `pnpm db:down` para la base de datos (los datos se conservan).
