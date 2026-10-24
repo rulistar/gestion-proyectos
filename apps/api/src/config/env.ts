@@ -20,6 +20,8 @@ const envSchema = z.object({
     .pipe(z.array(z.url({ protocol: /^https?$/ }).refine(isOrigin, 'Debe ser solo un origen'))),
   // true solo detrás del proxy del hosting: así se confía en X-Forwarded-For / X-Forwarded-Proto
   TRUST_PROXY: z.stringbool().default(false),
+  // La sesión expira tras este tiempo sin actividad (de 5 minutos a 24 horas)
+  SESSION_IDLE_MINUTES: z.coerce.number().int().min(5).max(1440).default(60),
 });
 
 /** Un origen es protocolo + dominio + puerto, sin ruta ni barra final */

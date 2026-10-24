@@ -41,7 +41,8 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 | CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                        | ✅ configurado                            |
 | Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)         | ✅ instalado                              |
 | Contraseñas   | `argon2` 0.45 (Argon2id, binario nativo; TEC-07)                           | ✅ instalado                              |
-| Pendientes    | TanStack Query, shadcn/ui, Swagger/OpenAPI, sesiones (cookie), Playwright  | ⏳ se instalan en la historia que los use |
+| Sesiones      | `@fastify/cookie` (cookie HttpOnly + sesión en BD; HU-02)                  | ✅ instalado                              |
+| Pendientes    | TanStack Query, shadcn/ui, Swagger/OpenAPI, Playwright                     | ⏳ se instalan en la historia que los use |
 
 **No agregar dependencias fuera del ADR sin preguntar al usuario.**
 
@@ -65,6 +66,8 @@ apps/
                         Rutas sensibles (login): `config: { rateLimit: authRateLimit }`
     src/modules/<mod>/  un módulo por funcionalidad: <mod>.routes.ts, <mod>.test.ts, ...
       auth/password.ts    hashPassword/verifyPassword (Argon2id)
+      auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth
+      auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
       setup/              createFirstAdmin: primer Admin + workspace "workpers" (TEC-07)
     src/cli/            comandos de terminal (setup-admin.ts → pnpm setup:admin)
     src/db/client.ts    createDb(): PrismaClient con el adaptador pg; se inyecta en buildApp({ db }) → app.db
@@ -89,6 +92,7 @@ docker-compose.yml    PostgreSQL local
 - Imports relativos en api y shared con extensión `.js` (módulos ESM `NodeNext`). En web no hace falta (`Bundler`).
 - Imports de solo tipos: `import type` (regla de ESLint).
 - Pruebas junto al código: `*.test.ts`. Probar endpoints con `buildApp({ db }).inject()`, sin red.
+- **Rutas que exigen sesión**: `{ preHandler: requireAuth }` (de `modules/auth/session.ts`); el usuario queda en `request.auth.userId`. Sin sesión válida → 401.
 - **Las pruebas de la API necesitan PostgreSQL** (`pnpm db:up`). Usan una BD aparte, `<DATABASE_URL>_test` (o `TEST_DATABASE_URL`), que `global-setup.ts` crea y migra sola; se niegan a correr contra una BD que no termine en `_test`. Se ejecutan en serie (`fileParallelism: false`) y cada archivo limpia con `resetDb()`.
 - **Prisma**: toda tabla nueva sigue el ADR-0002 (UUID v7 `@default(uuid(7)) @db.Uuid`, `@@map`/`@map` en snake_case, `@db.Timestamptz(3)`, campos de trazabilidad con relaciones a `User`). Toda consulta normal incluye `notDeleted`. Índices únicos que deben ignorar la papelera: `@@unique([...], where: { deletedAt: null })` (preview feature `partialIndexes`).
 - Cambiar el esquema → `pnpm db:migrate` (crea la migración con un nombre descriptivo) → incluir la carpeta de la migración en el commit. Nunca editar una migración ya fusionada en `main`.

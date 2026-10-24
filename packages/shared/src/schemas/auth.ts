@@ -18,3 +18,23 @@ export const passwordSchema = z
   .string()
   .min(PASSWORD_MIN_LENGTH, `Mínimo ${PASSWORD_MIN_LENGTH} caracteres`)
   .max(256, 'Máximo 256 caracteres');
+
+/** El login no aplica la política de longitud: si cambia, las contraseñas antiguas siguen sirviendo */
+export const loginRequestSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, 'La contraseña es obligatoria').max(256),
+});
+export type LoginRequest = z.infer<typeof loginRequestSchema>;
+
+export const membershipRoleSchema = z.enum(['ADMIN', 'MEMBER', 'VIEWER']);
+export type MembershipRole = z.infer<typeof membershipRoleSchema>;
+
+/** Usuario con sesión iniciada: respuesta de POST /auth/login y GET /auth/me */
+export const currentUserSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  email: z.email(),
+  isSystemAdmin: z.boolean(),
+  workspaces: z.array(z.object({ id: z.uuid(), name: z.string(), role: membershipRoleSchema })),
+});
+export type CurrentUser = z.infer<typeof currentUserSchema>;
