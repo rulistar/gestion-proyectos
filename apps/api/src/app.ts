@@ -1,8 +1,10 @@
 import cookie from '@fastify/cookie';
 import Fastify, { type FastifyServerOptions } from 'fastify';
+import type { MembershipRole } from '@gestion/shared';
 import type { Db } from './db/client.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { projectsRoutes } from './modules/projects/projects.routes.js';
 import { workspacesRoutes } from './modules/workspaces/workspaces.routes.js';
 import { registerSecurity, type SecurityOptions } from './security.js';
 
@@ -18,6 +20,8 @@ declare module 'fastify' {
   interface FastifyRequest {
     /** Sesión del usuario; la rellena `requireAuth` (null en rutas públicas) */
     auth: { userId: string; tokenHash: string } | null;
+    /** Membresía en el workspace de la URL; la rellenan `requireMembership`/`requirePermission` */
+    membership: { workspaceId: string; role: MembershipRole } | null;
   }
 }
 
@@ -44,6 +48,7 @@ export function buildApp({
   app.decorate('sessionIdleMinutes', sessionIdleMinutes);
   app.decorate('secureCookies', security.production ?? false);
   app.decorateRequest('auth', null);
+  app.decorateRequest('membership', null);
 
   registerSecurity(app, security);
   void app.register(cookie);
@@ -52,6 +57,7 @@ export function buildApp({
   void app.register(healthRoutes, { prefix: '/api/v1' });
   void app.register(authRoutes, { prefix: '/api/v1' });
   void app.register(workspacesRoutes, { prefix: '/api/v1' });
+  void app.register(projectsRoutes, { prefix: '/api/v1' });
 
   return app;
 }

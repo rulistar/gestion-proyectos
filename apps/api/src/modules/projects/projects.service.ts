@@ -1,0 +1,96 @@
+import type { Project, ProjectInput } from '@gestion/shared';
+import type { Db } from '../../db/client.js';
+import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
+
+const projectSelect = {
+  id: true,
+  workspaceId: true,
+  name: true,
+  area: true,
+  classification: true,
+  status: true,
+  priority: true,
+  startDate: true,
+  endDate: true,
+  notes: true,
+} as const;
+
+/**
+ * Las columnas `date` llegan de Prisma como Date a medianoche UTC. Se convierten a y desde
+ * "AAAA-MM-DD" siempre en UTC, para que la zona horaria del servidor no mueva el día.
+ */
+function toIsoDate(date: Date | null): string | null {
+  return date ? date.toISOString().slice(0, 10) : null;
+}
+
+function fromIsoDate(date: string | null): Date | null {
+  return date ? new Date(`${date}T00:00:00.000Z`) : null;
+}
+
+function toProject(
+  row: {
+    startDate: Date | null;
+    endDate: Date | null;
+  } & Omit<Project, 'startDate' | 'endDate'>,
+): Project {
+  return { ...row, startDate: toIsoDate(row.startDate), endDate: toIsoDate(row.endDate) };
+}
+
+function toData(input: ProjectInput) {
+  return {
+    ...input,
+    startDate: fromIsoDate(input.startDate),
+    endDate: fromIsoDate(input.endDate),
+  };
+}
+
+/** Proyectos del workspace que no están en la papelera; los más recientes primero */
+export async function listProjects(db: Db, workspaceId: string): Promise<Project[]> {
+  const rows = await db.project.findMany({
+    where: { workspaceId, ...notDeleted },
+    select: projectSelect,
+    orderBy: { createdAt: 'desc' },
+  });
+  return rows.map(toProject);
+}
+
+/** Un proyecto, solo si pertenece al workspace: el ID de otro workspace da null (→ 404) */
+export async function getProject(
+  db: Db,
+  workspaceId: string,
+  projectId: string,
+): Promise<Project | null> {
+  const row = await db.project.findFirst({
+    where: { id: projectId, workspaceId, ...notDeleted },
+    select: projectSelect,
+  });
+  return row && toProject(row);
+}
+
+export async function createProject(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  input: ProjectInput,
+): Promise<Project> {
+  const row = await db.project.create({
+    data: { workspaceId, ...toData(input), ...auditCreate(actorId) },
+    select: projectSelect,
+  });
+  return toProject(row);
+}
+
+/** Reemplaza los datos del proyecto; null si no existe en ese workspace */
+export async function updateProject(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  projectId: string,
+  input: ProjectInput,
+): Promise<Project | null> {
+  const { count } = await db.project.updateMany({
+    where: { id: projectId, workspaceId, ...notDeleted },
+    data: { ...toData(input), ...auditUpdate(actorId) },
+  });
+  return count === 0 ? null : getProject(db, workspaceId, projectId);
+}

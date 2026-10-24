@@ -1,3 +1,5 @@
 export * from './schemas/auth.js';
 export * from './schemas/health.js';
+export * from './schemas/permissions.js';
+export * from './schemas/projects.js';
 export * from './schemas/workspaces.js';
