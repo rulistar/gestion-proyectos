@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { workspaceSummarySchema } from './workspaces.js';
 
 /** Correo normalizado: sin espacios y en minúsculas, para que no haya dos cuentas "iguales" */
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email('Correo no válido'));
@@ -26,15 +27,12 @@ export const loginRequestSchema = z.object({
 });
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 
-export const membershipRoleSchema = z.enum(['ADMIN', 'MEMBER', 'VIEWER']);
-export type MembershipRole = z.infer<typeof membershipRoleSchema>;
-
 /** Usuario con sesión iniciada: respuesta de POST /auth/login y GET /auth/me */
 export const currentUserSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   email: z.email(),
   isSystemAdmin: z.boolean(),
-  workspaces: z.array(z.object({ id: z.uuid(), name: z.string(), role: membershipRoleSchema })),
+  workspaces: z.array(workspaceSummarySchema),
 });
 export type CurrentUser = z.infer<typeof currentUserSchema>;

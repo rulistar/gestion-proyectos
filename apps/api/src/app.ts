@@ -3,6 +3,7 @@ import Fastify, { type FastifyServerOptions } from 'fastify';
 import type { Db } from './db/client.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { workspacesRoutes } from './modules/workspaces/workspaces.routes.js';
 import { registerSecurity, type SecurityOptions } from './security.js';
 
 declare module 'fastify' {
@@ -50,6 +51,7 @@ export function buildApp({
   // Cada módulo registra sus rutas bajo el prefijo versionado de la API
   void app.register(healthRoutes, { prefix: '/api/v1' });
   void app.register(authRoutes, { prefix: '/api/v1' });
+  void app.register(workspacesRoutes, { prefix: '/api/v1' });
 
   return app;
 }
