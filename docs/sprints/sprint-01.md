@@ -60,8 +60,45 @@ Cada una se propondrá en su PR, con el porqué. Solo se instalará con la aprob
 | Revisión (_review_) | 2026-11-06 | Demostración del objetivo funcionando |
 | Retrospectiva | 2026-11-06 | Qué salió bien, qué mejorar, qué probar en el Sprint 2 |
 
-## Resultado (se completa al cierre)
+## Resultado (cierre: 2026-10-24)
 
-- Puntos completados: \_\_ / 24
-- Objetivo cumplido: ☐ Sí ☐ No
-- Notas de la retrospectiva:
+- Puntos completados: **24 / 24**
+- Objetivo cumplido: ☑ Sí ☐ No. El PO lo comprobó en el navegador: setup:admin → login → crear workspace → cerrar sesión.
+- Terminado antes de la fecha planeada de inicio (2026-10-26), así que el Sprint 2 se adelanta.
+
+### Revisión
+
+| ID | Elemento | Pts | PR |
+|---|---|---|---|
+| TEC-01 | Modelo de datos + Prisma | 8 | #6 |
+| TEC-02 | Seguridad HTTP | 3 | #7 |
+| TEC-07 | Primer Admin (`setup:admin`) | 2 | #8 |
+| HU-02 | Iniciar y cerrar sesión | 5 | #9 (API), #10 (web) |
+| TEC-03 | Base del frontend | 3 | #10 |
+| HU-03 | Crear workspace | 3 | #11 |
+
+- 53 pruebas en verde y CI en verde en todos los PR.
+- Pendiente de la Definición de Terminado: "funciona en el entorno desplegado", que llega con TEC-04 (Sprint 3).
+- El PR #1 de Dependabot (`@types/node` 26) queda obsoleto, porque ahora se ignoran esos majors. Se cierra sin fusionar.
+
+### Retrospectiva
+
+**Salió bien**
+
+- Una rama y un PR por elemento: cambios pequeños y fáciles de revisar.
+- Los binarios nativos (Argon2, Prisma) se probaron antes de adoptarlos, y no hubo bloqueos de Smart App Control.
+- El PO decidió rápido: el nombre del workspace, el tiempo de inactividad y el enrutador. Se sintió acompañado en todo momento.
+
+**A mejorar**
+
+- Los puntos no sirvieron para medir el calendario: se completaron 24 puntos en 2 días.
+- Hubo confusión en GitHub: el botón deshabilitado, PRs ya fusionados y PRs aún no creados.
+- Los PR se fusionaron en 1 o 2 minutos, sin tiempo para probarlos.
+- La curva de aprendizaje del stack es alta para el PO.
+
+**Acuerdos para el Sprint 2 (aceptados por el PO)**
+
+1. El sprint se mide por objetivo e historias terminadas, no por calendario; si se termina antes, se adelanta el siguiente.
+2. Claude crea el PR y entrega el enlace directo (con `gh` si el PO aprueba instalarlo).
+3. Cada PR incluye una sección **"Cómo probarlo"** de 3 o 4 pasos, y el PO prueba antes de fusionar.
+4. Material de estudio: guía de la arquitectura con una ruta de lectura (fuera del repositorio).
