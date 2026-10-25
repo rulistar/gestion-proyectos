@@ -5,7 +5,13 @@ import { requireAuth } from '../auth/session.js';
 import { getProject } from '../projects/projects.service.js';
 import { requirePermission } from '../workspaces/access.js';
 import { isActiveMember } from '../workspaces/workspaces.service.js';
-import { createTask, listTasks, updateTask, updateTaskStatus } from './tasks.service.js';
+import {
+  createTask,
+  currentAssignee,
+  listTasks,
+  updateTask,
+  updateTaskStatus,
+} from './tasks.service.js';
 
 const projectParamsSchema = z.object({ projectId: z.uuid() });
 const taskParamsSchema = z.object({ projectId: z.uuid(), taskId: z.uuid() });
@@ -16,10 +22,14 @@ function notFound(reply: FastifyReply, message: 'Proyecto no encontrado' | 'Tare
   return reply.code(404).send({ message });
 }
 
-/** El responsable debe ser un miembro activo del mismo workspace (o nadie) */
-async function invalidAssignee(request: FastifyRequest, input: TaskInput) {
+/**
+ * El responsable debe ser un miembro activo del mismo workspace (o nadie). Excepción (HU-25):
+ * al editar, se puede conservar al responsable que ya tenía aunque lo hayan quitado del espacio.
+ */
+async function invalidAssignee(request: FastifyRequest, input: TaskInput, kept?: string | null) {
   return (
     input.assigneeId !== null &&
+    input.assigneeId !== kept &&
     !(await isActiveMember(request.server.db, request.membership!.workspaceId, input.assigneeId))
   );
 }
@@ -78,7 +88,10 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
       if (!parsed.success) {
         return reply.code(400).send({ message: z.prettifyError(parsed.error) });
       }
-      if (await invalidAssignee(request, parsed.data)) {
+      const where = { workspaceId: request.membership!.workspaceId, ...params.data };
+      const kept = await currentAssignee(app.db, where);
+      if (kept === undefined) return notFound(reply, 'Tarea no encontrada');
+      if (await invalidAssignee(request, parsed.data, kept)) {
         return reply.code(400).send({ message: 'El responsable debe ser miembro del workspace' });
       }
       const task = await updateTask(

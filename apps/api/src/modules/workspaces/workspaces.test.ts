@@ -298,3 +298,79 @@ describe('Admin del sistema (ve y entra a todos los espacios)', () => {
     expect(detail.statusCode).toBe(404);
   });
 });
+
+describe('gestionar miembros (HU-25)', () => {
+  async function team() {
+    const ana = await userWithSession('ana@example.com');
+    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Equipo')).json());
+    const luis = await userWithSession('luis@example.com');
+    await addMember(db, ws.id, luis.user.id, 'VIEWER');
+    return { ana, ws, luis };
+  }
+
+  const memberUrl = (ws: string, user: string) => `/api/v1/workspaces/${ws}/members/${user}`;
+
+  function setRole(cookies: Record<string, string>, ws: string, user: string, role: string) {
+    return app.inject({ method: 'PATCH', url: memberUrl(ws, user), cookies, payload: { role } });
+  }
+
+  function remove(cookies: Record<string, string>, ws: string, user: string) {
+    return app.inject({ method: 'DELETE', url: memberUrl(ws, user), cookies });
+  }
+
+  it('el Admin cambia el rol y queda registrado quién (RNF-01)', async () => {
+    const { ana, ws, luis } = await team();
+
+    const response = await setRole(ana.cookies, ws.id, luis.user.id, 'MEMBER');
+
+    expect(response.statusCode).toBe(204);
+    const row = await db.membership.findFirstOrThrow({ where: { userId: luis.user.id } });
+    expect(row).toMatchObject({ role: 'MEMBER', updatedById: ana.user.id });
+  });
+
+  it('quitar a un miembro le quita el acceso al instante', async () => {
+    const { ana, ws, luis } = await team();
+    expect(
+      (await app.inject({ url: `/api/v1/workspaces/${ws.id}`, cookies: luis.cookies })).statusCode,
+    ).toBe(200);
+
+    const response = await remove(ana.cookies, ws.id, luis.user.id);
+
+    expect(response.statusCode).toBe(204);
+    const after = await app.inject({ url: `/api/v1/workspaces/${ws.id}`, cookies: luis.cookies });
+    expect(after.statusCode).toBe(404);
+    const row = await db.membership.findFirstOrThrow({ where: { userId: luis.user.id } });
+    expect(row).toMatchObject({ deletedById: ana.user.id });
+  });
+
+  it('nunca se puede quitar ni degradar al último Admin (409)', async () => {
+    const { ana, ws } = await team();
+
+    expect((await setRole(ana.cookies, ws.id, ana.user.id, 'MEMBER')).statusCode).toBe(409);
+    expect((await remove(ana.cookies, ws.id, ana.user.id)).statusCode).toBe(409);
+    const row = await db.membership.findFirstOrThrow({ where: { userId: ana.user.id } });
+    expect(row).toMatchObject({ role: 'ADMIN', deletedAt: null });
+  });
+
+  it('con otro Admin, sí se puede degradar a uno de los dos', async () => {
+    const { ana, ws, luis } = await team();
+    await setRole(ana.cookies, ws.id, luis.user.id, 'ADMIN');
+
+    expect((await setRole(ana.cookies, ws.id, ana.user.id, 'MEMBER')).statusCode).toBe(204);
+  });
+
+  it('un Miembro o Lector no puede gestionar miembros (403)', async () => {
+    const { ana, ws, luis } = await team();
+
+    expect((await setRole(luis.cookies, ws.id, ana.user.id, 'VIEWER')).statusCode).toBe(403);
+    expect((await remove(luis.cookies, ws.id, ana.user.id)).statusCode).toBe(403);
+  });
+
+  it('404 a quien no es miembro y 400 a un rol desconocido', async () => {
+    const { ana, ws, luis } = await team();
+    const eva = await userWithSession('eva@example.com');
+
+    expect((await remove(ana.cookies, ws.id, eva.user.id)).statusCode).toBe(404);
+    expect((await setRole(ana.cookies, ws.id, luis.user.id, 'OWNER')).statusCode).toBe(400);
+  });
+});

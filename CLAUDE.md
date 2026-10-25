@@ -84,7 +84,7 @@ apps/
       auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth + startSession
       auth/current-user.ts getCurrentUser: el usuario con sus workspaces (/auth/me, login, HU-01)
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
-      workspaces/         GET/POST /workspaces, GET /workspaces/:id y /:id/members (quien lo crea = Admin; HU-03)
+      workspaces/         GET/POST/PATCH /workspaces[/:id], /:id/members (PATCH rol, DELETE quitar; HU-25)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05)
       tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status (HU-08)

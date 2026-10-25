@@ -1,6 +1,11 @@
-import type { CreateWorkspaceRequest, Member, WorkspaceSummary } from '@gestion/shared';
+import type {
+  CreateWorkspaceRequest,
+  Member,
+  MembershipRole,
+  WorkspaceSummary,
+} from '@gestion/shared';
 import type { Db } from '../../db/client.js';
-import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
+import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 
 /**
  * Workspaces que el usuario puede abrir (sin los que están en la papelera): aquellos de los que
@@ -51,6 +56,63 @@ export async function listMembers(
     email: withEmail ? user.email : null,
     role,
   }));
+}
+
+/** El miembro no existe en el espacio (o ya fue quitado) → 404 */
+export class MemberNotFoundError extends Error {}
+/** La operación dejaría el espacio sin ningún Admin → 409 */
+export class LastAdminError extends Error {}
+
+/**
+ * Cambia el rol o quita a un miembro (HU-25), en una transacción que comprueba que el espacio no
+ * se quede sin Admin. Quitar es un borrado lógico de la membresía: pierde el acceso al instante
+ * (cada petición revisa la membresía) y sus tareas conservan su nombre hasta reasignarlas.
+ */
+async function changeMembership(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  userId: string,
+  change: { role: MembershipRole } | { remove: true },
+) {
+  await db.$transaction(async (tx) => {
+    const membership = await tx.membership.findFirst({
+      where: { workspaceId, userId, ...notDeleted },
+      select: { id: true, role: true },
+    });
+    if (!membership) throw new MemberNotFoundError();
+
+    const losesAdmin =
+      membership.role === 'ADMIN' && ('remove' in change || change.role !== 'ADMIN');
+    if (losesAdmin) {
+      const admins = await tx.membership.count({
+        where: { ...activeMembers(workspaceId), role: 'ADMIN' },
+      });
+      if (admins <= 1) throw new LastAdminError();
+    }
+
+    await tx.membership.update({
+      where: { id: membership.id },
+      data:
+        'remove' in change
+          ? auditSoftDelete(actorId)
+          : { role: change.role, ...auditUpdate(actorId) },
+    });
+  });
+}
+
+export function changeMemberRole(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  userId: string,
+  role: MembershipRole,
+) {
+  return changeMembership(db, actorId, workspaceId, userId, { role });
+}
+
+export function removeMember(db: Db, actorId: string, workspaceId: string, userId: string) {
+  return changeMembership(db, actorId, workspaceId, userId, { remove: true });
 }
 
 /**

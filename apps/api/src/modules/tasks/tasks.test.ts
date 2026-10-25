@@ -160,6 +160,8 @@ describe('POST .../tasks (HU-08)', () => {
       status: 'PENDING',
       estimatedMinutes: 45,
       assigneeId: null,
+      assigneeName: null,
+      assigneeIsMember: true,
       startDate: null,
       endDate: '2026-11-20',
       completedAt: null,
@@ -404,5 +406,55 @@ describe('pausar y cancelar con motivo (HU-24)', () => {
     expect(response.json()).toMatchObject({
       progress: { totalTasks: 2, doneTasks: 1, percent: 50, pendingMinutes: 45 },
     });
+  });
+});
+
+describe('responsable que ya no es miembro (HU-25)', () => {
+  it('la tarea conserva su nombre marcado como ex miembro; se puede editar sin reasignar', async () => {
+    const { ana, ws, project, withRole } = await setup();
+    const luis = await withRole('luis@example.com', 'MEMBER');
+    const task = await createOk(ana.cookies, ws.id, project.id, {
+      title: 'De Luis',
+      assigneeId: luis.user.id,
+    });
+
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/workspaces/${ws.id}/members/${luis.user.id}`,
+      cookies: ana.cookies,
+    });
+    const list = taskListSchema.parse(
+      (await app.inject({ url: tasksUrl(ws.id, project.id), cookies: ana.cookies })).json(),
+    );
+    const edited = await app.inject({
+      method: 'PUT',
+      url: `${tasksUrl(ws.id, project.id)}/${task.id}`,
+      cookies: ana.cookies,
+      payload: { title: 'Renombrada', assigneeId: luis.user.id },
+    });
+
+    expect(list[0]).toMatchObject({
+      assigneeId: luis.user.id,
+      assigneeName: 'luis@example.com',
+      assigneeIsMember: false,
+    });
+    expect(edited.statusCode).toBe(200);
+  });
+
+  it('no se le pueden asignar tareas nuevas (400)', async () => {
+    const { ana, ws, project, withRole } = await setup();
+    const luis = await withRole('luis@example.com', 'MEMBER');
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/workspaces/${ws.id}/members/${luis.user.id}`,
+      cookies: ana.cookies,
+    });
+
+    const response = await create(ana.cookies, ws.id, project.id, {
+      title: 'Nueva',
+      assigneeId: luis.user.id,
+    });
+
+    expect(response.statusCode).toBe(400);
   });
 });

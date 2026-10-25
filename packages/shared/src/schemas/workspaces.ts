@@ -36,3 +36,7 @@ export type Member = z.infer<typeof memberSchema>;
 
 /** Respuesta de GET /workspaces/:workspaceId/members */
 export const memberListSchema = z.array(memberSchema);
+
+/** Cuerpo de PATCH /workspaces/:workspaceId/members/:userId: cambiar el rol (HU-25) */
+export const updateMemberRoleRequestSchema = z.object({ role: membershipRoleSchema });
+export type UpdateMemberRoleRequest = z.infer<typeof updateMemberRoleRequestSchema>;

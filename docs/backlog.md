@@ -279,11 +279,11 @@ _Como Admin, quiero dar de baja proyectos y tareas sin perderlos de inmediato, p
 
 _Como Admin, quiero cambiar el rol de un miembro o quitarlo del espacio, para controlar quién tiene acceso._
 
-- [ ] El Admin cambia el rol de un miembro desde la página Miembros.
-- [ ] El Admin quita a un miembro del espacio (borrado lógico de la membresía): pierde el acceso **al instante**.
-- [ ] Sus tareas asignadas **conservan su nombre**, marcado "ya no es miembro", hasta que se reasignen; no se le pueden asignar tareas nuevas.
-- [ ] Nunca se puede quitar ni degradar al **último Admin**.
-- [ ] Cumple RNF-01 y tiene pruebas.
+- [x] El Admin cambia el rol de un miembro desde la página Miembros.
+- [x] El Admin quita a un miembro del espacio (borrado lógico de la membresía): pierde el acceso **al instante**.
+- [x] Sus tareas asignadas **conservan su nombre**, marcado "ya no es miembro", hasta que se reasignen; no se le pueden asignar tareas nuevas.
+- [x] Nunca se puede quitar ni degradar al **último Admin**.
+- [x] Cumple RNF-01 y tiene pruebas.
 
 #### HU-09 · Tabla de proyectos con filtros y orden (5 pts)
 
