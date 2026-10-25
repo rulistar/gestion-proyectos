@@ -67,6 +67,7 @@ apps/
     src/lib/use-schema-form.ts  formularios validados con el esquema de shared (FormData + errores por campo)
     src/components/ui/  componentes de shadcn/ui (copiados, sin el CLI; se pueden modificar)
     src/routes/         una página por archivo; leen la ruta con getRouteApi() para no importar router.tsx
+                        invitation-page.tsx: /invitacion#<token> (el token va tras "#": no llega al servidor)
   api/                Fastify — monolito modular
     src/app.ts          buildApp(): crea la instancia sin abrir puerto (testeable con app.inject)
     src/server.ts       arranque + cierre ordenado
@@ -76,13 +77,15 @@ apps/
     src/modules/<mod>/  un módulo por funcionalidad: <mod>.routes.ts, <mod>.test.ts, ...
       auth/password.ts    hashPassword/verifyPassword (Argon2id)
       auth/tokens.ts      generateToken/hashToken: token aleatorio para el usuario, hash SHA-256 para la BD
-      auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth
+      auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth + startSession
+      auth/current-user.ts getCurrentUser: el usuario con sus workspaces (/auth/me, login, HU-01)
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
       workspaces/         GET/POST /workspaces, GET /workspaces/:id y /:id/members (quien lo crea = Admin; HU-03)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05)
       tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status (HU-08)
       invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez
+      invitations/accept.* públicas: POST /invitations/preview|register|accept (HU-01); token en el cuerpo
     src/db/dates.ts     columnas date ↔ "AAAA-MM-DD" (siempre en UTC)
       setup/              createFirstAdmin: primer Admin + workspace "workpers" (TEC-07)
     src/cli/            comandos de terminal (setup-admin.ts → pnpm setup:admin)

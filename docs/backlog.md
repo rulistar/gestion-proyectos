@@ -203,12 +203,12 @@ _Como Admin, quiero invitar a personas a mi workspace con un rol, para trabajar 
 
 _Como persona invitada, quiero abrir el enlace y crear mi contraseña, para entrar al workspace con el rol asignado._
 
-- [ ] Página pública que lee el token del enlace y muestra a qué workspace y con qué rol me invitan.
-- [ ] Si el correo no tiene cuenta: defino mi nombre y mi contraseña (12+ caracteres, Argon2id) y quedo con la sesión iniciada.
-- [ ] Si el correo ya tiene cuenta: inicio sesión con él y la invitación se suma como un workspace más.
-- [ ] Al aceptar se crea la membresía con el rol de la invitación y se marca `acceptedAt`, todo en una transacción.
-- [ ] Un enlace caducado, usado o revocado muestra un mensaje claro sin revelar datos.
-- [ ] Límite de intentos en el endpoint de aceptar; tiene pruebas.
+- [x] Página pública que lee el token del enlace y muestra a qué workspace y con qué rol me invitan.
+- [x] Si el correo no tiene cuenta: defino mi nombre y mi contraseña (12+ caracteres, Argon2id) y quedo con la sesión iniciada.
+- [x] Si el correo ya tiene cuenta: inicio sesión con él y la invitación se suma como un workspace más.
+- [x] Al aceptar se crea la membresía con el rol de la invitación y se marca `acceptedAt`, todo en una transacción.
+- [x] Un enlace caducado, usado o revocado muestra un mensaje claro sin revelar datos.
+- [x] Límite de intentos en el endpoint de aceptar; tiene pruebas.
 
 ### Sprints siguientes (criterios por detallar en su planificación)
 

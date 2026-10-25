@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Db } from '../../db/client.js';
+import { auditUpdate } from '../../db/audit.js';
 import { generateToken, hashToken } from './tokens.js';
 
 export const SESSION_COOKIE = 'sid';
@@ -68,6 +69,37 @@ export async function findActiveSession(db: Db, token: string, idleMinutes: numb
 
 export async function deleteSession(db: Db, token: string) {
   await db.session.deleteMany({ where: { tokenHash: hashToken(token) } });
+}
+
+export function sessionCookieOptions(secure: boolean) {
+  return {
+    path: '/',
+    httpOnly: true, // JavaScript del navegador no puede leerla (protege ante XSS)
+    sameSite: 'lax', // otros sitios no pueden enviarla en peticiones que modifican datos
+    secure, // solo por HTTPS en producción
+  } as const;
+}
+
+/**
+ * Inicia sesión para `userId` en este navegador: sesión nueva en cada inicio (la anterior, si
+ * había, se invalida) y cookie HttpOnly. Lo usan el login y aceptar una invitación (HU-01).
+ */
+export async function startSession(request: FastifyRequest, reply: FastifyReply, userId: string) {
+  const { db, sessionIdleMinutes, secureCookies } = request.server;
+  const previous = request.cookies[SESSION_COOKIE];
+  if (previous) await deleteSession(db, previous);
+
+  const token = await createSession(db, {
+    userId,
+    idleMinutes: sessionIdleMinutes,
+    ipAddress: request.ip,
+    userAgent: request.headers['user-agent'],
+  });
+  await db.user.update({
+    where: { id: userId },
+    data: { lastLoginAt: new Date(), ...auditUpdate(userId) },
+  });
+  reply.setCookie(SESSION_COOKIE, token, sessionCookieOptions(secureCookies));
 }
 
 /**

@@ -18,6 +18,7 @@ import {
 import { AppLayout } from '@/routes/app-layout';
 import { ErrorPage } from '@/routes/error-page';
 import { HomePage } from '@/routes/home-page';
+import { InvitationPage } from '@/routes/invitation-page';
 import { LoginPage } from '@/routes/login-page';
 import { MembersPage } from '@/routes/members-page';
 import { ProjectPage } from '@/routes/project-page';
@@ -31,6 +32,7 @@ import { WorkspacePage } from '@/routes/workspace-page';
  *   /w/$workspaceId/p/$projectId un proyecto
  *   /w/$workspaceId/miembros      y sus miembros e invitaciones
  *   /login                     pública; si ya hay sesión, redirige a /
+ *   /invitacion#<token>        pública: aceptar una invitación (HU-01)
  */
 
 /**
@@ -80,6 +82,13 @@ const loginRoute = createRoute({
     }
   },
   component: LoginPage,
+});
+
+/** Pública: con o sin sesión (quien ya tiene cuenta puede iniciar sesión ahí mismo) */
+const invitationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/invitacion',
+  component: InvitationPage,
 });
 
 /** Ruta sin URL propia ("id"): protege a todas sus hijas y les pone el layout */
@@ -144,6 +153,7 @@ const membersRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
+  invitationRoute,
   appRoute.addChildren([homeRoute, workspaceRoute, projectRoute, membersRoute]),
 ]);
 
