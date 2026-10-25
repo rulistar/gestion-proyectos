@@ -1,6 +1,6 @@
 # ADR-0004: Tipos de trabajo configurables
 
-- **Estado:** Propuesto (pendiente de aprobación del PO)
+- **Estado:** Aceptado (2026-10-25)
 - **Fecha:** 2026-10-24
 - **Decide:** Product Owner, a propuesta del equipo técnico
 - **Contexto:** Además de proyectos, el PO necesita gestionar **mantenimientos** (correctivos, evolutivos…) y **actividades que no pertenecen a ningún proyecto**. Las tareas también necesitan más clasificaciones (incidencia, fast track…), y cada tipo debe llevar **su propio detalle**. Hoy el modelo (ADR-0002) tiene un solo tipo de contenedor (`Project`) y una lista fija de tipos de tarea (`TaskType`: Tarea, Reunión, Entregable, Revisión, Investigación, Examen). Los prototipos de `docs/FueraDelProyecto` no cubren este caso: es alcance nuevo.
@@ -31,15 +31,46 @@ En el código el contenedor sigue llamándose `Project` (no se renombra nada de 
 
 ### 2. Comportamientos: el nombre es libre, la forma de medir no
 
-El Admin inventa los tipos que quiera, pero cada uno elige **uno de tres comportamientos**. El comportamiento decide qué fechas se piden y qué se mide (HU-06):
+El Admin inventa los tipos que quiera, pero cada uno elige **uno de tres comportamientos**. El comportamiento decide **qué se mide** (HU-06); las fechas planeadas son opcionales en los tres y las reales se registran siempre (sección 2.1):
 
-| Comportamiento | Para qué | Fechas | Qué se mide |
+| Comportamiento | Para qué | Uso de las fechas planeadas | Qué se mide |
 |---|---|---|---|
-| **Con fin** (`WITH_END`) | Proyectos | Inicio y fin | % de avance, minutos pendientes, días restantes (como hoy) |
-| **Continuo** (`ONGOING`) | Mantenimientos, soporte | Inicio; fin opcional | Tareas abiertas, **vencidas** y **hechas este mes**; sin % ni "vencido" del contenedor |
-| **Por demanda** (`ON_DEMAND`) | Actividades que no son de un proyecto ni de un mantenimiento: trabajo que llega cuando se necesita | Ninguna | Tareas pendientes y vencidas |
+| **Con fin** (`WITH_END`) | Proyectos | El fin planeado da los días restantes y el "vencido" | % de avance, minutos pendientes, días restantes (como hoy) |
+| **Continuo** (`ONGOING`) | Mantenimientos, soporte | Periodo de referencia (p. ej. el del contrato); nunca se marca vencido | Tareas abiertas, **vencidas** y **hechas este mes**; sin % ni "vencido" del contenedor |
+| **Por demanda** (`ON_DEMAND`) | Actividades que no son de un proyecto ni de un mantenimiento: trabajo que llega cuando se necesita | Opcionales, solo informativas | Tareas pendientes y vencidas |
 
 Así, "Mtto preventivo" o "Auditoría" se agregan sin programar nada: basta elegir su comportamiento.
+
+### 2.1 Fechas planeadas y fechas reales (decisión del PO, 2026-10-25)
+
+Para poder hacer estadística, todo contenedor y toda tarea, **sea del tipo que sea**, guarda dos clases de fechas:
+
+| | **Planeadas** (lo que se espera) | **Reales** (lo que pasó) |
+|---|---|---|
+| Campos | startDate, endDate | startedAt, inishedAt (en tareas, completedAt, que ya existe) |
+| Quién las pone | La persona, en el formulario | **El sistema, automáticamente** |
+| ¿Se pueden cambiar? | Sí, al replanear | No: son el registro histórico |
+| ¿Obligatorias? | No, en ningún comportamiento | Se llenan solas al ocurrir el evento |
+
+**Cuándo se registran las reales:**
+
+| Entidad | Inicio real | Fin real |
+|---|---|---|
+| Tarea | La **primera vez** que pasa a En curso (o a Hecha, si se salta En curso) | Al pasar a Hecha |
+| Contenedor | La **primera vez** que pasa a En curso | Al pasar a Terminado o Cancelado |
+
+- Si una tarea sale de Hecha, su fin real se vacía (regla de HU-08), pero **su inicio real se conserva**: ya había empezado. Lo mismo con un contenedor que se reabre.
+- La fecha de creación (createdAt, RNF-01) completa la información.
+
+**Indicadores que habilita** (las gráficas llegan con HU-12, pero los datos se guardan desde HU-21 y HU-22, para no perder historia):
+
+| Indicador | Cálculo | Útil para |
+|---|---|---|
+| Tiempo de atención | creación → fin real | Incidencias y Fast track: cuánto se tarda en resolver |
+| Tiempo de espera | creación → inicio real | Cuánto tarda en empezar a atenderse una solicitud |
+| Tiempo de trabajo | inicio real → fin real | Cuánto dura realmente cada tipo de tarea |
+| Cumplimiento de plazo | fin real ≤ fin planeado | Qué % termina a tiempo |
+| Desviación | fin real − fin planeado | Dónde se planea mal |
 
 ### 3. Campos de detalle ("el detalle que debe llevar cada uno")
 
@@ -138,8 +169,8 @@ erDiagram
     }
 ```
 
-- `Project` gana `typeId` (obligatorio) y `details` (JSONB).
-- `Task.type` (enum) se reemplaza por `typeId` (catálogo) y gana `details` (JSONB).
+- `Project` gana `typeId` (obligatorio), `details` (JSONB) y las fechas reales `startedAt` y `finishedAt` (sección 2.1).
+- `Task.type` (enum) se reemplaza por `typeId` (catálogo) y gana `details` (JSONB) y la fecha real `startedAt` (el fin real ya es `completedAt`).
 - Permiso nuevo `catalog.manage` (solo Admin) en el catálogo de permisos (ADR-0002 §5).
 
 ### 7. Impacto en otras historias
@@ -150,14 +181,14 @@ erDiagram
 | HU-09 Tabla con filtros | Filtro por tipo; las columnas de fechas y % se adaptan al comportamiento |
 | HU-10 Kanban | Filtro por tipo |
 | HU-13 / HU-14 Exportar e importar | Columnas de tipo y de campos de detalle; el respaldo del prototipo se importa como tipo "Proyecto" |
-| HU-12 Gráficas | Se pueden separar por tipo |
+| HU-12 Gráficas | Se pueden separar por tipo; suman los indicadores de la sección 2.1 (tiempos de atención, espera y trabajo; cumplimiento de plazo) |
 
 ## Historias derivadas (para el Sprint 3)
 
 | ID | Historia | Pts |
 |---|---|---|
-| HU-21 | Tipos de contenedor con comportamiento (catálogo, valores iniciales, migración, tipos de tarea permitidos, métricas por comportamiento) | 5 |
-| HU-22 | Tipos de tarea configurables (el `enum` pasa a catálogo, con migración de las tareas existentes) | 3 |
+| HU-21 | Tipos de contenedor con comportamiento (catálogo, valores iniciales, migración, tipos de tarea permitidos, métricas por comportamiento, fechas reales del contenedor) | 5 |
+| HU-22 | Tipos de tarea configurables (el `enum` pasa a catálogo, con migración de las tareas existentes; atención inmediata; inicio real de la tarea) | 3 |
 | HU-23 | Campos de detalle por tipo (definición, formularios dinámicos y validación en la API) | 8 |
 
 Se priorizan **antes** de HU-09 y HU-10, para que la tabla y el Kanban nazcan con el filtro por tipo. El orden final se decide en la planificación del Sprint 3.
