@@ -143,7 +143,17 @@ export function AppSidebar() {
           <SoonItem icon={FolderKanban} label="Proyectos" story="un espacio elegido" />
         )}
         <SoonItem icon={Wrench} label="Mantenimientos" story="HU-21" />
-        <SoonItem icon={ListChecks} label="Mi trabajo" story="HU-28b" />
+        {current && (
+          <Link
+            to="/w/$workspaceId/mi-trabajo"
+            params={{ workspaceId: current.id }}
+            className={itemClass}
+            activeProps={{ className: 'bg-accent text-accent-foreground', 'aria-current': 'page' }}
+          >
+            <ListChecks aria-hidden />
+            Mi trabajo
+          </Link>
+        )}
         <SoonItem icon={Inbox} label="Actividades" story="HU-21" />
         <SoonItem icon={ChartGantt} label="Gantt" story="HU-27" />
       </div>

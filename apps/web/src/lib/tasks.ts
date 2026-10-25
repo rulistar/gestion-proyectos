@@ -39,9 +39,12 @@ const tasksKey = (workspaceId: string, projectId: string) => [
   'tasks',
 ];
 
-/** Una tarea cambia el avance de su proyecto (HU-06): se refrescan proyectos y tareas del workspace */
-function invalidateProjects(queryClient: QueryClient, workspaceId: string) {
-  return queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId, 'projects'] });
+/**
+ * Una tarea cambia el avance de su proyecto (HU-06) y "Mi trabajo" (HU-28b): se refresca todo lo
+ * del workspace (solo se vuelve a pedir lo que está en pantalla)
+ */
+function invalidateWorkspace(queryClient: QueryClient, workspaceId: string) {
+  return queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] });
 }
 
 export const tasksQueryOptions = (workspaceId: string, projectId: string) =>
@@ -59,7 +62,7 @@ export function useCreateTask(workspaceId: string, projectId: string) {
         body: data,
         schema: taskSchema,
       }),
-    onSuccess: () => invalidateProjects(queryClient, workspaceId),
+    onSuccess: () => invalidateWorkspace(queryClient, workspaceId),
   });
 }
 
@@ -72,7 +75,7 @@ export function useUpdateTask(workspaceId: string, projectId: string, taskId: st
         body: data,
         schema: taskSchema,
       }),
-    onSuccess: () => invalidateProjects(queryClient, workspaceId),
+    onSuccess: () => invalidateWorkspace(queryClient, workspaceId),
   });
 }
 
@@ -86,7 +89,7 @@ export function useMoveTask(workspaceId: string, projectId: string, taskId: stri
         body: change,
         schema: taskSchema,
       }),
-    onSuccess: () => invalidateProjects(queryClient, workspaceId),
+    onSuccess: () => invalidateWorkspace(queryClient, workspaceId),
   });
 }
 
@@ -96,7 +99,7 @@ export function useDeleteTask(workspaceId: string, projectId: string, taskId: st
   return useMutation({
     mutationFn: () =>
       apiFetch(`${tasksPath(workspaceId, projectId)}/${taskId}`, { method: 'DELETE' }),
-    // Cambia el avance y la papelera: se refresca todo lo del workspace
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] }),
+    // También cambia la papelera
+    onSuccess: () => invalidateWorkspace(queryClient, workspaceId),
   });
 }

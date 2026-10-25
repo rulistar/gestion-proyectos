@@ -5,6 +5,13 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { TaskForm } from '@/components/task-form';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { formatDate } from '@/lib/dates';
@@ -288,24 +295,40 @@ interface EditTaskPanelProps {
   onClose: () => void;
 }
 
+/**
+ * Editar en una ventana: aparece al centro sin importar dónde esté la tarjeta. Antes era un panel
+ * arriba del tablero y, con muchas tareas, se abría fuera de la vista y parecía no responder.
+ */
 function EditTaskPanel({ task, workspaceId, projectId, members, onClose }: EditTaskPanelProps) {
   const update = useUpdateTask(workspaceId, projectId, task.id);
 
   return (
-    <section aria-label="Editar tarea" className="rounded-md border bg-background p-4">
-      <h3 className="mb-3 font-medium">Editar tarea</h3>
-      <TaskForm
-        task={task}
-        members={members}
-        submitLabel="Guardar"
-        isPending={update.isPending}
-        error={update.error?.message}
-        onSubmit={(data) => update.mutate(data, { onSuccess: onClose })}
-      >
-        <Button type="button" variant="ghost" onClick={onClose}>
-          Cancelar
-        </Button>
-      </TaskForm>
-    </section>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Editar tarea</DialogTitle>
+          <DialogDescription>{task.title}</DialogDescription>
+        </DialogHeader>
+        <TaskForm
+          task={task}
+          members={members}
+          submitLabel="Guardar"
+          isPending={update.isPending}
+          error={update.error?.message}
+          onSubmit={(data) =>
+            update.mutate(data, {
+              onSuccess: () => {
+                toast.success('Cambios guardados');
+                onClose();
+              },
+            })
+          }
+        >
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+        </TaskForm>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,4 +1,10 @@
-import { statusNeedsReason, type Task, type TaskInput, type TaskStatus } from '@gestion/shared';
+import {
+  statusNeedsReason,
+  type MyTask,
+  type Task,
+  type TaskInput,
+  type TaskStatus,
+} from '@gestion/shared';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
@@ -94,6 +100,33 @@ export async function listTasks(db: Db, workspaceId: string, projectId: string):
     orderBy: { createdAt: 'asc' },
   });
   return rows.map(toTask);
+}
+
+/**
+ * Mis tareas en el workspace (HU-28b), de proyectos que no están en la papelera: las abiertas
+ * y las Hechas desde `doneSince` (para "hechas esta semana"). Las canceladas no se piden.
+ */
+export async function listMyTasks(
+  db: Db,
+  workspaceId: string,
+  userId: string,
+  doneSince: Date,
+): Promise<MyTask[]> {
+  const rows = await db.task.findMany({
+    where: {
+      workspaceId,
+      assigneeId: userId,
+      ...notDeleted,
+      project: notDeleted,
+      OR: [
+        { status: { in: ['PENDING', 'IN_PROGRESS', 'PAUSED'] } },
+        { status: 'DONE', completedAt: { gte: doneSince } },
+      ],
+    },
+    select: { ...taskSelect, project: { select: { name: true } } },
+    orderBy: [{ endDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }],
+  });
+  return rows.map(({ project, ...row }) => ({ ...toTask(row), projectName: project.name }));
 }
 
 /** El proyecto ya se comprobó (existe en el workspace y no está borrado) */

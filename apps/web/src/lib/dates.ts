@@ -25,3 +25,12 @@ export function formatMinutes(minutes: number): string {
   if (hours === 0) return `${rest} min`;
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
+
+/** Instante en que empezó la semana del usuario (lunes 00:00 en su zona horaria), en ISO */
+export function weekStartIso(): string {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  // getDay(): 0 = domingo; la semana empieza en lunes
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  return start.toISOString();
+}

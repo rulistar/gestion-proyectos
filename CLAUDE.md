@@ -61,7 +61,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
-                        (/, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../miembros, .../papelera). getRouteApi usa el id: "/app/w/..."
+                        (/, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mi-trabajo, .../miembros, .../papelera). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
     src/lib/<mod>.ts    queryOptions + mutaciones de cada módulo (p. ej. workspaces.ts); la ruta precarga con loader
@@ -87,7 +87,8 @@ apps/
       workspaces/         GET/POST/PATCH /workspaces[/:id], /:id/members (PATCH rol, DELETE quitar; HU-25)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05); DELETE = a la papelera
-      tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status, DELETE (HU-08)
+      tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status, DELETE (HU-08);
+                          GET /workspaces/:id/my-tasks = mis tareas (HU-28b)
       trash/              papelera, solo Admin (HU-15): GET /trash, POST /trash/:kind/:id/restore, DELETE /trash/:kind/:id
       invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez
       invitations/accept.* públicas: POST /invitations/preview|register|accept (HU-01); token en el cuerpo
@@ -104,6 +105,7 @@ packages/
   shared/             esquemas Zod + tipos (z.infer) usados por web y api
     src/schemas/permissions.ts  catálogo de permisos por rol (roleHasPermission)
     src/schemas/progress.ts     reglas de avance (summarizeTasks, daysRemainingLabel; HU-06), con pruebas
+    src/schemas/my-work.ts      groupMyWork: agrupa mis tareas por fecha de fin (HU-28b), con pruebas
     tsconfig.build.json         build sin los *.test.ts
 docs/                 acta, ADRs, backlog (no los reformatea Prettier)
 .github/              CI (ci.yml) y Dependabot
