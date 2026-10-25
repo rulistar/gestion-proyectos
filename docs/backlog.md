@@ -1,7 +1,7 @@
 # Product Backlog
 
 > Lista priorizada de todo lo que el producto debe hacer. La ordena el **Product Owner**. Nada entra al desarrollo sin estar aquí (acta, riesgo "crecimiento desordenado del alcance").
-> Última actualización: 2026-10-25 (revisión del Sprint 2 y planificación del Sprint 3).
+> Última actualización: 2026-10-25 (fases: HU-07 se adelanta al Sprint 4).
 
 ## Cómo leer este documento
 
@@ -31,6 +31,7 @@
 | Tipos de trabajo (2026-10-24) | Además de proyectos: **mantenimientos** y **actividades sueltas**, con **tipos configurables** por espacio (los define el Admin), tipos de tarea permitidos por tipo y **campos de detalle por tipo**. Todo contenedor y toda tarea guarda **fechas planeadas** (opcionales) y **fechas reales** (automáticas) para estadística. Diseño en [ADR-0004](adr/ADR-0004-tipos-de-trabajo.md); historias HU-21 a HU-23 para el Sprint 3. |
 | Revisión del Sprint 2 (2026-10-25) | Tareas con estados **Pausada** (cuenta como pendiente) y **Cancelada** (se descuenta), con **motivo obligatorio**. **Papelera** adelantada al Sprint 3. Al quitar a un miembro, **sus tareas conservan su nombre** (marcado "ya no es miembro") hasta reasignarlas. **Gantt** del proyecto y del espacio. Prioridad: ajustes de la revisión → tipos de trabajo → Gantt y permisos. |
 | Rediseño (2026-10-25) | Antes de seguir, **rediseñar la interfaz** según la [maqueta](https://claude.ai/artifact/QkTijPe4GF7EtTePxQHYFR): menú lateral (Proyectos, Mantenimientos, Mi trabajo, Actividades, Gantt), combo **Espacio de trabajo**, color **turquesa matizado** y login con el formulario a la izquierda. El **Admin del sistema ve y entra a todos los espacios**. Nombre provisional: "Gestor de Proyectos". Después, los tipos de trabajo (HU-21, HU-22). |
+| Fases (2026-10-25) | Las tareas de un proyecto se agrupan en **fases**, como las tareas resumen de Project: una fase puede contener tareas y otras fases, hasta **4 niveles**. Su avance y sus fechas **se calculan** a partir de lo que contiene. HU-07 se adelanta al Sprint 4, antes de la vista Lista (HU-26) y el Gantt (HU-27), que dependen de ella. |
 
 ## Requisitos no funcionales (aplican a todas las historias)
 
@@ -66,14 +67,14 @@
 | 16 | HU-15 | Papelera: dar de baja proyectos y tareas, restaurar y borrar definitivamente | Datos | 5 | 🔴 | 4 |
 | 17 | HU-25 | Gestionar miembros: cambiar el rol y quitar del espacio | Workspaces | 3 | 🔴 | 4 |
 | 18 | HU-09 | Tabla de proyectos con filtros y orden por columna | Vistas | 5 | 🔴 | 4 |
-| 19 | HU-26 | Muchas tareas: vista Lista, filtros y columnas plegables | Vistas | 5 | 🔴 | 4 |
-| 20 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 4 |
-| 21 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 4 |
-| 22 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
-| 23 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 5 |
-| 24 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
-| 25 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 26 | HU-07 | Dividir un proyecto en fases o entregables | Proyectos | 3 | 🟡 | 6 |
+| 19 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 4 |
+| 20 | HU-26 | Muchas tareas: vista Lista, filtros y columnas plegables | Vistas | 5 | 🔴 | 4 |
+| 21 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 4 |
+| 22 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 4 |
+| 23 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
+| 24 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 5 |
+| 25 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
+| 26 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
 | 27 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
 | 28 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
 | 29 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
@@ -296,11 +297,23 @@ _Como miembro, quiero filtrar y ordenar los proyectos, para encontrar rápido lo
 - [ ] Mensaje "Ningún proyecto coincide con los filtros" y botón "Limpiar filtros".
 - [ ] El filtro por tipo se suma con HU-21.
 
+#### HU-07 · Fases (8 pts)
+
+_Como responsable de un proyecto, quiero agrupar sus tareas en fases (y subfases), para ver el trabajo ordenado y el avance de cada parte, como en Project._
+
+- [ ] Crear, renombrar, reordenar (subir/bajar) y dar de baja **fases** dentro de un proyecto; una fase puede contener tareas y otras fases, hasta **4 niveles**.
+- [ ] Una tarea pertenece a una fase o queda **suelta** (sin fase); se puede mover de fase al crearla o editarla.
+- [ ] La fase **calcula sola** su avance (con las reglas de HU-06), su inicio (el más temprano) y su fin (el más tardío) a partir de todo lo que contiene; no se capturan a mano.
+- [ ] En el proyecto, las fases se ven como un **esquema con sangría** que se pliega y despliega, con su avance; el tablero se puede **filtrar por fase**.
+- [ ] Dar de baja una fase manda a la papelera su contenido (subfases y tareas) y restaurarla lo devuelve, como un proyecto (HU-15).
+- [ ] El tipo de contenedor (ADR-0004) decide si usa fases: Proyecto sí; Mantenimiento y Actividades, no por defecto.
+- [ ] Cumple RNF-01 y RNF-05, con pruebas de permisos y de los cálculos (funciones puras en shared).
+
 #### HU-26 · Muchas tareas en pantalla (5 pts)
 
 _Como miembro, quiero ver las tareas en lista y filtrarlas, para manejar proyectos con muchas tareas._
 
-- [ ] En el proyecto se alterna entre **Tablero** y **Lista** (tabla compacta y ordenable).
+- [ ] En el proyecto se alterna entre **Tablero** y **Lista** (tabla compacta y ordenable, agrupada por fases con sangría).
 - [ ] Filtros: texto, **Mis tareas**, responsable, tipo, estado, vencidas y rango de fechas (se muestran las tareas cuyo rango se cruza con el elegido, como en el prototipo).
 - [ ] Las columnas Hecha y Cancelada muestran las 10 más recientes y un botón "Ver más".
 - [ ] Los filtros viven en la URL.
@@ -310,7 +323,7 @@ _Como miembro, quiero ver las tareas en lista y filtrarlas, para manejar proyect
 
 - **HU-16 · Visibilidad:** un proyecto puede marcarse como restringido, con una lista de usuarios autorizados; los demás no lo ven en ninguna vista, búsqueda ni exportación.
 - **HU-17 · Permisos por usuario:** pantalla con la **matriz de permisos** de cada miembro (filas: ver, crear, editar, borrar, exportar... sobre proyectos y tareas; columnas: lo que da su rol y el ajuste personal). El Admin concede o quita acciones concretas, por ejemplo limitar las altas o las modificaciones.
-- **HU-27 · Gantt:** dentro de cada proyecto (sus tareas) y uno general del espacio (los proyectos como barras, con sus tareas desplegables). Barras con las fechas planeadas coloreadas por estado, línea de "hoy", vencido resaltado, **planeado contra real** (ADR-0004 §2.1), zoom semana / mes / trimestre y Entregables como hitos. Sin librería nueva (cuadrícula de CSS). Dependencias entre tareas: más adelante, si hacen falta.
+- **HU-27 · Gantt:** dentro de cada proyecto (sus tareas) y uno general del espacio (los proyectos como barras, con sus tareas desplegables). Barras con las fechas planeadas coloreadas por estado, línea de "hoy", vencido resaltado, **planeado contra real** (ADR-0004 §2.1), zoom semana / mes / trimestre, **fases como barras resumen** (HU-07) y Entregables como hitos (rombo). Sin librería nueva (cuadrícula de CSS). Dependencias entre tareas: más adelante, si hacen falta.
 - **HU-13 · Exportar:** JSON (respaldo completo) y CSV con BOM UTF-8 (una fila por tarea, compatible con el formato del prototipo); respeta la visibilidad y excluye lo borrado. Sin dependencias nuevas.
 - **HU-14 · Importar:** JSON o CSV, incluidos los respaldos del prototipo; "Actualizar" busca coincidencias por ID o, si no hay, por nombre sin distinguir mayúsculas; "Reemplazar" pide doble confirmación y manda lo anterior a la papelera; fechas normalizadas a AAAA-MM-DD (ambiguas = día/mes/año).
 - **Integraciones (TEC-08 a HU-20):** diseño en ADR-0002 §7.
