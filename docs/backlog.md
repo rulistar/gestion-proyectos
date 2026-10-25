@@ -1,7 +1,7 @@
 # Product Backlog
 
 > Lista priorizada de todo lo que el producto debe hacer. La ordena el **Product Owner**. Nada entra al desarrollo sin estar aquí (acta, riesgo "crecimiento desordenado del alcance").
-> Última actualización: 2026-10-24 (planificación del Sprint 2).
+> Última actualización: 2026-10-25 (revisión del Sprint 2 y planificación del Sprint 3).
 
 ## Cómo leer este documento
 
@@ -29,6 +29,7 @@
 | Capacidad | 5–10 h/semana → unos **21 puntos por sprint** de 2 semanas. |
 | Invitaciones (2026-10-24) | La app muestra un **enlace para copiar** (sin correo automático), de **un solo uso** y válido **48 horas**. |
 | Tipos de trabajo (2026-10-24) | Además de proyectos: **mantenimientos** y **actividades sueltas**, con **tipos configurables** por espacio (los define el Admin), tipos de tarea permitidos por tipo y **campos de detalle por tipo**. Todo contenedor y toda tarea guarda **fechas planeadas** (opcionales) y **fechas reales** (automáticas) para estadística. Diseño en [ADR-0004](adr/ADR-0004-tipos-de-trabajo.md); historias HU-21 a HU-23 para el Sprint 3. |
+| Revisión del Sprint 2 (2026-10-25) | Tareas con estados **Pausada** (cuenta como pendiente) y **Cancelada** (se descuenta), con **motivo obligatorio**. **Papelera** adelantada al Sprint 3. Al quitar a un miembro, **sus tareas conservan su nombre** (marcado "ya no es miembro") hasta reasignarlas. **Gantt** del proyecto y del espacio. Prioridad: ajustes de la revisión → tipos de trabajo → Gantt y permisos. |
 
 ## Requisitos no funcionales (aplican a todas las historias)
 
@@ -57,27 +58,34 @@
 | 9 | HU-05 | Crear y editar proyectos (fechas, estado, prioridad, clasificación) | Proyectos | 5 | 🔴 | 2 |
 | 10 | HU-08 | Crear y asignar tareas, y moverlas entre Pendiente, En curso y Hecha | Tareas | 5 | 🔴 | 2 |
 | 11 | HU-06 | Ver % de avance, minutos pendientes y días restantes | Proyectos | 3 | 🔴 | 2 |
-| 12 | HU-09 | Tabla de proyectos con filtros (área, clasificación, estado, prioridad, fecha fin) | Vistas | 5 | 🔴 | 3 |
-| 13 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 3 |
-| 14 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 3 |
-| 15 | HU-07 | Dividir un proyecto en fases o entregables | Proyectos | 3 | 🟡 | 3 |
-| 16 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 3 |
-| 17 | HU-17 | Activar o desactivar acciones concretas por usuario | Permisos | 8 | 🟡 | 4 |
-| 18 | HU-15 | Papelera: borrado lógico, restaurar y borrado definitivo | Datos | 5 | 🟡 | 4 |
-| 19 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 4 |
-| 20 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 4 |
-| 21 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 5 |
-| 22 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 5 |
-| 23 | HU-12 | Gráficas por mes de término y por estado | Reportes | 5 | 🟢 | 5 |
-| 24 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 6 |
-| 25 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 26 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 7 |
-| 27 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 7 |
-| 28 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 29 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 8 |
-| 30 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 8 |
+| 12 | HU-24 | Pausar y cancelar tareas con motivo (Pausada cuenta como pendiente; Cancelada se descuenta) | Tareas | 3 | 🔴 | 3 |
+| 13 | HU-15 | Papelera: dar de baja proyectos y tareas, restaurar y borrar definitivamente | Datos | 5 | 🔴 | 3 |
+| 14 | HU-25 | Gestionar miembros: cambiar el rol y quitar del espacio | Workspaces | 3 | 🔴 | 3 |
+| 15 | HU-09 | Tabla de proyectos con filtros y orden por columna | Vistas | 5 | 🔴 | 3 |
+| 16 | HU-26 | Muchas tareas: vista Lista, filtros y columnas plegables | Vistas | 5 | 🔴 | 3 |
+| 17 | HU-21 | Tipos de contenedor con comportamiento (ADR-0004) | Tipos | 5 | 🔴 | 4 |
+| 18 | HU-22 | Tipos de tarea configurables (ADR-0004) | Tipos | 3 | 🔴 | 4 |
+| 19 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 4 |
+| 20 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 4 |
+| 21 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
+| 22 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 5 |
+| 23 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
+| 24 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 25 | HU-07 | Dividir un proyecto en fases o entregables | Proyectos | 3 | 🟡 | 6 |
+| 26 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 27 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 28 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
+| 29 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 30 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 31 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 32 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 33 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 34 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 35 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 36 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 37 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
-**MVP (objetivo 1 del acta, cierre del Sprint 3):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue.
+**MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
 **Backlog futuro (acta):** Gantt, registro de riesgos, interesados, bitácora de auditoría, notificaciones. (Tokens de API, webhooks e integración con la app de estudio ya están en la épica Integraciones, del 25 al 30.)
 
@@ -211,11 +219,68 @@ _Como persona invitada, quiero abrir el enlace y crear mi contraseña, para entr
 - [x] Un enlace caducado, usado o revocado muestra un mensaje claro sin revelar datos.
 - [x] Límite de intentos en el endpoint de aceptar; tiene pruebas.
 
+### Sprint 3
+
+Ajustes que pidió el PO en la revisión del Sprint 2. Orden: HU-24 → HU-15 → HU-25 → HU-09 → HU-26.
+
+#### HU-24 · Pausar y cancelar tareas (3 pts)
+
+_Como miembro, quiero pausar o cancelar una tarea indicando por qué, para saber qué está detenido y darle seguimiento._
+
+- [ ] Estados de tarea: Pendiente, En curso, **Pausada**, Hecha y **Cancelada**.
+- [ ] Pausar o cancelar exige un **motivo**; la tarjeta lo muestra. Al salir de Pausada o Cancelada, el motivo se limpia.
+- [ ] Una tarea Pausada se puede reactivar (Pendiente o En curso) o cancelar; una Cancelada se puede reabrir.
+- [ ] Avance (HU-06): Pausada **cuenta** como trabajo pendiente; Cancelada **no cuenta** en el % ni en los minutos.
+- [ ] El tablero muestra las columnas nuevas; Hecha y Cancelada se pueden plegar.
+- [ ] Pruebas de la regla de avance y de las transiciones.
+
+#### HU-15 · Papelera (5 pts)
+
+_Como Admin, quiero dar de baja proyectos y tareas sin perderlos de inmediato, para poder recuperarlos si me equivoco._
+
+- [ ] Botón **Dar de baja** en el proyecto (solo Admin, `project.delete`) y en cada tarea (`task.delete`), con confirmación.
+- [ ] Lo dado de baja desaparece de listas, tablero y avance (RNF-05); las tareas de un proyecto en la papelera desaparecen con él.
+- [ ] Página **Papelera** del espacio (solo Admin, `trash.manage`): qué se dio de baja, quién y cuándo.
+- [ ] **Restaurar**: el proyecto vuelve con sus tareas.
+- [ ] **Borrar definitivamente** solo desde la papelera, escribiendo el nombre para confirmar; un proyecto se lleva sus tareas.
+- [ ] Cumple RNF-01 (`deletedById`/`deletedAt`) y tiene pruebas de permisos.
+
+#### HU-25 · Gestionar miembros (3 pts)
+
+_Como Admin, quiero cambiar el rol de un miembro o quitarlo del espacio, para controlar quién tiene acceso._
+
+- [ ] El Admin cambia el rol de un miembro desde la página Miembros.
+- [ ] El Admin quita a un miembro del espacio (borrado lógico de la membresía): pierde el acceso **al instante**.
+- [ ] Sus tareas asignadas **conservan su nombre**, marcado "ya no es miembro", hasta que se reasignen; no se le pueden asignar tareas nuevas.
+- [ ] Nunca se puede quitar ni degradar al **último Admin**.
+- [ ] Cumple RNF-01 y tiene pruebas.
+
+#### HU-09 · Tabla de proyectos con filtros y orden (5 pts)
+
+_Como miembro, quiero filtrar y ordenar los proyectos, para encontrar rápido lo que busco aunque sean muchos._
+
+- [ ] Filtros: texto, área y clasificación (con los valores existentes), estado, prioridad y "fecha de fin hasta".
+- [ ] **Ordenar** por cualquier columna, ascendente o descendente.
+- [ ] Terminados y Cancelados **ocultos por defecto**, con la casilla "Mostrar terminados y cancelados".
+- [ ] Los filtros y el orden viven en la URL (ADR-0003): un enlace compartido abre la misma vista.
+- [ ] Mensaje "Ningún proyecto coincide con los filtros" y botón "Limpiar filtros".
+- [ ] El filtro por tipo se suma con HU-21.
+
+#### HU-26 · Muchas tareas en pantalla (5 pts)
+
+_Como miembro, quiero ver las tareas en lista y filtrarlas, para manejar proyectos con muchas tareas._
+
+- [ ] En el proyecto se alterna entre **Tablero** y **Lista** (tabla compacta y ordenable).
+- [ ] Filtros: texto, **Mis tareas**, responsable, tipo, estado, vencidas y rango de fechas (se muestran las tareas cuyo rango se cruza con el elegido, como en el prototipo).
+- [ ] Las columnas Hecha y Cancelada muestran las 10 más recientes y un botón "Ver más".
+- [ ] Los filtros viven en la URL.
+- [ ] La lógica de filtrado son funciones puras con pruebas.
+
 ### Sprints siguientes (criterios por detallar en su planificación)
 
-- **HU-15 · Papelera:** borrar lleva a la papelera (lógico); el Admin restaura o borra definitivamente desde ella, confirmando con el nombre del registro; el borrado definitivo de un proyecto incluye sus fases y tareas.
 - **HU-16 · Visibilidad:** un proyecto puede marcarse como restringido, con una lista de usuarios autorizados; los demás no lo ven en ninguna vista, búsqueda ni exportación.
-- **HU-17 · Permisos por usuario:** catálogo de permisos (crear, editar, borrar, exportar, importar...); cada rol trae valores por defecto y el Admin los ajusta por usuario.
+- **HU-17 · Permisos por usuario:** pantalla con la **matriz de permisos** de cada miembro (filas: ver, crear, editar, borrar, exportar... sobre proyectos y tareas; columnas: lo que da su rol y el ajuste personal). El Admin concede o quita acciones concretas, por ejemplo limitar las altas o las modificaciones.
+- **HU-27 · Gantt:** dentro de cada proyecto (sus tareas) y uno general del espacio (los proyectos como barras, con sus tareas desplegables). Barras con las fechas planeadas coloreadas por estado, línea de "hoy", vencido resaltado, **planeado contra real** (ADR-0004 §2.1), zoom semana / mes / trimestre y Entregables como hitos. Sin librería nueva (cuadrícula de CSS). Dependencias entre tareas: más adelante, si hacen falta.
 - **HU-13 · Exportar:** JSON (respaldo completo) y CSV con BOM UTF-8 (una fila por tarea, compatible con el formato del prototipo); respeta la visibilidad y excluye lo borrado. Sin dependencias nuevas.
 - **HU-14 · Importar:** JSON o CSV, incluidos los respaldos del prototipo; "Actualizar" busca coincidencias por ID o, si no hay, por nombre sin distinguir mayúsculas; "Reemplazar" pide doble confirmación y manda lo anterior a la papelera; fechas normalizadas a AAAA-MM-DD (ambiguas = día/mes/año).
 - **Integraciones (TEC-08 a HU-20):** diseño en ADR-0002 §7.

@@ -67,8 +67,51 @@ Si apareciera una necesidad, se propondrá con su porqué antes de instalar nada
 | Revisión (_review_) | Al terminar las 5 historias | Demostración del objetivo funcionando |
 | Retrospectiva | Junto con la revisión | Qué salió bien, qué mejorar, qué probar en el Sprint 3 |
 
-## Resultado (se completa al cierre)
+## Resultado (cierre: 2026-10-25)
 
-- Puntos completados: \_\_ / 21
-- Objetivo cumplido: ☐ Sí ☐ No
-- Notas de la retrospectiva:
+- Puntos completados: **21 / 21**
+- Objetivo cumplido: ☑ Sí ☐ No. El PO hizo la demostración completa: proyecto real con tareas, avance, invitar a un Lector y a un Miembro, permisos por rol.
+
+### Revisión
+
+| ID | Historia | Pts | PR |
+|---|---|---|---|
+| HU-05 | Crear y editar proyectos (con permisos por rol) | 5 | #14 |
+| HU-08 | Tareas: crear, asignar y mover | 5 | #15 |
+| HU-06 | Avance: %, minutos pendientes, días restantes | 3 | #16 |
+| HU-04 | Invitar miembros con un rol | 5 | #17 |
+| HU-01 | Aceptar una invitación | 3 | #18 |
+
+- 136 pruebas en verde. Además: [ADR-0004](../adr/ADR-0004-tipos-de-trabajo.md), tipos de trabajo configurables (#19).
+
+**Comentarios del PO en la demostración**, que pasan al backlog:
+
+| Comentario | Respuesta |
+|---|---|
+| No hay forma de dar de baja un proyecto | HU-15 (papelera) se adelanta al Sprint 3 |
+| Las tareas necesitan estados Pausada y Cancelada | HU-24: Pausada cuenta como pendiente; Cancelada se descuenta; motivo obligatorio |
+| Gantt para ver los avances | HU-27, del proyecto y del espacio, con planeado contra real |
+| Con muchas tareas, ¿cómo se manejan en pantalla? | HU-26: vista Lista, filtros, columnas plegables |
+| Filtros y orden en la lista de proyectos | HU-09 ampliada con orden por columna |
+| Dar de baja a un usuario invitado | HU-25: cambiar el rol y quitar del espacio |
+| Permisos por usuario (limitar altas, modificaciones, visualizaciones) | HU-17 (matriz de permisos) y HU-16 (visibilidad por proyecto) |
+
+### Retrospectiva
+
+**Salió bien**
+
+- Los 21 puntos, cada uno con su sección "Cómo probarlo", y el PO probó cada historia antes de fusionarla.
+- La necesidad de los tipos de trabajo se detectó **antes** de construir la tabla y el Kanban: corregir el diseño cuesta poco; corregir código ya hecho, mucho.
+- Las dudas con GitHub (rama "out-of-date", ramas apiladas) se resolvieron sobre la marcha.
+
+**A mejorar**
+
+- **Punto del PO:** probar historia por historia no basta para validar que el conjunto es lo que quiere. Hace falta una prueba integral con datos reales.
+- Una API desactualizada en `pnpm dev` causó un error falso. Remedio: reiniciar `pnpm dev` tras fusionar o cambiar de rama.
+- Dos ramas quedaron apiladas porque un PR se creó tarde.
+
+**Acuerdos para el Sprint 3**
+
+1. **Validar el concepto antes de construir todo:** en las historias grandes, primero una versión que el PO pueda probar en el navegador; después el resto.
+2. **Demostración integral en cada revisión**, con datos reales del PO.
+3. **Fusionar un PR antes de empezar el siguiente**, salvo que el PO decida otra cosa.
