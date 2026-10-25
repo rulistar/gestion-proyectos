@@ -15,7 +15,7 @@ function toInvitation(row: Omit<Invitation, 'expiresAt'> & { expiresAt: Date }):
 }
 
 /** Pendiente = ni aceptada, ni revocada, ni caducada */
-function pending(now: Date) {
+export function pending(now: Date) {
   return { acceptedAt: null, revokedAt: null, expiresAt: { gt: now } };
 }
 

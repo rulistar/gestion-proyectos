@@ -1,11 +1,15 @@
-import { loginRequestSchema, type CurrentUser } from '@gestion/shared';
+import { loginRequestSchema } from '@gestion/shared';
 import type { FastifyPluginCallback, FastifyRequest } from 'fastify';
-import type { Db } from '../../db/client.js';
-import { auditUpdate } from '../../db/audit.js';
 import { authRateLimit } from '../../security.js';
-import { listWorkspacesForUser } from '../workspaces/workspaces.service.js';
+import { getCurrentUser } from './current-user.js';
 import { hashPassword, verifyPassword } from './password.js';
-import { createSession, deleteSession, requireAuth, SESSION_COOKIE } from './session.js';
+import {
+  deleteSession,
+  requireAuth,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+  startSession,
+} from './session.js';
 
 const INVALID_CREDENTIALS = 'Correo o contraseña incorrectos';
 
@@ -26,25 +30,7 @@ function loginRateLimitKey(request: FastifyRequest): string {
   return `${request.ip}|${email}`;
 }
 
-async function getCurrentUser(db: Db, userId: string): Promise<CurrentUser> {
-  const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    isSystemAdmin: user.isSystemAdmin,
-    workspaces: await listWorkspacesForUser(db, userId),
-  };
-}
-
 export const authRoutes: FastifyPluginCallback = (app, _options, done) => {
-  const cookieOptions = {
-    path: '/',
-    httpOnly: true, // JavaScript del navegador no puede leerla (protege ante XSS)
-    sameSite: 'lax', // otros sitios no pueden enviarla en peticiones que modifican datos
-    secure: app.secureCookies, // solo por HTTPS en producción
-  } as const;
-
   app.post(
     '/auth/login',
     {
@@ -69,22 +55,7 @@ export const authRoutes: FastifyPluginCallback = (app, _options, done) => {
         return reply.code(401).send({ message: INVALID_CREDENTIALS });
       }
 
-      // Sesión nueva en cada login; la anterior de este navegador (si había) se invalida
-      const previous = request.cookies[SESSION_COOKIE];
-      if (previous) await deleteSession(app.db, previous);
-
-      const token = await createSession(app.db, {
-        userId: user.id,
-        idleMinutes: app.sessionIdleMinutes,
-        ipAddress: request.ip,
-        userAgent: request.headers['user-agent'],
-      });
-      await app.db.user.update({
-        where: { id: user.id },
-        data: { lastLoginAt: new Date(), ...auditUpdate(user.id) },
-      });
-
-      reply.setCookie(SESSION_COOKIE, token, cookieOptions);
+      await startSession(request, reply, user.id);
       return getCurrentUser(app.db, user.id);
     },
   );
@@ -93,7 +64,10 @@ export const authRoutes: FastifyPluginCallback = (app, _options, done) => {
     const token = request.cookies[SESSION_COOKIE];
     // Se borra en el servidor: aunque alguien hubiera copiado la cookie, ya no sirve
     if (token) await deleteSession(app.db, token);
-    return reply.clearCookie(SESSION_COOKIE, cookieOptions).code(204).send();
+    return reply
+      .clearCookie(SESSION_COOKIE, sessionCookieOptions(app.secureCookies))
+      .code(204)
+      .send();
   });
 
   app.get('/auth/me', { preHandler: requireAuth }, async (request) => {
