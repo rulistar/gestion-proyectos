@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { endAfterStart, endAfterStartError, optionalDate, optionalText } from './common.js';
+import { projectProgressSchema } from './progress.js';
 
 export const projectStatusSchema = z.enum([
   'NOT_STARTED',
@@ -39,6 +40,7 @@ export const projectSchema = z.object({
   startDate: z.iso.date().nullable(),
   endDate: z.iso.date().nullable(),
   notes: z.string().nullable(),
+  progress: projectProgressSchema,
 });
 export type Project = z.infer<typeof projectSchema>;
 

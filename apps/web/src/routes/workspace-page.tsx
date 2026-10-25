@@ -1,10 +1,11 @@
-import { roleHasPermission } from '@gestion/shared';
+import { daysRemainingLabel, roleHasPermission } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
+import { ProgressBar } from '@/components/progress-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatDate } from '@/lib/dates';
+import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
 import { PROJECT_PRIORITIES, projectsQueryOptions, useCreateProject } from '@/lib/projects';
 import { ROLE_LABELS, workspaceQueryOptions } from '@/lib/workspaces';
 
@@ -17,6 +18,7 @@ export function WorkspacePage() {
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
   const { data: projects } = useSuspenseQuery(projectsQueryOptions(workspaceId));
   const canCreate = roleHasPermission(workspace.role, 'project.create');
+  const today = todayIso();
 
   return (
     <div className="grid gap-4">
@@ -45,6 +47,8 @@ export function WorkspacePage() {
                   <th className="py-2 pr-4 font-medium">Clasificación</th>
                   <th className="py-2 pr-4 font-medium">Estado</th>
                   <th className="py-2 pr-4 font-medium">Prioridad</th>
+                  <th className="py-2 pr-4 font-medium">Avance</th>
+                  <th className="py-2 pr-4 font-medium">Pendiente</th>
                   <th className="py-2 font-medium">Fin</th>
                 </tr>
               </thead>
@@ -66,7 +70,26 @@ export function WorkspacePage() {
                       <ProjectStatusBadge status={project.status} />
                     </td>
                     <td className="py-2 pr-4">{PROJECT_PRIORITIES[project.priority]}</td>
-                    <td className="py-2 whitespace-nowrap">{formatDate(project.endDate)}</td>
+                    <td className="py-2 pr-4">
+                      <div className="flex min-w-28 items-center gap-2">
+                        <ProgressBar
+                          percent={project.progress.percent}
+                          label={`Avance de ${project.name}`}
+                        />
+                        <span className="w-9 text-right tabular-nums">
+                          {project.progress.percent}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-2 pr-4 whitespace-nowrap">
+                      {formatMinutes(project.progress.pendingMinutes)}
+                    </td>
+                    <td className="py-2 whitespace-nowrap">
+                      {formatDate(project.endDate)}
+                      <span className="block text-xs text-muted-foreground">
+                        {daysRemainingLabel(project.endDate, today)}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

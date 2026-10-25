@@ -92,6 +92,9 @@ apps/
     prisma.config.ts    configuración de Prisma 7 (carga el .env de la raíz)
 packages/
   shared/             esquemas Zod + tipos (z.infer) usados por web y api
+    src/schemas/permissions.ts  catálogo de permisos por rol (roleHasPermission)
+    src/schemas/progress.ts     reglas de avance (summarizeTasks, daysRemainingLabel; HU-06), con pruebas
+    tsconfig.build.json         build sin los *.test.ts
 docs/                 acta, ADRs, backlog (no los reformatea Prettier)
 .github/              CI (ci.yml) y Dependabot
 docker-compose.yml    PostgreSQL local
@@ -105,7 +108,7 @@ docker-compose.yml    PostgreSQL local
 - `@gestion/shared` se resuelve al **código fuente** (`src/*.ts`) en desarrollo, tests, typecheck y build de la web mediante la condición de export `@gestion/source`. Solo `node dist/server.js` (producción) usa el `dist` compilado. Si se agrega otra herramienta, configurarle esa condición.
 - Imports relativos en api y shared con extensión `.js` (módulos ESM `NodeNext`). En web no hace falta (`Bundler`) y se usa el alias `@/` → `src/`.
 - Imports de solo tipos: `import type` (regla de ESLint).
-- Pruebas junto al código: `*.test.ts`. Probar endpoints con `buildApp({ db }).inject()`, sin red.
+- Pruebas junto al código: `*.test.ts`. Probar endpoints con `buildApp({ db }).inject()`, sin red. Las reglas de negocio puras (cálculos) van en `packages/shared` con sus pruebas (Vitest, sin BD).
 - **Rutas que exigen sesión**: `{ preHandler: requireAuth }` (de `modules/auth/session.ts`); el usuario queda en `request.auth.userId`. Sin sesión válida → 401.
 - **Rutas de un workspace** (`/workspaces/:workspaceId/...`): después de `requireAuth`, `{ preHandler: requirePermission('project.create') }` (de `modules/workspaces/access.ts`). No miembro o ID inválido → 404 (no revela que existe); rol sin permiso → 403. El catálogo de permisos por rol está en `packages/shared` (`roleHasPermission`); la web lo usa solo para ocultar botones. Toda consulta filtra también por `workspaceId` (un ID de otro workspace da 404).
 - **Las pruebas de la API necesitan PostgreSQL** (`pnpm db:up`). Usan una BD aparte, `<DATABASE_URL>_test` (o `TEST_DATABASE_URL`), que `global-setup.ts` crea y migra sola; se niegan a correr contra una BD que no termine en `_test`. Se ejecutan en serie (`fileParallelism: false`) y cada archivo limpia con `resetDb()`.

@@ -1,11 +1,18 @@
-import { roleHasPermission, type Member } from '@gestion/shared';
+import {
+  daysRemainingLabel,
+  roleHasPermission,
+  type Member,
+  type ProjectProgress,
+} from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
+import { ProgressBar } from '@/components/progress-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { TaskBoard } from '@/components/task-board';
 import { TaskForm } from '@/components/task-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatMinutes, todayIso } from '@/lib/dates';
 import { projectQueryOptions, useUpdateProject } from '@/lib/projects';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
@@ -39,6 +46,8 @@ export function ProjectPage() {
         </div>
       </div>
 
+      <ProgressSummary progress={project.progress} endDate={project.endDate} />
+
       <Card>
         <CardHeader>
           <CardTitle>Tareas</CardTitle>
@@ -60,6 +69,40 @@ export function ProjectPage() {
 
       <ProjectDetailsCard workspaceId={workspaceId} projectId={projectId} />
     </div>
+  );
+}
+
+/** % de avance, minutos pendientes y días restantes (HU-06) */
+function ProgressSummary({
+  progress,
+  endDate,
+}: {
+  progress: ProjectProgress;
+  endDate: string | null;
+}) {
+  const stats = [
+    { label: 'Tareas hechas', value: `${progress.doneTasks} de ${progress.totalTasks}` },
+    { label: 'Minutos pendientes', value: formatMinutes(progress.pendingMinutes) },
+    { label: 'Fecha de fin', value: daysRemainingLabel(endDate, todayIso()) },
+  ];
+
+  return (
+    <Card>
+      <CardContent className="grid gap-4">
+        <div className="flex items-center gap-3">
+          <ProgressBar percent={progress.percent} label="Avance del proyecto" className="h-3" />
+          <span className="text-lg font-semibold tabular-nums">{progress.percent}%</span>
+        </div>
+        <dl className="grid gap-4 sm:grid-cols-3">
+          {stats.map((stat) => (
+            <div key={stat.label}>
+              <dt className="text-sm text-muted-foreground">{stat.label}</dt>
+              <dd className="font-medium">{stat.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </CardContent>
+    </Card>
   );
 }
 
