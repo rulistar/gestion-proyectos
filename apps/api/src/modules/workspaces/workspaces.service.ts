@@ -21,10 +21,15 @@ function activeMembers(workspaceId: string) {
 export async function listMembers(db: Db, workspaceId: string): Promise<Member[]> {
   const memberships = await db.membership.findMany({
     where: activeMembers(workspaceId),
-    select: { role: true, user: { select: { id: true, name: true } } },
+    select: { role: true, user: { select: { id: true, name: true, email: true } } },
     orderBy: { user: { name: 'asc' } },
   });
-  return memberships.map((m) => ({ userId: m.user.id, name: m.user.name, role: m.role }));
+  return memberships.map(({ role, user }) => ({
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    role,
+  }));
 }
 
 /** ¿Es un miembro activo del workspace? (p. ej. para poder ser responsable de una tarea) */

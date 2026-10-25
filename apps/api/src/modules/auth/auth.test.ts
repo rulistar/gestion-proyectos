@@ -4,7 +4,8 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { createTestDb, resetDb } from '../../test/test-db.js';
 import { createFirstAdmin, FIRST_WORKSPACE_NAME } from '../setup/first-admin.js';
-import { hashToken, SESSION_COOKIE } from './session.js';
+import { SESSION_COOKIE } from './session.js';
+import { hashToken } from './tokens.js';
 
 const db = createTestDb();
 const credentials = { email: 'ana@example.com', password: 'una-clave-bien-larga' };

@@ -19,6 +19,7 @@ import { AppLayout } from '@/routes/app-layout';
 import { ErrorPage } from '@/routes/error-page';
 import { HomePage } from '@/routes/home-page';
 import { LoginPage } from '@/routes/login-page';
+import { MembersPage } from '@/routes/members-page';
 import { ProjectPage } from '@/routes/project-page';
 import { WorkspacePage } from '@/routes/workspace-page';
 
@@ -27,7 +28,8 @@ import { WorkspacePage } from '@/routes/workspace-page';
  *
  *   /                          protegidas (layout "app": barra superior + página):
  *   /w/$workspaceId              inicio, un workspace con sus proyectos
- *   /w/$workspaceId/p/$projectId y un proyecto
+ *   /w/$workspaceId/p/$projectId un proyecto
+ *   /w/$workspaceId/miembros      y sus miembros e invitaciones
  *   /login                     pública; si ya hay sesión, redirige a /
  */
 
@@ -129,9 +131,20 @@ const projectRoute = createRoute({
   component: ProjectPage,
 });
 
+const membersRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/miembros',
+  loader: ({ context, params }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(membersQueryOptions(params.workspaceId)),
+    ]),
+  component: MembersPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  appRoute.addChildren([homeRoute, workspaceRoute, projectRoute]),
+  appRoute.addChildren([homeRoute, workspaceRoute, projectRoute, membersRoute]),
 ]);
 
 export const router = createRouter({
