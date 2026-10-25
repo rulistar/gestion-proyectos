@@ -100,6 +100,10 @@ export function LoginPage() {
               {login.isPending ? 'Entrando…' : 'Iniciar sesión'}
             </Button>
           </form>
+          {/* Registro solo por invitación (decisión del PO): no hay botón de "crear cuenta" */}
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            ¿No tienes cuenta? Pide al Admin de tu espacio de trabajo que te envíe una invitación.
+          </p>
         </CardContent>
       </Card>
     </main>
