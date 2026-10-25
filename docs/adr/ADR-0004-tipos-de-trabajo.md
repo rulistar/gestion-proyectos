@@ -3,7 +3,7 @@
 - **Estado:** Propuesto (pendiente de aprobación del PO)
 - **Fecha:** 2026-10-24
 - **Decide:** Product Owner, a propuesta del equipo técnico
-- **Contexto:** Además de proyectos, el PO necesita gestionar **mantenimientos** (correctivos, evolutivos…) y **actividades que no pertenecen a ningún proyecto**. Las tareas también necesitan más clasificaciones (incidencia, track…), y cada tipo debe llevar **su propio detalle**. Hoy el modelo (ADR-0002) tiene un solo tipo de contenedor (`Project`) y una lista fija de tipos de tarea (`TaskType`: Tarea, Reunión, Entregable, Revisión, Investigación, Examen). Los prototipos de `docs/FueraDelProyecto` no cubren este caso: es alcance nuevo.
+- **Contexto:** Además de proyectos, el PO necesita gestionar **mantenimientos** (correctivos, evolutivos…) y **actividades que no pertenecen a ningún proyecto**. Las tareas también necesitan más clasificaciones (incidencia, fast track…), y cada tipo debe llevar **su propio detalle**. Hoy el modelo (ADR-0002) tiene un solo tipo de contenedor (`Project`) y una lista fija de tipos de tarea (`TaskType`: Tarea, Reunión, Entregable, Revisión, Investigación, Examen). Los prototipos de `docs/FueraDelProyecto` no cubren este caso: es alcance nuevo.
 
 ## Decisiones del PO (2026-10-24)
 
@@ -21,9 +21,9 @@
 ```
 Espacio de trabajo
  ├── Tipos de contenedor   Proyecto, Mtto correctivo, Mtto evolutivo, Actividades… (+ los que agregue el Admin)
- │     └── comportamiento: Con fin | Continuo | Bolsa        (lista fija: el sistema sabe medirlos)
+ │     └── comportamiento: Con fin | Continuo | Por demanda  (lista fija: el sistema sabe medirlos)
  │     └── tipos de tarea permitidos (opcional)
- ├── Tipos de tarea        Tarea, Incidencia, Track, Reunión… (+ los que agregue el Admin)
+ ├── Tipos de tarea        Tarea, Incidencia, Fast track, Reunión… (+ los que agregue el Admin)
  └── Campos de detalle     por tipo de contenedor o por tipo de tarea
 ```
 
@@ -37,7 +37,7 @@ El Admin inventa los tipos que quiera, pero cada uno elige **uno de tres comport
 |---|---|---|---|
 | **Con fin** (`WITH_END`) | Proyectos | Inicio y fin | % de avance, minutos pendientes, días restantes (como hoy) |
 | **Continuo** (`ONGOING`) | Mantenimientos, soporte | Inicio; fin opcional | Tareas abiertas, **vencidas** y **hechas este mes**; sin % ni "vencido" del contenedor |
-| **Bolsa** (`BACKLOG`) | Actividades sueltas | Ninguna | Tareas pendientes y vencidas |
+| **Por demanda** (`ON_DEMAND`) | Actividades que no son de un proyecto ni de un mantenimiento: trabajo que llega cuando se necesita | Ninguna | Tareas pendientes y vencidas |
 
 Así, "Mtto preventivo" o "Auditoría" se agregan sin programar nada: basta elegir su comportamiento.
 
@@ -79,9 +79,9 @@ Al crear un espacio de trabajo (y, por migración, en los que ya existen) se car
 | Tipo | Comportamiento | Tipos de tarea permitidos | Campos de detalle propuestos |
 |---|---|---|---|
 | Proyecto | Con fin | Todos | Patrocinador (texto), Objetivo (texto largo) |
-| Mtto correctivo | Continuo | Incidencia, Tarea, Track | Sistema o aplicación (texto, **obligatorio**) |
-| Mtto evolutivo | Continuo | Tarea, Track, Entregable, Revisión | Solicitante (texto), Versión objetivo (texto) |
-| Actividades | Bolsa | Todos | — |
+| Mtto correctivo | Continuo | Incidencia, Fast track, Tarea | Sistema o aplicación (texto, **obligatorio**) |
+| Mtto evolutivo | Continuo | Tarea, Fast track, Entregable, Revisión | Solicitante (texto), Versión objetivo (texto) |
+| Actividades | Por demanda | Todos | — |
 
 **Tipos de tarea**
 
@@ -89,8 +89,10 @@ Al crear un espacio de trabajo (y, por migración, en los que ya existen) se car
 |---|---|
 | Tarea | — |
 | Incidencia | Severidad (lista: Crítica, Alta, Media, Baja; **obligatorio**), Sistema afectado (texto), Fecha de reporte (fecha), Reportado por (texto), Causa raíz (texto largo) |
-| Track | **Por confirmar con el PO** (propuesta: seguimiento periódico → Frecuencia: diaria / semanal / mensual; Próxima revisión: fecha) |
+| Fast track | Se atiende **de inmediato, sin pasar por el proceso normal**. Justificación (texto largo, **obligatorio**), Autorizado por (texto, **obligatorio**), Impacto si no se atiende (texto largo) |
 | Reunión, Entregable, Revisión, Investigación, Examen | — (son los tipos actuales; se conservan) |
+
+**Atención inmediata (vía rápida):** cada tipo de tarea tiene una casilla **"Atención inmediata"**. Las tareas de esos tipos (como Fast track) se **resaltan** con una etiqueta y aparecen **primero** en su columna del tablero. Es una propiedad del tipo y no un nombre fijo: si mañana se crea "Urgencia de seguridad", también puede marcarse así.
 
 **Migración de lo existente:** los proyectos actuales pasan al tipo "Proyecto"; las tareas conservan su tipo actual, que deja de ser un `enum` y pasa a apuntar al catálogo.
 
@@ -110,7 +112,7 @@ erDiagram
         uuid id PK
         uuid workspaceId FK
         string name
-        enum behavior "WITH_END | ONGOING | BACKLOG"
+        enum behavior "WITH_END | ONGOING | ON_DEMAND"
         int order
         datetime archivedAt
     }
@@ -118,6 +120,7 @@ erDiagram
         uuid id PK
         uuid workspaceId FK
         string name
+        bool expedited "atención inmediata"
         int order
         datetime archivedAt
     }
@@ -164,7 +167,7 @@ Se priorizan **antes** de HU-09 y HU-10, para que la tabla y el Kanban nazcan co
 | Alternativa | Por qué se descartó |
 |---|---|
 | Tipos fijos en el código (`enum`) | Cada tipo nuevo exigiría programar y desplegar; el PO quiere ampliarlos solo. |
-| Tareas sin contenedor ("sueltas") | La visibilidad y los permisos (HU-16) se basan en el contenedor; las tareas sueltas necesitarían reglas aparte. El tipo "Actividades" (Bolsa) cubre el caso sin excepciones. |
+| Tareas sin contenedor ("sueltas") | La visibilidad y los permisos (HU-16) se basan en el contenedor; las tareas sueltas necesitarían reglas aparte. El tipo "Actividades" (Por demanda) cubre el caso sin excepciones. |
 | Una tabla por tipo (proyectos, mantenimientos…) | Duplica código y pantallas por cada tipo nuevo. |
 | Valores de campos en tabla aparte (EAV) | Más uniones y consultas más lentas; JSONB es más simple y PostgreSQL permite indexarlo si hace falta filtrar por un campo. |
 
@@ -172,4 +175,4 @@ Se priorizan **antes** de HU-09 y HU-10, para que la tabla y el Kanban nazcan co
 
 - **Positivas:** el PO amplía tipos y detalle sin cambios de código; mantenimientos y actividades usan las mismas pantallas, permisos y exportación; lo ya construido se conserva.
 - **Negativas:** los formularios y la validación pasan a ser dinámicos (más complejos de probar); el MVP (objetivo del acta al cierre del Sprint 3) se recorre aproximadamente un sprint.
-- **Pendiente del PO:** confirmar qué es "Track" y ajustar los campos propuestos en la sección 5.
+- **Pendiente del PO:** ajustar los campos propuestos en la sección 5.
