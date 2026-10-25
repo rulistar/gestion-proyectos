@@ -75,12 +75,14 @@ apps/
                         Rutas sensibles (login): `config: { rateLimit: authRateLimit }`
     src/modules/<mod>/  un módulo por funcionalidad: <mod>.routes.ts, <mod>.test.ts, ...
       auth/password.ts    hashPassword/verifyPassword (Argon2id)
+      auth/tokens.ts      generateToken/hashToken: token aleatorio para el usuario, hash SHA-256 para la BD
       auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
       workspaces/         GET/POST /workspaces, GET /workspaces/:id y /:id/members (quien lo crea = Admin; HU-03)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05)
       tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status (HU-08)
+      invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez
     src/db/dates.ts     columnas date ↔ "AAAA-MM-DD" (siempre en UTC)
       setup/              createFirstAdmin: primer Admin + workspace "workpers" (TEC-07)
     src/cli/            comandos de terminal (setup-admin.ts → pnpm setup:admin)

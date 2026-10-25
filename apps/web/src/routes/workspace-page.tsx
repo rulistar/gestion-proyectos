@@ -27,7 +27,16 @@ export function WorkspacePage() {
           ← Mis espacios de trabajo
         </Link>
         <h1 className="mt-1 text-2xl font-semibold">{workspace.name}</h1>
-        <p className="text-sm text-muted-foreground">Tu rol: {ROLE_LABELS[workspace.role]}</p>
+        <p className="text-sm text-muted-foreground">
+          Tu rol: {ROLE_LABELS[workspace.role]} ·{' '}
+          <Link
+            to="/w/$workspaceId/miembros"
+            params={{ workspaceId }}
+            className="font-medium text-foreground hover:underline"
+          >
+            Miembros
+          </Link>
+        </p>
       </div>
 
       <Card>

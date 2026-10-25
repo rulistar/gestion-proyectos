@@ -191,13 +191,13 @@ _Como miembro, quiero ver el % de avance, los minutos pendientes y los días res
 
 _Como Admin, quiero invitar a personas a mi workspace con un rol, para trabajar en equipo._
 
-- [ ] Tabla `Invitation` con su migración (ADR-0002); solo se guarda el **hash** del token.
-- [ ] Solo el Admin (`member.manage`) invita, indicando el correo y el rol (Admin, Miembro o Lector).
-- [ ] La app muestra **una sola vez** el enlace para copiarlo (decisión del PO: sin correo automático).
-- [ ] El enlace es de un solo uso y caduca a las **48 horas**.
-- [ ] Error claro si el correo ya es miembro o ya tiene una invitación pendiente.
-- [ ] Lista de miembros y de invitaciones pendientes; el Admin puede revocar una invitación.
-- [ ] Cumple RNF-01 y tiene pruebas (incluida la de que un Miembro o Lector no puede invitar).
+- [x] Tabla `Invitation` con su migración (ADR-0002); solo se guarda el **hash** del token.
+- [x] Solo el Admin (`member.manage`) invita, indicando el correo y el rol (Admin, Miembro o Lector).
+- [x] La app muestra **una sola vez** el enlace para copiarlo (decisión del PO: sin correo automático).
+- [x] El enlace es de un solo uso y caduca a las **48 horas**.
+- [x] Error claro si el correo ya es miembro o ya tiene una invitación pendiente.
+- [x] Lista de miembros y de invitaciones pendientes; el Admin puede revocar una invitación.
+- [x] Cumple RNF-01 y tiene pruebas (incluida la de que un Miembro o Lector no puede invitar).
 
 #### HU-01 · Aceptar una invitación (3 pts)
 

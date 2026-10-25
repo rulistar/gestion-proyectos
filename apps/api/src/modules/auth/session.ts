@@ -1,21 +1,11 @@
-import { createHash, randomBytes } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Db } from '../../db/client.js';
+import { generateToken, hashToken } from './tokens.js';
 
 export const SESSION_COOKIE = 'sid';
 
 /** Renovar la sesión en cada petición escribiría en la BD sin parar: se renueva como mucho 1 vez/min */
 const RENEW_AFTER_MS = 60_000;
-
-/** 32 bytes aleatorios (256 bits): imposible de adivinar. Es lo único que viaja en la cookie */
-function generateToken(): string {
-  return randomBytes(32).toString('base64url');
-}
-
-/** En la BD solo se guarda el hash: quien lea la tabla no puede usar las sesiones (ADR-0002 §6) */
-export function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
-}
 
 function expiresFrom(now: Date, idleMinutes: number): Date {
   return new Date(now.getTime() + idleMinutes * 60_000);

@@ -28,6 +28,7 @@ export const workspaceListSchema = z.array(workspaceSummarySchema);
 export const memberSchema = z.object({
   userId: z.uuid(),
   name: z.string(),
+  email: z.string(),
   role: membershipRoleSchema,
 });
 export type Member = z.infer<typeof memberSchema>;

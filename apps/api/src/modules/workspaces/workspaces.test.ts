@@ -130,8 +130,8 @@ describe('GET /workspaces/:workspaceId/members', () => {
     });
 
     expect(memberListSchema.parse(response.json())).toEqual([
-      { userId: ana.user.id, name: 'ana@example.com', role: 'ADMIN' },
-      { userId: luis.user.id, name: 'luis@example.com', role: 'VIEWER' },
+      { userId: ana.user.id, name: 'ana@example.com', email: 'ana@example.com', role: 'ADMIN' },
+      { userId: luis.user.id, name: 'luis@example.com', email: 'luis@example.com', role: 'VIEWER' },
     ]);
   });
 });

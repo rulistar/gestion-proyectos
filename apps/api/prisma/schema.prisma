@@ -1,6 +1,6 @@
 // Modelo de datos — ver docs/adr/ADR-0002-modelo-de-datos.md
 // Convenciones: UUID v7, tablas/columnas en snake_case, timestamptz, trazabilidad (RNF-01).
-// Sprint 1: User, Session, Workspace, Membership. Sprint 2: Project, Task. El resto se agrega en su sprint.
+// Sprint 1: User, Session, Workspace, Membership. Sprint 2: Project, Task, Invitation. El resto se agrega en su sprint.
 
 generator client {
   provider            = "prisma-client"
@@ -107,21 +107,25 @@ model User {
   memberships Membership[] @relation("MembershipUser")
 
   // Relaciones inversas de trazabilidad
-  usersCreated       User[]       @relation("UserCreatedBy")
-  usersUpdated       User[]       @relation("UserUpdatedBy")
-  workspacesCreated  Workspace[]  @relation("WorkspaceCreatedBy")
-  workspacesUpdated  Workspace[]  @relation("WorkspaceUpdatedBy")
-  workspacesDeleted  Workspace[]  @relation("WorkspaceDeletedBy")
-  membershipsCreated Membership[] @relation("MembershipCreatedBy")
-  membershipsUpdated Membership[] @relation("MembershipUpdatedBy")
-  membershipsDeleted Membership[] @relation("MembershipDeletedBy")
-  projectsCreated    Project[]    @relation("ProjectCreatedBy")
-  projectsUpdated    Project[]    @relation("ProjectUpdatedBy")
-  projectsDeleted    Project[]    @relation("ProjectDeletedBy")
-  tasksAssigned      Task[]       @relation("TaskAssignee")
-  tasksCreated       Task[]       @relation("TaskCreatedBy")
-  tasksUpdated       Task[]       @relation("TaskUpdatedBy")
-  tasksDeleted       Task[]       @relation("TaskDeletedBy")
+  usersCreated        User[]       @relation("UserCreatedBy")
+  usersUpdated        User[]       @relation("UserUpdatedBy")
+  workspacesCreated   Workspace[]  @relation("WorkspaceCreatedBy")
+  workspacesUpdated   Workspace[]  @relation("WorkspaceUpdatedBy")
+  workspacesDeleted   Workspace[]  @relation("WorkspaceDeletedBy")
+  membershipsCreated  Membership[] @relation("MembershipCreatedBy")
+  membershipsUpdated  Membership[] @relation("MembershipUpdatedBy")
+  membershipsDeleted  Membership[] @relation("MembershipDeletedBy")
+  projectsCreated     Project[]    @relation("ProjectCreatedBy")
+  projectsUpdated     Project[]    @relation("ProjectUpdatedBy")
+  projectsDeleted     Project[]    @relation("ProjectDeletedBy")
+  tasksAssigned       Task[]       @relation("TaskAssignee")
+  tasksCreated        Task[]       @relation("TaskCreatedBy")
+  tasksUpdated        Task[]       @relation("TaskUpdatedBy")
+  tasksDeleted        Task[]       @relation("TaskDeletedBy")
+  invitationsCreated  Invitation[] @relation("InvitationCreatedBy")
+  invitationsUpdated  Invitation[] @relation("InvitationUpdatedBy")
+  invitationsRevoked  Invitation[] @relation("InvitationRevokedBy")
+  invitationsAccepted Invitation[] @relation("InvitationAcceptedBy")
 
   @@map("users")
 }
@@ -161,6 +165,7 @@ model Workspace {
   memberships Membership[]
   projects    Project[]
   tasks       Task[]
+  invitations Invitation[]
 
   @@map("workspaces")
 }
@@ -258,4 +263,36 @@ model Task {
   @@index([workspaceId])
   @@index([assigneeId])
   @@map("tasks")
+}
+
+/// Invitación a un workspace (HU-04). Se guarda el hash del token, nunca el token (ADR-0002 §6).
+/// Sin papelera: su ciclo de vida ya es un historial (aceptada o revocada, ADR-0002 §4).
+model Invitation {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  workspaceId String         @map("workspace_id") @db.Uuid
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  /// Siempre en minúsculas y sin espacios, como User.email
+  email       String
+  role        MembershipRole
+  tokenHash   String         @unique @map("token_hash")
+  /// 48 horas después de crearla (decisión del PO)
+  expiresAt   DateTime       @map("expires_at") @db.Timestamptz(3)
+
+  acceptedAt   DateTime? @map("accepted_at") @db.Timestamptz(3)
+  /// Usuario que la aceptó (HU-01)
+  acceptedById String?   @map("accepted_by_id") @db.Uuid
+  acceptedBy   User?     @relation("InvitationAcceptedBy", fields: [acceptedById], references: [id], onDelete: Restrict)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(3)
+  revokedById  String?   @map("revoked_by_id") @db.Uuid
+  revokedBy    User?     @relation("InvitationRevokedBy", fields: [revokedById], references: [id], onDelete: Restrict)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  createdBy   User?    @relation("InvitationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User?    @relation("InvitationUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, email])
+  @@map("invitations")
 }
