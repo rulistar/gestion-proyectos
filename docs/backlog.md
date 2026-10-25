@@ -28,6 +28,7 @@
 | Integración | Con la futura app de estudio (gestor de cursos + Lexika), **en ambas direcciones** (API + webhooks). Diseño en ADR-0002 §7. |
 | Capacidad | 5–10 h/semana → unos **21 puntos por sprint** de 2 semanas. |
 | Invitaciones (2026-10-24) | La app muestra un **enlace para copiar** (sin correo automático), de **un solo uso** y válido **48 horas**. |
+| Tipos de trabajo (2026-10-24) | Además de proyectos: **mantenimientos** y **actividades sueltas**, con **tipos configurables** por espacio (los define el Admin), tipos de tarea permitidos por tipo y **campos de detalle por tipo**. Diseño en [ADR-0004](adr/ADR-0004-tipos-de-trabajo.md); historias HU-21 a HU-23 para el Sprint 3. |
 
 ## Requisitos no funcionales (aplican a todas las historias)
 
