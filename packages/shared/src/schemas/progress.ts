@@ -5,25 +5,30 @@ import type { TaskStatus } from './tasks.js';
 export const projectProgressSchema = z.object({
   totalTasks: z.number().int(),
   doneTasks: z.number().int(),
-  /** % de tareas Hechas, redondeado; 0 si no hay tareas */
+  /** % de tareas Hechas sobre las no canceladas, redondeado; 0 si no hay tareas */
   percent: z.number().int().min(0).max(100),
   /** Suma de los minutos estimados de las tareas que no están Hechas */
   pendingMinutes: z.number().int(),
 });
 export type ProjectProgress = z.infer<typeof projectProgressSchema>;
 
-/** Reglas de cálculo del prototipo (ADR-0002 §1.1) */
+/**
+ * Reglas de cálculo del prototipo (ADR-0002 §1.1), con los estados de HU-24: una tarea
+ * **Cancelada no cuenta** (ni en el total ni en los minutos); una **Pausada sí**, porque sigue
+ * siendo trabajo pendiente.
+ */
 export function summarizeTasks(
   tasks: readonly { status: TaskStatus; estimatedMinutes: number | null }[],
 ): ProjectProgress {
-  const doneTasks = tasks.filter((task) => task.status === 'DONE').length;
-  const pendingMinutes = tasks
+  const counted = tasks.filter((task) => task.status !== 'CANCELLED');
+  const doneTasks = counted.filter((task) => task.status === 'DONE').length;
+  const pendingMinutes = counted
     .filter((task) => task.status !== 'DONE')
     .reduce((sum, task) => sum + (task.estimatedMinutes ?? 0), 0);
   return {
-    totalTasks: tasks.length,
+    totalTasks: counted.length,
     doneTasks,
-    percent: tasks.length === 0 ? 0 : Math.round((doneTasks / tasks.length) * 100),
+    percent: counted.length === 0 ? 0 : Math.round((doneTasks / counted.length) * 100),
     pendingMinutes,
   };
 }

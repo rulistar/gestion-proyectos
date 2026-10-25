@@ -5,6 +5,7 @@ import {
   optionalDate,
   optionalId,
   optionalInt,
+  optionalText,
 } from './common.js';
 
 /** Tipos genéricos (ADR-0002 §1.1): reemplazan a los tipos de actividad del prototipo */
@@ -18,8 +19,25 @@ export const taskTypeSchema = z.enum([
 ]);
 export type TaskType = z.infer<typeof taskTypeSchema>;
 
-export const taskStatusSchema = z.enum(['PENDING', 'IN_PROGRESS', 'DONE']);
+export const taskStatusSchema = z.enum(['PENDING', 'IN_PROGRESS', 'PAUSED', 'DONE', 'CANCELLED']);
 export type TaskStatus = z.infer<typeof taskStatusSchema>;
+
+/** Estados que exigen un motivo (HU-24): dicen por qué la tarea está detenida */
+export const STATUSES_WITH_REASON: readonly TaskStatus[] = ['PAUSED', 'CANCELLED'];
+
+export function statusNeedsReason(status: TaskStatus): boolean {
+  return STATUSES_WITH_REASON.includes(status);
+}
+
+/** Pausar o cancelar sin motivo no se permite; el error se marca en el campo del motivo */
+function reasonWhenRequired(value: { status: TaskStatus; statusReason: string | null }) {
+  return !statusNeedsReason(value.status) || value.statusReason !== null;
+}
+
+const reasonRequiredError = {
+  message: 'Escribe el motivo para pausar o cancelar',
+  path: ['statusReason'],
+};
 
 /** Cuerpo de POST y PUT .../projects/:projectId/tasks (HU-08) */
 export const taskInputSchema = z
@@ -33,12 +51,17 @@ export const taskInputSchema = z
     assigneeId: optionalId,
     startDate: optionalDate,
     endDate: optionalDate,
+    /** Motivo de Pausada o Cancelada; en los demás estados se ignora */
+    statusReason: optionalText(500),
   })
-  .refine(endAfterStart, endAfterStartError);
+  .refine(endAfterStart, endAfterStartError)
+  .refine(reasonWhenRequired, reasonRequiredError);
 export type TaskInput = z.infer<typeof taskInputSchema>;
 
-/** Cuerpo de PATCH .../tasks/:taskId/status: mover la tarea de columna */
-export const taskStatusUpdateSchema = z.object({ status: taskStatusSchema });
+/** Cuerpo de PATCH .../tasks/:taskId/status: mover la tarea de columna (con motivo si se pausa o cancela) */
+export const taskStatusUpdateSchema = z
+  .object({ status: taskStatusSchema, statusReason: optionalText(500) })
+  .refine(reasonWhenRequired, reasonRequiredError);
 export type TaskStatusUpdate = z.infer<typeof taskStatusUpdateSchema>;
 
 export const taskSchema = z.object({
@@ -51,6 +74,8 @@ export const taskSchema = z.object({
   assigneeId: z.uuid().nullable(),
   startDate: z.iso.date().nullable(),
   endDate: z.iso.date().nullable(),
+  /** Por qué está Pausada o Cancelada; null en los demás estados */
+  statusReason: z.string().nullable(),
   /** Cuándo pasó a Hecha; null si no está Hecha */
   completedAt: z.iso.datetime().nullable(),
 });

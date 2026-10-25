@@ -1,4 +1,4 @@
-import type { Task, TaskInput, TaskStatus } from '@gestion/shared';
+import { statusNeedsReason, type Task, type TaskInput, type TaskStatus } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
@@ -14,6 +14,7 @@ const taskSelect = {
   startDate: true,
   endDate: true,
   completedAt: true,
+  statusReason: true,
 } as const;
 
 type TaskRow = Omit<Task, 'startDate' | 'endDate' | 'completedAt'> & {
@@ -42,6 +43,11 @@ export function completedAtFor(
 ): Date | null {
   if (status !== 'DONE') return null;
   return previous?.status === 'DONE' ? previous.completedAt : now;
+}
+
+/** El motivo solo se guarda en Pausada y Cancelada (HU-24); al salir de esos estados se limpia */
+function reasonFor(status: TaskStatus, reason: string | null | undefined): string | null {
+  return statusNeedsReason(status) ? (reason ?? null) : null;
 }
 
 /** Tareas del proyecto en ese workspace; si el proyecto está en la papelera, tampoco se ven */
@@ -74,6 +80,7 @@ export async function createTask(
       startDate: fromIsoDate(input.startDate),
       endDate: fromIsoDate(input.endDate),
       completedAt: completedAtFor(input.status, null),
+      statusReason: reasonFor(input.status, input.statusReason),
       ...auditCreate(actorId),
     },
     select: taskSelect,
@@ -104,6 +111,7 @@ async function applyUpdate(
       ...(changes.startDate !== undefined && { startDate: fromIsoDate(changes.startDate) }),
       ...(changes.endDate !== undefined && { endDate: fromIsoDate(changes.endDate) }),
       completedAt: completedAtFor(changes.status, previous),
+      statusReason: reasonFor(changes.status, changes.statusReason),
       ...auditUpdate(actorId),
     },
     select: taskSelect,
@@ -125,6 +133,7 @@ export function updateTaskStatus(
   actorId: string,
   where: { workspaceId: string; projectId: string; taskId: string },
   status: TaskStatus,
+  statusReason: string | null,
 ) {
-  return applyUpdate(db, actorId, where, { status });
+  return applyUpdate(db, actorId, where, { status, statusReason });
 }

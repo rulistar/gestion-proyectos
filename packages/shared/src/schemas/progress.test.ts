@@ -39,6 +39,35 @@ describe('summarizeTasks (HU-06)', () => {
   });
 });
 
+describe('summarizeTasks con Pausada y Cancelada (HU-24)', () => {
+  it('Cancelada no cuenta ni en el total ni en los minutos', () => {
+    const tasks = [
+      { status: 'DONE', estimatedMinutes: 30 },
+      { status: 'PENDING', estimatedMinutes: 20 },
+      { status: 'CANCELLED', estimatedMinutes: 500 },
+    ] as const;
+    expect(summarizeTasks(tasks)).toEqual({
+      totalTasks: 2,
+      doneTasks: 1,
+      percent: 50,
+      pendingMinutes: 20,
+    });
+  });
+
+  it('Pausada cuenta como trabajo pendiente', () => {
+    const tasks = [
+      { status: 'DONE', estimatedMinutes: 30 },
+      { status: 'PAUSED', estimatedMinutes: 45 },
+    ] as const;
+    expect(summarizeTasks(tasks)).toMatchObject({ totalTasks: 2, percent: 50, pendingMinutes: 45 });
+  });
+
+  it('si todas están canceladas: 0 % y 0 minutos', () => {
+    const tasks = [{ status: 'CANCELLED', estimatedMinutes: 60 }] as const;
+    expect(summarizeTasks(tasks)).toMatchObject({ totalTasks: 0, percent: 0, pendingMinutes: 0 });
+  });
+});
+
 describe('daysRemainingLabel (HU-06)', () => {
   const today = '2026-10-24';
 

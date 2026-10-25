@@ -1,5 +1,12 @@
-import { taskInputSchema, type Member, type Task, type TaskInput } from '@gestion/shared';
-import type { ReactNode } from 'react';
+import {
+  statusNeedsReason,
+  taskInputSchema,
+  type Member,
+  type Task,
+  type TaskInput,
+  type TaskStatus,
+} from '@gestion/shared';
+import { useState, type ReactNode } from 'react';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { Input } from '@/components/ui/input';
@@ -16,6 +23,7 @@ const FIELDS = [
   'assigneeId',
   'startDate',
   'endDate',
+  'statusReason',
 ] as const;
 
 interface TaskFormProps {
@@ -41,6 +49,8 @@ export function TaskForm({
   onSubmit,
 }: TaskFormProps) {
   const form = useSchemaForm(taskInputSchema, FIELDS, onSubmit);
+  // El motivo solo se pide (y se muestra) en Pausada y Cancelada (HU-24)
+  const [status, setStatus] = useState<TaskStatus>(task?.status ?? 'PENDING');
 
   return (
     <form onSubmit={form.onSubmit} noValidate>
@@ -63,7 +73,11 @@ export function TaskForm({
         </div>
         <div className="grid gap-2">
           <Label htmlFor={form.idOf('status')}>Estado</Label>
-          <NativeSelect {...form.field('status')} defaultValue={task?.status ?? 'PENDING'}>
+          <NativeSelect
+            {...form.field('status')}
+            value={status}
+            onChange={(event) => setStatus(event.target.value as TaskStatus)}
+          >
             {Object.entries(TASK_STATUSES).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -72,6 +86,20 @@ export function TaskForm({
           </NativeSelect>
           <FieldError {...form.errorProps('status')} />
         </div>
+        {statusNeedsReason(status) && (
+          <div className="grid gap-2 sm:col-span-2 lg:col-span-4">
+            <Label htmlFor={form.idOf('statusReason')}>
+              Motivo ({TASK_STATUSES[status].toLowerCase()})
+            </Label>
+            <Input
+              {...form.field('statusReason')}
+              defaultValue={task?.statusReason ?? ''}
+              maxLength={500}
+              placeholder="Por ejemplo: esperando respuesta del cliente"
+            />
+            <FieldError {...form.errorProps('statusReason')} />
+          </div>
+        )}
         <div className="grid gap-2">
           <Label htmlFor={form.idOf('assigneeId')}>Responsable</Label>
           <NativeSelect {...form.field('assigneeId')} defaultValue={task?.assigneeId ?? ''}>

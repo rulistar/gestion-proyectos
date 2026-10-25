@@ -163,6 +163,7 @@ describe('POST .../tasks (HU-08)', () => {
       startDate: null,
       endDate: '2026-11-20',
       completedAt: null,
+      statusReason: null,
     });
     const row = await db.task.findUniqueOrThrow({ where: { id: task.id } });
     expect(row).toMatchObject({ workspaceId: ws.id, createdById: ana.user.id });
@@ -301,5 +302,107 @@ describe('mover y editar tareas', () => {
     const response = await moveTo(ana.cookies, `${tasksUrl(ws.id, project.id)}/${task.id}`, 'DONE');
 
     expect(response.statusCode).toBe(404);
+  });
+});
+
+describe('pausar y cancelar con motivo (HU-24)', () => {
+  function moveWithReason(cookies: Cookies, url: string, status: string, statusReason?: string) {
+    return app.inject({
+      method: 'PATCH',
+      url: `${url}/status`,
+      cookies,
+      payload: { status, statusReason },
+    });
+  }
+
+  it.each(['PAUSED', 'CANCELLED'])(
+    '%s sin motivo responde 400 y la tarea no cambia',
+    async (status) => {
+      const { ana, ws, project } = await setup();
+      const task = await createOk(ana.cookies, ws.id, project.id, { title: 'Tarea' });
+      const url = `${tasksUrl(ws.id, project.id)}/${task.id}`;
+
+      const response = await moveWithReason(ana.cookies, url, status, '   ');
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json<{ message: string }>().message).toContain('motivo');
+      const row = await db.task.findUniqueOrThrow({ where: { id: task.id } });
+      expect(row.status).toBe('PENDING');
+    },
+  );
+
+  it('pausar guarda el motivo; reactivar lo limpia', async () => {
+    const { ana, ws, project } = await setup();
+    const task = await createOk(ana.cookies, ws.id, project.id, { title: 'Tarea' });
+    const url = `${tasksUrl(ws.id, project.id)}/${task.id}`;
+
+    const paused = taskSchema.parse(
+      (await moveWithReason(ana.cookies, url, 'PAUSED', ' Esperando al cliente ')).json(),
+    );
+    const resumed = taskSchema.parse(
+      (await moveWithReason(ana.cookies, url, 'IN_PROGRESS', 'texto que se ignora')).json(),
+    );
+
+    expect(paused).toMatchObject({ status: 'PAUSED', statusReason: 'Esperando al cliente' });
+    expect(resumed).toMatchObject({ status: 'IN_PROGRESS', statusReason: null });
+  });
+
+  it('una tarea cancelada se puede reabrir', async () => {
+    const { ana, ws, project } = await setup();
+    const task = await createOk(ana.cookies, ws.id, project.id, { title: 'Tarea' });
+    const url = `${tasksUrl(ws.id, project.id)}/${task.id}`;
+
+    await moveWithReason(ana.cookies, url, 'CANCELLED', 'Ya no se necesita');
+    const reopened = await moveWithReason(ana.cookies, url, 'PENDING');
+
+    expect(reopened.json()).toMatchObject({ status: 'PENDING', statusReason: null });
+  });
+
+  it('crear o editar en Pausada también exige motivo', async () => {
+    const { ana, ws, project } = await setup();
+
+    const withoutReason = await create(ana.cookies, ws.id, project.id, {
+      title: 'X',
+      status: 'PAUSED',
+    });
+    const withReason = await create(ana.cookies, ws.id, project.id, {
+      title: 'X',
+      status: 'PAUSED',
+      statusReason: 'Falta presupuesto',
+    });
+
+    expect(withoutReason.statusCode).toBe(400);
+    expect(withReason.statusCode).toBe(201);
+  });
+
+  it('el avance del proyecto descuenta las canceladas y cuenta las pausadas', async () => {
+    const { ana, ws, project } = await setup();
+    const base = { title: 'T' };
+    await createOk(ana.cookies, ws.id, project.id, {
+      ...base,
+      status: 'DONE',
+      estimatedMinutes: 30,
+    });
+    await createOk(ana.cookies, ws.id, project.id, {
+      ...base,
+      status: 'PAUSED',
+      statusReason: 'Esperando',
+      estimatedMinutes: 45,
+    });
+    await createOk(ana.cookies, ws.id, project.id, {
+      ...base,
+      status: 'CANCELLED',
+      statusReason: 'Fuera de alcance',
+      estimatedMinutes: 500,
+    });
+
+    const response = await app.inject({
+      url: `/api/v1/workspaces/${ws.id}/projects/${project.id}`,
+      cookies: ana.cookies,
+    });
+
+    expect(response.json()).toMatchObject({
+      progress: { totalTasks: 2, doneTasks: 1, percent: 50, pendingMinutes: 45 },
+    });
   });
 });

@@ -1,7 +1,8 @@
-import type { Member, Task, TaskStatus } from '@gestion/shared';
-import { useState } from 'react';
+import { statusNeedsReason, type Member, type Task, type TaskStatus } from '@gestion/shared';
+import { useState, type FormEvent } from 'react';
 import { TaskForm } from '@/components/task-form';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { formatDate } from '@/lib/dates';
 import { TASK_STATUSES, TASK_TYPES, useMoveTask, useUpdateTask } from '@/lib/tasks';
@@ -15,11 +16,25 @@ interface TaskBoardProps {
   canEdit: boolean;
 }
 
-/** Tareas del proyecto en tres columnas: Pendiente, En curso y Hecha (HU-08) */
+/** Columnas que se pueden plegar: lo terminado ocupa espacio sin pedir atención */
+const FOLDABLE: readonly TaskStatus[] = ['DONE', 'CANCELLED'];
+
+/** Tareas del proyecto en una columna por estado (HU-08, HU-24) */
 export function TaskBoard({ workspaceId, projectId, tasks, members, canEdit }: TaskBoardProps) {
   const [editingId, setEditingId] = useState<string>();
+  // Cancelada empieza plegada; Hecha, abierta
+  const [folded, setFolded] = useState<ReadonlySet<TaskStatus>>(() => new Set(['CANCELLED']));
   const editing = tasks.find((task) => task.id === editingId);
   const memberNames = new Map(members.map((m) => [m.userId, m.name]));
+
+  function toggleFold(status: TaskStatus) {
+    setFolded((current) => {
+      const next = new Set(current);
+      if (next.has(status)) next.delete(status);
+      else next.add(status);
+      return next;
+    });
+  }
 
   return (
     <div className="grid gap-4">
@@ -33,30 +48,46 @@ export function TaskBoard({ workspaceId, projectId, tasks, members, canEdit }: T
           onClose={() => setEditingId(undefined)}
         />
       )}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
         {(Object.keys(TASK_STATUSES) as TaskStatus[]).map((status) => {
           const column = tasks.filter((task) => task.status === status);
+          const isFolded = folded.has(status);
           return (
             <section
               key={status}
               aria-label={TASK_STATUSES[status]}
               className="grid content-start gap-2"
             >
-              <h3 className="text-sm font-medium text-muted-foreground">
-                {TASK_STATUSES[status]} · {column.length}
-              </h3>
-              {column.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  workspaceId={workspaceId}
-                  projectId={projectId}
-                  assigneeName={task.assigneeId ? memberNames.get(task.assigneeId) : undefined}
-                  canEdit={canEdit}
-                  onEdit={() => setEditingId(task.id)}
-                />
-              ))}
-              {column.length === 0 && (
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {TASK_STATUSES[status]} · {column.length}
+                </h3>
+                {FOLDABLE.includes(status) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    aria-expanded={!isFolded}
+                    onClick={() => toggleFold(status)}
+                  >
+                    {isFolded ? 'Mostrar' : 'Plegar'}
+                  </Button>
+                )}
+              </div>
+              {!isFolded &&
+                column.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    workspaceId={workspaceId}
+                    projectId={projectId}
+                    assigneeName={task.assigneeId ? memberNames.get(task.assigneeId) : undefined}
+                    canEdit={canEdit}
+                    onEdit={() => setEditingId(task.id)}
+                  />
+                ))}
+              {!isFolded && column.length === 0 && (
                 <p className="rounded-md border border-dashed p-3 text-center text-sm text-muted-foreground">
                   Sin tareas
                 </p>
@@ -80,6 +111,14 @@ interface TaskCardProps {
 
 function TaskCard({ task, workspaceId, projectId, assigneeName, canEdit, onEdit }: TaskCardProps) {
   const move = useMoveTask(workspaceId, projectId, task.id);
+  /** Estado elegido que pide motivo (Pausada o Cancelada): se pregunta antes de moverla */
+  const [askingReasonFor, setAskingReasonFor] = useState<TaskStatus>();
+  const finished = task.status === 'DONE' || task.status === 'CANCELLED';
+
+  function changeStatus(status: TaskStatus) {
+    if (statusNeedsReason(status)) setAskingReasonFor(status);
+    else move.mutate({ status, statusReason: null });
+  }
 
   const details = [
     TASK_TYPES[task.type],
@@ -90,18 +129,36 @@ function TaskCard({ task, workspaceId, projectId, assigneeName, canEdit, onEdit 
 
   return (
     <article className="grid gap-2 rounded-md border bg-background p-3">
-      <p className={task.status === 'DONE' ? 'text-muted-foreground line-through' : 'font-medium'}>
+      <p className={finished ? 'text-muted-foreground line-through' : 'font-medium'}>
         {task.title}
       </p>
       <p className="text-xs text-muted-foreground">{details.join(' · ')}</p>
-      {canEdit && (
+      {task.statusReason && (
+        <p className="rounded bg-muted px-2 py-1 text-xs">
+          <span className="font-medium">Motivo:</span> {task.statusReason}
+        </p>
+      )}
+      {askingReasonFor && (
+        <ReasonPrompt
+          status={askingReasonFor}
+          isPending={move.isPending}
+          onConfirm={(statusReason) =>
+            move.mutate(
+              { status: askingReasonFor, statusReason },
+              { onSuccess: () => setAskingReasonFor(undefined) },
+            )
+          }
+          onDiscard={() => setAskingReasonFor(undefined)}
+        />
+      )}
+      {canEdit && !askingReasonFor && (
         <div className="flex items-center gap-2">
           {/* Mover de columna: cambia solo el estado (PATCH .../status) */}
           <NativeSelect
             aria-label={`Estado de "${task.title}"`}
             value={task.status}
             disabled={move.isPending}
-            onChange={(event) => move.mutate(event.target.value as TaskStatus)}
+            onChange={(event) => changeStatus(event.target.value as TaskStatus)}
             className="h-8"
           >
             {Object.entries(TASK_STATUSES).map(([value, label]) => (
@@ -121,6 +178,55 @@ function TaskCard({ task, workspaceId, projectId, assigneeName, canEdit, onEdit 
         </p>
       )}
     </article>
+  );
+}
+
+/** Pide el motivo al pausar o cancelar desde la tarjeta (HU-24) */
+function ReasonPrompt({
+  status,
+  isPending,
+  onConfirm,
+  onDiscard,
+}: {
+  status: TaskStatus;
+  isPending: boolean;
+  onConfirm: (reason: string) => void;
+  onDiscard: () => void;
+}) {
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<string>();
+  const label = TASK_STATUSES[status].toLowerCase();
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (reason.trim() === '') {
+      setError(`Escribe por qué queda ${label}`);
+      return;
+    }
+    onConfirm(reason.trim());
+  }
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className="grid gap-2">
+      <Input
+        aria-label={`Motivo para dejarla ${label}`}
+        placeholder={`¿Por qué queda ${label}?`}
+        value={reason}
+        onChange={(event) => setReason(event.target.value)}
+        maxLength={500}
+        autoFocus
+        aria-invalid={Boolean(error)}
+      />
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={isPending}>
+          {isPending ? 'Guardando…' : `Dejar ${label}`}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDiscard}>
+          Descartar
+        </Button>
+      </div>
+    </form>
   );
 }
 

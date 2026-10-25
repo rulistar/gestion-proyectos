@@ -3,15 +3,19 @@ import {
   taskSchema,
   type TaskInput,
   type TaskStatus,
+  type TaskStatusUpdate,
   type TaskType,
 } from '@gestion/shared';
 import { queryOptions, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
 
+/** En este orden se muestran las columnas del tablero */
 export const TASK_STATUSES: Record<TaskStatus, string> = {
   PENDING: 'Pendiente',
   IN_PROGRESS: 'En curso',
+  PAUSED: 'Pausada',
   DONE: 'Hecha',
+  CANCELLED: 'Cancelada',
 };
 
 export const TASK_TYPES: Record<TaskType, string> = {
@@ -75,10 +79,11 @@ export function useUpdateTask(workspaceId: string, projectId: string, taskId: st
 export function useMoveTask(workspaceId: string, projectId: string, taskId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (status: TaskStatus) =>
+    // El motivo solo se envía al pausar o cancelar (HU-24)
+    mutationFn: (change: TaskStatusUpdate) =>
       apiFetch(`${tasksPath(workspaceId, projectId)}/${taskId}/status`, {
         method: 'PATCH',
-        body: { status },
+        body: change,
         schema: taskSchema,
       }),
     onSuccess: () => invalidateProjects(queryClient, workspaceId),

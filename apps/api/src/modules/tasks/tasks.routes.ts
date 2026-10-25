@@ -108,6 +108,7 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
         request.auth!.userId,
         { workspaceId: request.membership!.workspaceId, ...params.data },
         parsed.data.status,
+        parsed.data.statusReason,
       );
       return task ?? notFound(reply, 'Tarea no encontrada');
     },
