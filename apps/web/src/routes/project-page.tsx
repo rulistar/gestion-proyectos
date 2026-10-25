@@ -5,15 +5,19 @@ import {
   type ProjectProgress,
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getRouteApi, Link } from '@tanstack/react-router';
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ProgressBar } from '@/components/progress-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { TaskBoard } from '@/components/task-board';
 import { TaskForm } from '@/components/task-form';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatMinutes, todayIso } from '@/lib/dates';
-import { projectQueryOptions, useUpdateProject } from '@/lib/projects';
+import { projectQueryOptions, useDeleteProject, useUpdateProject } from '@/lib/projects';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
 
@@ -29,6 +33,8 @@ export function ProjectPage() {
   const { data: members } = useSuspenseQuery(membersQueryOptions(workspaceId));
   const canEditTasks = roleHasPermission(workspace.role, 'task.update');
   const canCreateTasks = roleHasPermission(workspace.role, 'task.create');
+  const canDeleteTasks = roleHasPermission(workspace.role, 'task.delete');
+  const canDeleteProject = roleHasPermission(workspace.role, 'project.delete');
 
   return (
     <div className="grid gap-4">
@@ -43,6 +49,13 @@ export function ProjectPage() {
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold">{project.name}</h1>
           <ProjectStatusBadge status={project.status} />
+          {canDeleteProject && (
+            <DeleteProjectButton
+              workspaceId={workspaceId}
+              projectId={projectId}
+              name={project.name}
+            />
+          )}
         </div>
       </div>
 
@@ -59,6 +72,7 @@ export function ProjectPage() {
             tasks={tasks}
             members={members}
             canEdit={canEditTasks}
+            canDelete={canDeleteTasks}
           />
         </CardContent>
       </Card>
@@ -69,6 +83,45 @@ export function ProjectPage() {
 
       <ProjectDetailsCard workspaceId={workspaceId} projectId={projectId} />
     </div>
+  );
+}
+
+/** Dar de baja (HU-15): el proyecto y sus tareas van a la papelera, de donde el Admin los recupera */
+function DeleteProjectButton({
+  workspaceId,
+  projectId,
+  name,
+}: {
+  workspaceId: string;
+  projectId: string;
+  name: string;
+}) {
+  const navigate = useNavigate();
+  const remove = useDeleteProject(workspaceId, projectId);
+
+  function handleConfirm() {
+    remove.mutate(undefined, {
+      onSuccess: () => {
+        toast.success(`"${name}" se envió a la papelera`);
+        void navigate({ to: '/w/$workspaceId', params: { workspaceId } });
+      },
+      onError: (error) => toast.error(error.message),
+    });
+  }
+
+  return (
+    <ConfirmDialog
+      trigger={
+        <Button variant="outline" size="sm" className="ml-auto" disabled={remove.isPending}>
+          <Trash2 aria-hidden />
+          Dar de baja
+        </Button>
+      }
+      title={`¿Dar de baja "${name}"?`}
+      description="El proyecto y sus tareas se van a la papelera: dejan de verse en listas y avances. El Admin puede restaurarlos desde la papelera."
+      confirmLabel="Dar de baja"
+      onConfirm={handleConfirm}
+    />
   );
 }
 

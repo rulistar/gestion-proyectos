@@ -89,3 +89,14 @@ export function useMoveTask(workspaceId: string, projectId: string, taskId: stri
     onSuccess: () => invalidateProjects(queryClient, workspaceId),
   });
 }
+
+/** Dar de baja: la tarea va a la papelera (HU-15) */
+export function useDeleteTask(workspaceId: string, projectId: string, taskId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiFetch(`${tasksPath(workspaceId, projectId)}/${taskId}`, { method: 'DELETE' }),
+    // Cambia el avance y la papelera: se refresca todo lo del workspace
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] }),
+  });
+}

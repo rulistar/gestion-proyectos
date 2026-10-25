@@ -9,6 +9,7 @@ import {
   createTask,
   currentAssignee,
   listTasks,
+  softDeleteTask,
   updateTask,
   updateTaskStatus,
 } from './tasks.service.js';
@@ -104,7 +105,7 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
     },
   );
 
-  // Mover la tarea entre Pendiente, En curso y Hecha sin enviar el resto de los datos
+  // Cambiar solo el estado de la tarea, sin enviar el resto de los datos
   app.patch(
     `${BASE}/:taskId/status`,
     { preHandler: requirePermission('task.update') },
@@ -124,6 +125,22 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
         parsed.data.statusReason,
       );
       return task ?? notFound(reply, 'Tarea no encontrada');
+    },
+  );
+
+  // Dar de baja: va a la papelera (HU-15)
+  app.delete(
+    `${BASE}/:taskId`,
+    { preHandler: requirePermission('task.delete') },
+    async (request, reply) => {
+      const params = taskParamsSchema.safeParse(request.params);
+      const deleted =
+        params.success &&
+        (await softDeleteTask(app.db, request.auth!.userId, {
+          workspaceId: request.membership!.workspaceId,
+          ...params.data,
+        }));
+      return deleted ? reply.code(204).send() : notFound(reply, 'Tarea no encontrada');
     },
   );
 

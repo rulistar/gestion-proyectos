@@ -161,7 +161,20 @@ export function AppSidebar() {
             <Users aria-hidden />
             Miembros
           </Link>
-          <SoonItem icon={Trash2} label="Papelera" story="HU-15" />
+          {roleHasPermission(current.role, 'trash.manage') && (
+            <Link
+              to="/w/$workspaceId/papelera"
+              params={{ workspaceId: current.id }}
+              className={itemClass}
+              activeProps={{
+                className: 'bg-accent text-accent-foreground',
+                'aria-current': 'page',
+              }}
+            >
+              <Trash2 aria-hidden />
+              Papelera
+            </Link>
+          )}
           <SoonItem icon={Settings} label="Configuración" story="HU-21" />
         </div>
       )}

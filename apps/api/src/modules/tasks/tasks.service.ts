@@ -1,6 +1,6 @@
 import { statusNeedsReason, type Task, type TaskInput, type TaskStatus } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
-import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
+import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
 
 const taskSelect = {
@@ -168,4 +168,17 @@ export function updateTaskStatus(
   statusReason: string | null,
 ) {
   return applyUpdate(db, actorId, where, { status, statusReason });
+}
+
+/** Manda la tarea a la papelera (HU-15); false si no existe en ese proyecto (→ 404) */
+export async function softDeleteTask(
+  db: Db,
+  actorId: string,
+  where: { workspaceId: string; projectId: string; taskId: string },
+): Promise<boolean> {
+  const { count } = await db.task.updateMany({
+    where: { id: where.taskId, ...taskScope(where.workspaceId, where.projectId) },
+    data: auditSoftDelete(actorId),
+  });
+  return count > 0;
 }

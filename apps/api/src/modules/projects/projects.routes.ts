@@ -3,7 +3,13 @@ import { z } from 'zod';
 import type { FastifyPluginCallback, FastifyReply } from 'fastify';
 import { requireAuth } from '../auth/session.js';
 import { requirePermission } from '../workspaces/access.js';
-import { createProject, getProject, listProjects, updateProject } from './projects.service.js';
+import {
+  createProject,
+  getProject,
+  listProjects,
+  softDeleteProject,
+  updateProject,
+} from './projects.service.js';
 
 const projectParamsSchema = z.object({ projectId: z.uuid() });
 
@@ -70,6 +76,24 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
         parsed.data,
       );
       return project ?? projectNotFound(reply);
+    },
+  );
+
+  // Dar de baja: va a la papelera (HU-15); el borrado definitivo solo se hace desde ahí
+  app.delete(
+    '/workspaces/:workspaceId/projects/:projectId',
+    { preHandler: requirePermission('project.delete') },
+    async (request, reply) => {
+      const params = projectParamsSchema.safeParse(request.params);
+      const deleted =
+        params.success &&
+        (await softDeleteProject(
+          app.db,
+          request.auth!.userId,
+          request.membership!.workspaceId,
+          params.data.projectId,
+        ));
+      return deleted ? reply.code(204).send() : projectNotFound(reply);
     },
   );
 
