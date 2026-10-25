@@ -64,3 +64,18 @@ export function useUpdateProject(workspaceId: string, projectId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: projectsKey(workspaceId) }),
   });
 }
+
+/** Dar de baja: el proyecto va a la papelera (HU-15) */
+export function useDeleteProject(workspaceId: string, projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiFetch(`/workspaces/${workspaceId}/projects/${projectId}`, { method: 'DELETE' }),
+    // Solo la lista y la papelera: refrescar el detalle daría 404 mientras la página sigue abierta
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: projectsKey(workspaceId), exact: true }),
+        queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId, 'trash'] }),
+      ]),
+  });
+}

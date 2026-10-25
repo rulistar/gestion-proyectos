@@ -223,7 +223,7 @@ _Como persona invitada, quiero abrir el enlace y crear mi contraseña, para entr
 
 ### Sprint 3
 
-Orden del PO (2026-10-25): HU-24 → HU-28 (a, b, c) → HU-21 → HU-22. HU-15, HU-25, HU-09 y HU-26 pasan al Sprint 4 (sus criterios siguen abajo).
+Orden del PO (2026-10-25): HU-24 → HU-28 (a, b, c) → HU-21 → HU-22. HU-09 y HU-26 pasan al Sprint 4 (sus criterios siguen abajo); HU-25 y HU-15 se adelantaron a este sprint a pedido del PO.
 
 #### HU-28 · Rediseño de la interfaz (15 pts, en 3 entregas)
 
@@ -268,12 +268,12 @@ _Como miembro, quiero pausar o cancelar una tarea indicando por qué, para saber
 
 _Como Admin, quiero dar de baja proyectos y tareas sin perderlos de inmediato, para poder recuperarlos si me equivoco._
 
-- [ ] Botón **Dar de baja** en el proyecto (solo Admin, `project.delete`) y en cada tarea (`task.delete`), con confirmación.
-- [ ] Lo dado de baja desaparece de listas, tablero y avance (RNF-05); las tareas de un proyecto en la papelera desaparecen con él.
-- [ ] Página **Papelera** del espacio (solo Admin, `trash.manage`): qué se dio de baja, quién y cuándo.
-- [ ] **Restaurar**: el proyecto vuelve con sus tareas.
-- [ ] **Borrar definitivamente** solo desde la papelera, escribiendo el nombre para confirmar; un proyecto se lleva sus tareas.
-- [ ] Cumple RNF-01 (`deletedById`/`deletedAt`) y tiene pruebas de permisos.
+- [x] Botón **Dar de baja** en el proyecto (solo Admin, `project.delete`) y en cada tarea (`task.delete`), con confirmación.
+- [x] Lo dado de baja desaparece de listas, tablero y avance (RNF-05); las tareas de un proyecto en la papelera desaparecen con él.
+- [x] Página **Papelera** del espacio (solo Admin, `trash.manage`): qué se dio de baja, quién y cuándo.
+- [x] **Restaurar**: el proyecto vuelve con sus tareas.
+- [x] **Borrar definitivamente** solo desde la papelera, escribiendo el nombre para confirmar; un proyecto se lleva sus tareas.
+- [x] Cumple RNF-01 (`deletedById`/`deletedAt`) y tiene pruebas de permisos.
 
 #### HU-25 · Gestionar miembros (3 pts)
 

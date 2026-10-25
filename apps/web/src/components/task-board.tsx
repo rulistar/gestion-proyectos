@@ -1,11 +1,14 @@
 import { statusNeedsReason, type Member, type Task, type TaskStatus } from '@gestion/shared';
+import { Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { TaskForm } from '@/components/task-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { formatDate } from '@/lib/dates';
-import { TASK_STATUSES, TASK_TYPES, useMoveTask, useUpdateTask } from '@/lib/tasks';
+import { TASK_STATUSES, TASK_TYPES, useDeleteTask, useMoveTask, useUpdateTask } from '@/lib/tasks';
 
 interface TaskBoardProps {
   workspaceId: string;
@@ -14,13 +17,22 @@ interface TaskBoardProps {
   members: Member[];
   /** Si el rol permite crear y editar tareas (la API lo vuelve a comprobar) */
   canEdit: boolean;
+  /** Si el rol permite dar de baja tareas (HU-15) */
+  canDelete: boolean;
 }
 
 /** Columnas que se pueden plegar: lo terminado ocupa espacio sin pedir atención */
 const FOLDABLE: readonly TaskStatus[] = ['DONE', 'CANCELLED'];
 
 /** Tareas del proyecto en una columna por estado (HU-08, HU-24) */
-export function TaskBoard({ workspaceId, projectId, tasks, members, canEdit }: TaskBoardProps) {
+export function TaskBoard({
+  workspaceId,
+  projectId,
+  tasks,
+  members,
+  canEdit,
+  canDelete,
+}: TaskBoardProps) {
   const [editingId, setEditingId] = useState<string>();
   // Cancelada empieza plegada; Hecha, abierta
   const [folded, setFolded] = useState<ReadonlySet<TaskStatus>>(() => new Set(['CANCELLED']));
@@ -82,6 +94,7 @@ export function TaskBoard({ workspaceId, projectId, tasks, members, canEdit }: T
                     workspaceId={workspaceId}
                     projectId={projectId}
                     canEdit={canEdit}
+                    canDelete={canDelete}
                     onEdit={() => setEditingId(task.id)}
                   />
                 ))}
@@ -103,11 +116,13 @@ interface TaskCardProps {
   workspaceId: string;
   projectId: string;
   canEdit: boolean;
+  canDelete: boolean;
   onEdit: () => void;
 }
 
-function TaskCard({ task, workspaceId, projectId, canEdit, onEdit }: TaskCardProps) {
+function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: TaskCardProps) {
   const move = useMoveTask(workspaceId, projectId, task.id);
+  const remove = useDeleteTask(workspaceId, projectId, task.id);
   /** Estado elegido que pide motivo (Pausada o Cancelada): se pregunta antes de moverla */
   const [askingReasonFor, setAskingReasonFor] = useState<TaskStatus>();
   const finished = task.status === 'DONE' || task.status === 'CANCELLED';
@@ -115,6 +130,13 @@ function TaskCard({ task, workspaceId, projectId, canEdit, onEdit }: TaskCardPro
   function changeStatus(status: TaskStatus) {
     if (statusNeedsReason(status)) setAskingReasonFor(status);
     else move.mutate({ status, statusReason: null });
+  }
+
+  function handleDelete() {
+    remove.mutate(undefined, {
+      onSuccess: () => toast.success(`"${task.title}" se envió a la papelera`),
+      onError: (error) => toast.error(error.message),
+    });
   }
 
   const details = [
@@ -154,25 +176,50 @@ function TaskCard({ task, workspaceId, projectId, canEdit, onEdit }: TaskCardPro
           onDiscard={() => setAskingReasonFor(undefined)}
         />
       )}
-      {canEdit && !askingReasonFor && (
+      {(canEdit || canDelete) && !askingReasonFor && (
         <div className="flex items-center gap-2">
           {/* Mover de columna: cambia solo el estado (PATCH .../status) */}
-          <NativeSelect
-            aria-label={`Estado de "${task.title}"`}
-            value={task.status}
-            disabled={move.isPending}
-            onChange={(event) => changeStatus(event.target.value as TaskStatus)}
-            className="h-8"
-          >
-            {Object.entries(TASK_STATUSES).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </NativeSelect>
-          <Button type="button" variant="outline" size="sm" onClick={onEdit}>
-            Editar
-          </Button>
+          {canEdit && (
+            <>
+              <NativeSelect
+                aria-label={`Estado de "${task.title}"`}
+                value={task.status}
+                disabled={move.isPending}
+                onChange={(event) => changeStatus(event.target.value as TaskStatus)}
+                className="h-8"
+              >
+                {Object.entries(TASK_STATUSES).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </NativeSelect>
+              <Button type="button" variant="outline" size="sm" onClick={onEdit}>
+                Editar
+              </Button>
+            </>
+          )}
+          {canDelete && (
+            <ConfirmDialog
+              trigger={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto px-2"
+                  disabled={remove.isPending}
+                  aria-label={`Dar de baja "${task.title}"`}
+                  title="Dar de baja"
+                >
+                  <Trash2 aria-hidden />
+                </Button>
+              }
+              title={`¿Dar de baja "${task.title}"?`}
+              description="La tarea se va a la papelera y deja de contar en el avance. El Admin puede restaurarla."
+              confirmLabel="Dar de baja"
+              onConfirm={handleDelete}
+            />
+          )}
         </div>
       )}
       {move.error && (

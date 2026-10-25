@@ -18,6 +18,7 @@ import { InvitationPage } from '@/routes/invitation-page';
 import { LoginPage } from '@/routes/login-page';
 import { MembersPage } from '@/routes/members-page';
 import { ProjectPage } from '@/routes/project-page';
+import { TrashPage } from '@/routes/trash-page';
 import { WorkspacePage } from '@/routes/workspace-page';
 
 /*
@@ -27,6 +28,7 @@ import { WorkspacePage } from '@/routes/workspace-page';
  *   /w/$workspaceId              inicio, un workspace con sus proyectos
  *   /w/$workspaceId/p/$projectId un proyecto
  *   /w/$workspaceId/miembros      y sus miembros e invitaciones
+ *   /w/$workspaceId/papelera      y su papelera (solo Admin)
  *   /login                     pública; si ya hay sesión, redirige a /
  *   /invitacion#<token>        pública: aceptar una invitación (HU-01)
  */
@@ -153,10 +155,19 @@ const membersRoute = createRoute({
   component: MembersPage,
 });
 
+const trashRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/papelera',
+  // Solo se precarga el workspace: la papelera la pide la página, que antes revisa el rol
+  loader: ({ context, params }) =>
+    context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
+  component: TrashPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   invitationRoute,
-  appRoute.addChildren([homeRoute, workspaceRoute, projectRoute, membersRoute]),
+  appRoute.addChildren([homeRoute, workspaceRoute, projectRoute, membersRoute, trashRoute]),
 ]);
 
 export const router = createRouter({

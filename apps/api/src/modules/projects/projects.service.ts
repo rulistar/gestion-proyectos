@@ -1,6 +1,6 @@
 import { summarizeTasks, type Project, type ProjectInput, type TaskStatus } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
-import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
+import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
 
 const projectSelect = {
@@ -90,4 +90,21 @@ export async function updateProject(
     data: { ...toData(input), ...auditUpdate(actorId) },
   });
   return count === 0 ? null : getProject(db, workspaceId, projectId);
+}
+
+/**
+ * Manda el proyecto a la papelera (HU-15). Sus tareas no se tocan: dejan de verse porque su
+ * proyecto está borrado, y vuelven con él al restaurarlo. false si no existe (→ 404).
+ */
+export async function softDeleteProject(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  projectId: string,
+): Promise<boolean> {
+  const { count } = await db.project.updateMany({
+    where: { id: projectId, workspaceId, ...notDeleted },
+    data: auditSoftDelete(actorId),
+  });
+  return count > 0;
 }
