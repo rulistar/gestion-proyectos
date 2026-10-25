@@ -129,10 +129,67 @@ describe('GET /workspaces/:workspaceId/members', () => {
       cookies: luis.cookies,
     });
 
+    // Luis es Lector: ve los nombres (para asignar tareas), pero no los correos
+    expect(memberListSchema.parse(response.json())).toEqual([
+      { userId: ana.user.id, name: 'ana@example.com', email: null, role: 'ADMIN' },
+      { userId: luis.user.id, name: 'luis@example.com', email: null, role: 'VIEWER' },
+    ]);
+  });
+
+  it('el Admin del espacio sí ve los correos', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Equipo')).json());
+
+    const response = await app.inject({
+      url: `/api/v1/workspaces/${ws.id}/members`,
+      cookies: ana.cookies,
+    });
+
     expect(memberListSchema.parse(response.json())).toEqual([
       { userId: ana.user.id, name: 'ana@example.com', email: 'ana@example.com', role: 'ADMIN' },
-      { userId: luis.user.id, name: 'luis@example.com', email: 'luis@example.com', role: 'VIEWER' },
     ]);
+  });
+});
+
+describe('PATCH /workspaces/:workspaceId (renombrar)', () => {
+  function rename(cookies: Record<string, string>, id: string, name: unknown) {
+    return app.inject({
+      method: 'PATCH',
+      url: `/api/v1/workspaces/${id}`,
+      cookies,
+      payload: { name },
+    });
+  }
+
+  it('el Admin lo renombra: cambia la etiqueta, no el ID, y queda registrado quién (RNF-01)', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'workpers')).json());
+
+    const response = await rename(ana.cookies, ws.id, '  Mi empresa ');
+
+    expect(response.json()).toEqual({ id: ws.id, name: 'Mi empresa', role: 'ADMIN' });
+    const row = await db.workspace.findUniqueOrThrow({ where: { id: ws.id } });
+    expect(row.updatedById).toBe(ana.user.id);
+  });
+
+  it.each(['MEMBER', 'VIEWER'] as const)('un %s no puede renombrarlo (403)', async (role) => {
+    const ana = await userWithSession('ana@example.com');
+    const otro = await userWithSession('otro@example.com');
+    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Original')).json());
+    await addMember(db, ws.id, otro.user.id, role);
+
+    expect((await rename(otro.cookies, ws.id, 'Cambiado')).statusCode).toBe(403);
+    const row = await db.workspace.findUniqueOrThrow({ where: { id: ws.id } });
+    expect(row.name).toBe('Original');
+  });
+
+  it('rechaza un nombre vacío (400) y a quien no es miembro (404)', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const luis = await userWithSession('luis@example.com');
+    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Original')).json());
+
+    expect((await rename(ana.cookies, ws.id, '   ')).statusCode).toBe(400);
+    expect((await rename(luis.cookies, ws.id, 'Intruso')).statusCode).toBe(404);
   });
 });
 

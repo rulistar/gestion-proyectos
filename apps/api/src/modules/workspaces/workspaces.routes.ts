@@ -1,9 +1,14 @@
-import { createWorkspaceRequestSchema } from '@gestion/shared';
+import { createWorkspaceRequestSchema, roleHasPermission } from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyPluginCallback } from 'fastify';
 import { requireAuth } from '../auth/session.js';
-import { requireMembership } from './access.js';
-import { createWorkspace, listMembers, listWorkspacesForUser } from './workspaces.service.js';
+import { requireMembership, requirePermission } from './access.js';
+import {
+  createWorkspace,
+  listMembers,
+  listWorkspacesForUser,
+  renameWorkspace,
+} from './workspaces.service.js';
 
 export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => {
   // Todas las rutas de este módulo exigen sesión
@@ -23,8 +28,35 @@ export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => 
     return { ...workspace, role };
   });
 
-  app.get('/workspaces/:workspaceId/members', { preHandler: requireMembership }, async (request) =>
-    listMembers(app.db, request.membership!.workspaceId),
+  app.get(
+    '/workspaces/:workspaceId/members',
+    { preHandler: requireMembership },
+    async (request) => {
+      const { workspaceId, role } = request.membership!;
+      return listMembers(app.db, workspaceId, {
+        withEmail: roleHasPermission(role, 'member.manage'),
+      });
+    },
+  );
+
+  // Renombrar el espacio (solo el Admin): el nombre es una etiqueta, el ID no cambia
+  app.patch(
+    '/workspaces/:workspaceId',
+    { preHandler: requirePermission('workspace.update') },
+    async (request, reply) => {
+      const parsed = createWorkspaceRequestSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ message: z.prettifyError(parsed.error) });
+      }
+      const { workspaceId, role } = request.membership!;
+      const workspace = await renameWorkspace(
+        app.db,
+        request.auth!.userId,
+        workspaceId,
+        parsed.data,
+      );
+      return { ...workspace, role };
+    },
   );
 
   app.post('/workspaces', async (request, reply) => {

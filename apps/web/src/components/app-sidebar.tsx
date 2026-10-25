@@ -1,9 +1,11 @@
+import { roleHasPermission } from '@gestion/shared';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import {
   ChartGantt,
   FolderKanban,
   Inbox,
   ListChecks,
+  Pencil,
   Plus,
   Settings,
   Trash2,
@@ -14,6 +16,7 @@ import {
 import type { ReactNode } from 'react';
 import { AppLogo } from '@/components/app-logo';
 import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog';
+import { RenameWorkspaceDialog } from '@/components/rename-workspace-dialog';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useCurrentUser } from '@/lib/auth';
@@ -101,14 +104,27 @@ export function AppSidebar() {
             </option>
           ))}
         </NativeSelect>
-        <CreateWorkspaceDialog
-          trigger={
-            <Button variant="ghost" size="sm" className="justify-start text-primary">
-              <Plus aria-hidden />
-              Nuevo espacio
-            </Button>
-          }
-        />
+        <div className="flex flex-wrap gap-1">
+          <CreateWorkspaceDialog
+            trigger={
+              <Button variant="ghost" size="sm" className="text-primary">
+                <Plus aria-hidden />
+                Nuevo espacio
+              </Button>
+            }
+          />
+          {current && roleHasPermission(current.role, 'workspace.update') && (
+            <RenameWorkspaceDialog
+              workspace={current}
+              trigger={
+                <Button variant="ghost" size="sm" className="text-primary">
+                  <Pencil aria-hidden />
+                  Renombrar
+                </Button>
+              }
+            />
+          )}
+        </div>
       </div>
 
       <div className="grid gap-0.5">
@@ -132,9 +148,10 @@ export function AppSidebar() {
         <SoonItem icon={ChartGantt} label="Gantt" story="HU-27" />
       </div>
 
-      <div className="grid gap-0.5">
-        <SectionTitle>Administración</SectionTitle>
-        {current ? (
+      {/* Administración: solo para quien administra el espacio (los demás no ven la sección) */}
+      {current && roleHasPermission(current.role, 'member.manage') && (
+        <div className="grid gap-0.5">
+          <SectionTitle>Administración</SectionTitle>
           <Link
             to="/w/$workspaceId/miembros"
             params={{ workspaceId: current.id }}
@@ -144,12 +161,10 @@ export function AppSidebar() {
             <Users aria-hidden />
             Miembros
           </Link>
-        ) : (
-          <SoonItem icon={Users} label="Miembros" story="un espacio elegido" />
-        )}
-        <SoonItem icon={Trash2} label="Papelera" story="HU-15" />
-        <SoonItem icon={Settings} label="Configuración" story="HU-21" />
-      </div>
+          <SoonItem icon={Trash2} label="Papelera" story="HU-15" />
+          <SoonItem icon={Settings} label="Configuración" story="HU-21" />
+        </div>
+      )}
     </nav>
   );
 }

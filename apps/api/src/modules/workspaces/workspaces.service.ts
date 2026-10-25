@@ -1,6 +1,6 @@
 import type { CreateWorkspaceRequest, Member, WorkspaceSummary } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
-import { auditCreate, notDeleted } from '../../db/audit.js';
+import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
 
 /**
  * Workspaces que el usuario puede abrir (sin los que están en la papelera): aquellos de los que
@@ -31,8 +31,15 @@ function activeMembers(workspaceId: string) {
   return { workspaceId, ...notDeleted, user: { status: 'ACTIVE' as const } };
 }
 
-/** Miembros activos del workspace, por nombre */
-export async function listMembers(db: Db, workspaceId: string): Promise<Member[]> {
+/**
+ * Miembros activos del workspace, por nombre. Todos los miembros los necesitan (p. ej. para
+ * elegir el responsable de una tarea), pero el correo solo lo ve quien gestiona miembros.
+ */
+export async function listMembers(
+  db: Db,
+  workspaceId: string,
+  { withEmail }: { withEmail: boolean },
+): Promise<Member[]> {
   const memberships = await db.membership.findMany({
     where: activeMembers(workspaceId),
     select: { role: true, user: { select: { id: true, name: true, email: true } } },
@@ -41,9 +48,26 @@ export async function listMembers(db: Db, workspaceId: string): Promise<Member[]
   return memberships.map(({ role, user }) => ({
     userId: user.id,
     name: user.name,
-    email: user.email,
+    email: withEmail ? user.email : null,
     role,
   }));
+}
+
+/**
+ * Cambia el nombre visible del espacio. Es solo una etiqueta: todo (permisos, enlaces, apps
+ * externas) se relaciona por el ID, que no cambia.
+ */
+export async function renameWorkspace(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  { name }: CreateWorkspaceRequest,
+) {
+  return db.workspace.update({
+    where: { id: workspaceId },
+    data: { name, ...auditUpdate(actorId) },
+    select: { id: true, name: true },
+  });
 }
 
 /** ¿Es un miembro activo del workspace? (p. ej. para poder ser responsable de una tarea) */

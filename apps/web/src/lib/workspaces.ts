@@ -47,3 +47,22 @@ export function useCreateWorkspace() {
       ]),
   });
 }
+
+/** Renombrar el espacio (solo el Admin): cambia la etiqueta; el ID y todo lo demás siguen igual */
+export function useRenameWorkspace(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateWorkspaceRequest) =>
+      apiFetch(`/workspaces/${workspaceId}`, {
+        method: 'PATCH',
+        body: data,
+        schema: workspaceSummarySchema,
+      }),
+    // El nombre aparece en el combo (viene de /auth/me) y en las páginas del espacio
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
+        queryClient.invalidateQueries({ queryKey: meQueryKey }),
+      ]),
+  });
+}

@@ -236,6 +236,8 @@ _Como usuario nuevo, quiero una interfaz clara y atractiva, para encontrar rápi
 - [x] Combo **Espacio de trabajo** para cambiar de espacio, y "Nuevo espacio" en una ventana.
 - [x] El **Admin del sistema** ve todos los espacios y entra a cualquiera como Admin; los demás, solo aquellos en que participan (con pruebas).
 - [x] Barra superior con el menú del usuario (nombre, correo, cerrar sesión).
+- [x] **Solo el Admin** del espacio ve la sección Administración y la página Miembros; la API solo le envía a él los correos de los miembros (los demás ven nombres, para asignar tareas).
+- [x] El Admin **renombra el espacio**: el nombre es solo una etiqueta; todo (permisos, enlaces, apps externas) se relaciona por el ID, que no cambia.
 - [x] Inicio de sesión con el formulario a la izquierda, mostrar contraseña y panel de marca a la derecha.
 - [x] Quien no tiene espacios ve una bienvenida para crear el primero; quien tiene, entra directo al primero.
 

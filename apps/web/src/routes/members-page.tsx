@@ -31,24 +31,37 @@ const dateTimeFormat = new Intl.DateTimeFormat('es-MX', {
   timeStyle: 'short',
 });
 
-/** Miembros del workspace; el Admin además invita y gestiona las invitaciones (HU-04) */
+/** Miembros del workspace, invitar y gestionar invitaciones (HU-04). Solo para el Admin del espacio */
 export function MembersPage() {
   const { workspaceId } = route.useParams();
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
   const { data: members } = useSuspenseQuery(membersQueryOptions(workspaceId));
   const canManage = roleHasPermission(workspace.role, 'member.manage');
 
+  // Decisión del PO: solo el Admin ve la página de miembros (la API además oculta los correos)
+  if (!canManage) {
+    return (
+      <Card className="mx-auto mt-8 max-w-md">
+        <CardHeader>
+          <CardTitle>Solo para el Admin</CardTitle>
+          <CardDescription>
+            La lista de miembros e invitaciones la gestiona el Admin de este espacio de trabajo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link to="/w/$workspaceId" params={{ workspaceId }} className="text-sm font-medium">
+            Volver a los proyectos
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="grid gap-4">
       <div>
-        <Link
-          to="/w/$workspaceId"
-          params={{ workspaceId }}
-          className="text-sm text-muted-foreground hover:underline"
-        >
-          ← {workspace.name}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Miembros</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Miembros</h1>
+        <p className="mt-1 text-muted-foreground">{workspace.name}</p>
       </div>
 
       <Card>
@@ -74,12 +87,8 @@ export function MembersPage() {
         </CardContent>
       </Card>
 
-      {canManage && (
-        <>
-          <InviteCard workspaceId={workspaceId} />
-          <PendingInvitationsCard workspaceId={workspaceId} />
-        </>
-      )}
+      <InviteCard workspaceId={workspaceId} />
+      <PendingInvitationsCard workspaceId={workspaceId} />
     </div>
   );
 }

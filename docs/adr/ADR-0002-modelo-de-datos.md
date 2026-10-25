@@ -287,6 +287,7 @@ Todas las **entidades de negocio** (`Workspace`, `Membership`, `Invitation`, `Pr
 | `data.export` | ✅ | ✅ | ❌ |
 | `data.import` | ✅ | ❌ | ❌ |
 | `member.manage` (invitar, cambiar rol, quitar) | ✅ | ❌ | ❌ |
+| `workspace.update` (renombrar el espacio; HU-28) | ✅ | ❌ | ❌ |
 | `trash.manage` (restaurar, borrar definitivamente) | ✅ | ❌ | ❌ |
 | `integration.manage` (crear y revocar apps externas, vincular recursos) | ✅ | ❌ | ❌ |
 
