@@ -72,6 +72,10 @@ export const taskSchema = z.object({
   status: taskStatusSchema,
   estimatedMinutes: z.number().int().nullable(),
   assigneeId: z.uuid().nullable(),
+  /** Nombre del responsable; se conserva aunque ya no sea miembro (decisión del PO, HU-25) */
+  assigneeName: z.string().nullable(),
+  /** false si el responsable fue quitado del espacio: la tarjeta lo marca para reasignarla */
+  assigneeIsMember: z.boolean(),
   startDate: z.iso.date().nullable(),
   endDate: z.iso.date().nullable(),
   /** Por qué está Pausada o Cancelada; null en los demás estados */

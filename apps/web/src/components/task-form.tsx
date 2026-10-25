@@ -104,6 +104,10 @@ export function TaskForm({
           <Label htmlFor={form.idOf('assigneeId')}>Responsable</Label>
           <NativeSelect {...form.field('assigneeId')} defaultValue={task?.assigneeId ?? ''}>
             <option value="">Sin asignar</option>
+            {/* Se puede conservar al responsable que ya no es miembro, o reasignar (HU-25) */}
+            {task?.assigneeId && !task.assigneeIsMember && (
+              <option value={task.assigneeId}>{task.assigneeName} (ya no es miembro)</option>
+            )}
             {members.map((member) => (
               <option key={member.userId} value={member.userId}>
                 {member.name}

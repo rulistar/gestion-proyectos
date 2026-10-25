@@ -25,7 +25,6 @@ export function TaskBoard({ workspaceId, projectId, tasks, members, canEdit }: T
   // Cancelada empieza plegada; Hecha, abierta
   const [folded, setFolded] = useState<ReadonlySet<TaskStatus>>(() => new Set(['CANCELLED']));
   const editing = tasks.find((task) => task.id === editingId);
-  const memberNames = new Map(members.map((m) => [m.userId, m.name]));
 
   function toggleFold(status: TaskStatus) {
     setFolded((current) => {
@@ -82,7 +81,6 @@ export function TaskBoard({ workspaceId, projectId, tasks, members, canEdit }: T
                     task={task}
                     workspaceId={workspaceId}
                     projectId={projectId}
-                    assigneeName={task.assigneeId ? memberNames.get(task.assigneeId) : undefined}
                     canEdit={canEdit}
                     onEdit={() => setEditingId(task.id)}
                   />
@@ -104,12 +102,11 @@ interface TaskCardProps {
   task: Task;
   workspaceId: string;
   projectId: string;
-  assigneeName: string | undefined;
   canEdit: boolean;
   onEdit: () => void;
 }
 
-function TaskCard({ task, workspaceId, projectId, assigneeName, canEdit, onEdit }: TaskCardProps) {
+function TaskCard({ task, workspaceId, projectId, canEdit, onEdit }: TaskCardProps) {
   const move = useMoveTask(workspaceId, projectId, task.id);
   /** Estado elegido que pide motivo (Pausada o Cancelada): se pregunta antes de moverla */
   const [askingReasonFor, setAskingReasonFor] = useState<TaskStatus>();
@@ -122,7 +119,7 @@ function TaskCard({ task, workspaceId, projectId, assigneeName, canEdit, onEdit 
 
   const details = [
     TASK_TYPES[task.type],
-    assigneeName ?? 'Sin asignar',
+    task.assigneeName ?? 'Sin asignar',
     task.estimatedMinutes !== null && `${task.estimatedMinutes} min`,
     task.endDate && `Fin: ${formatDate(task.endDate)}`,
   ].filter(Boolean);
@@ -133,6 +130,12 @@ function TaskCard({ task, workspaceId, projectId, assigneeName, canEdit, onEdit 
         {task.title}
       </p>
       <p className="text-xs text-muted-foreground">{details.join(' · ')}</p>
+      {!task.assigneeIsMember && (
+        // Decisión del PO (HU-25): la tarea conserva el nombre hasta que alguien la reasigne
+        <p className="rounded bg-warning/25 px-2 py-1 text-xs text-warning-foreground">
+          {task.assigneeName} ya no es miembro: reasigna esta tarea
+        </p>
+      )}
       {task.statusReason && (
         <p className="rounded bg-muted px-2 py-1 text-xs">
           <span className="font-medium">Motivo:</span> {task.statusReason}

@@ -29,21 +29,22 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 
 ## Stack (ADR-0001)
 
-| Capa          | Tecnología                                                                 | Estado                                    |
-| ------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
-| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                         | ✅ instalado                              |
-| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                            | ✅ instalado                              |
-| Backend       | Fastify 5 + TypeScript                                                     | ✅ instalado                              |
-| Validación    | Zod 4 (compartido en `packages/shared`)                                    | ✅ instalado                              |
-| Base de datos | PostgreSQL 17 (Docker Compose) + Prisma 7.10 (`@prisma/adapter-pg` + `pg`) | ✅ instalado                              |
-| Pruebas       | Vitest (unitarias + integración contra PostgreSQL real)                    | ✅ instalado                              |
-| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged               | ✅ instalado                              |
-| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                        | ✅ configurado                            |
-| Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)         | ✅ instalado                              |
-| Contraseñas   | `argon2` 0.45 (Argon2id, binario nativo; TEC-07)                           | ✅ instalado                              |
-| Sesiones      | `@fastify/cookie` (cookie HttpOnly + sesión en BD; HU-02)                  | ✅ instalado                              |
-| Web (TEC-03)  | TanStack Router (ADR-0003), TanStack Query, shadcn/ui (copiado a mano)     | ✅ instalado                              |
-| Pendientes    | Swagger/OpenAPI, Playwright                                                | ⏳ se instalan en la historia que los use |
+| Capa          | Tecnología                                                                      | Estado                                    |
+| ------------- | ------------------------------------------------------------------------------- | ----------------------------------------- |
+| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                              | ✅ instalado                              |
+| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                                 | ✅ instalado                              |
+| Backend       | Fastify 5 + TypeScript                                                          | ✅ instalado                              |
+| Validación    | Zod 4 (compartido en `packages/shared`)                                         | ✅ instalado                              |
+| Base de datos | PostgreSQL 17 (Docker Compose) + Prisma 7.10 (`@prisma/adapter-pg` + `pg`)      | ✅ instalado                              |
+| Pruebas       | Vitest (unitarias + integración contra PostgreSQL real)                         | ✅ instalado                              |
+| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged                    | ✅ instalado                              |
+| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                             | ✅ configurado                            |
+| Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)              | ✅ instalado                              |
+| Contraseñas   | `argon2` 0.45 (Argon2id, binario nativo; TEC-07)                                | ✅ instalado                              |
+| Sesiones      | `@fastify/cookie` (cookie HttpOnly + sesión en BD; HU-02)                       | ✅ instalado                              |
+| Web (TEC-03)  | TanStack Router (ADR-0003), TanStack Query, shadcn/ui (copiado a mano)          | ✅ instalado                              |
+| Interfaz      | `lucide-react` (iconos), Radix Dialog y Dropdown Menu, `sonner` (avisos); HU-28 | ✅ instalado                              |
+| Pendientes    | Swagger/OpenAPI, Playwright                                                     | ⏳ se instalan en la historia que los use |
 
 **No agregar dependencias fuera del ADR sin preguntar al usuario.**
 
@@ -66,6 +67,9 @@ apps/
     src/lib/<mod>.ts    queryOptions + mutaciones de cada módulo (p. ej. workspaces.ts); la ruta precarga con loader
     src/lib/use-schema-form.ts  formularios validados con el esquema de shared (FormData + errores por campo)
     src/components/ui/  componentes de shadcn/ui (copiados, sin el CLI; se pueden modificar)
+    src/components/app-sidebar.tsx  menú lateral con el combo "Espacio de trabajo"; app-layout.tsx = menú + barra superior
+    src/lib/brand.ts    APP_NAME (nombre del producto, provisional) e initials() para avatares
+    src/index.css       tema: variables de color (turquesa #0f6e7a, dorado para lo urgente) y Plus Jakarta Sans
     src/routes/         una página por archivo; leen la ruta con getRouteApi() para no importar router.tsx
                         invitation-page.tsx: /invitacion#<token> (el token va tras "#": no llega al servidor)
   api/                Fastify — monolito modular
@@ -80,7 +84,7 @@ apps/
       auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth + startSession
       auth/current-user.ts getCurrentUser: el usuario con sus workspaces (/auth/me, login, HU-01)
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
-      workspaces/         GET/POST /workspaces, GET /workspaces/:id y /:id/members (quien lo crea = Admin; HU-03)
+      workspaces/         GET/POST/PATCH /workspaces[/:id], /:id/members (PATCH rol, DELETE quitar; HU-25)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05)
       tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status (HU-08)

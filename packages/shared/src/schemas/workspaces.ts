@@ -9,7 +9,7 @@ export const workspaceNameSchema = z
   .min(1, 'El nombre es obligatorio')
   .max(80, 'Máximo 80 caracteres');
 
-/** Cuerpo de POST /workspaces */
+/** Cuerpo de POST /workspaces y de PATCH /workspaces/:workspaceId (renombrar) */
 export const createWorkspaceRequestSchema = z.object({ name: workspaceNameSchema });
 export type CreateWorkspaceRequest = z.infer<typeof createWorkspaceRequestSchema>;
 
@@ -28,10 +28,15 @@ export const workspaceListSchema = z.array(workspaceSummarySchema);
 export const memberSchema = z.object({
   userId: z.uuid(),
   name: z.string(),
-  email: z.string(),
+  /** Solo lo recibe quien gestiona miembros (el Admin); para los demás, null */
+  email: z.string().nullable(),
   role: membershipRoleSchema,
 });
 export type Member = z.infer<typeof memberSchema>;
 
 /** Respuesta de GET /workspaces/:workspaceId/members */
 export const memberListSchema = z.array(memberSchema);
+
+/** Cuerpo de PATCH /workspaces/:workspaceId/members/:userId: cambiar el rol (HU-25) */
+export const updateMemberRoleRequestSchema = z.object({ role: membershipRoleSchema });
+export type UpdateMemberRoleRequest = z.infer<typeof updateMemberRoleRequestSchema>;

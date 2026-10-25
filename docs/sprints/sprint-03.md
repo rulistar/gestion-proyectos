@@ -4,24 +4,25 @@
 |---|---|
 | Fechas | **2026-10-25 → 2026-11-07** |
 | Capacidad | 5–10 h/semana (PO + Claude Code) |
-| Compromiso | **21 puntos** |
+| Compromiso | **26 puntos** (repriorizado por el PO el 2026-10-25: rediseño y tipos primero) |
 
 ## Objetivo del sprint
 
 > **"Trabajo con más control: pauso o cancelo tareas con motivo, doy de baja proyectos y miembros, y encuentro rápido lo que busco aunque sean muchos."**
 
-Responde a los comentarios del PO en la revisión del Sprint 2.
+Responde a los comentarios del PO en la revisión del Sprint 2. **Cambio del PO (2026-10-25):** antes de seguir, rediseñar la interfaz ([maqueta](https://claude.ai/artifact/QkTijPe4GF7EtTePxQHYFR)) y adelantar los tipos de trabajo; la papelera (HU-15), miembros (HU-25) y filtros (HU-09, HU-26) pasan al Sprint 4.
 
 ## Elementos comprometidos
 
 | Orden | ID | Elemento | Pts |
 |---|---|---|---|
 | 1 | HU-24 | Pausar y cancelar tareas con motivo | 3 |
-| 2 | HU-15 | Papelera: dar de baja, restaurar y borrar definitivamente | 5 |
-| 3 | HU-25 | Gestionar miembros: cambiar el rol y quitar del espacio | 3 |
-| 4 | HU-09 | Tabla de proyectos con filtros y orden | 5 |
-| 5 | HU-26 | Muchas tareas: vista Lista, filtros y columnas plegables | 5 |
-| | | **Total** | **21** |
+| 2 | HU-28a | Rediseño: nueva estructura (menú lateral, combo de espacios, tema, login) | 5 |
+| 3 | HU-28b | Rediseño: pantalla "Mi trabajo" | 5 |
+| 4 | HU-28c | Rediseño: página del proyecto y ventanas | 5 |
+| 5 | HU-21 | Tipos de contenedor (proyecto, mantenimientos, actividades) | 5 |
+| 6 | HU-22 | Tipos de tarea (incidencia, fast track…) | 3 |
+| | | **Total** | **26** |
 
 Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-3).
 
@@ -29,7 +30,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-3).
 
 | Sprint | Contenido |
 |---|---|
-| 4 | Tipos de trabajo ([ADR-0004](../adr/ADR-0004-tipos-de-trabajo.md)): HU-21, HU-22, HU-23 + despliegue (TEC-04) |
+| 4 | Papelera (HU-15), miembros (HU-25), filtros (HU-09, HU-26), campos de detalle (HU-23) y despliegue (TEC-04) |
 | 5 | Gantt (HU-27), permisos por usuario (HU-17) y visibilidad por proyecto (HU-16) |
 | 6 | Kanban de proyectos, fases, exportar, Swagger y pruebas extremo a extremo → **MVP** |
 
@@ -41,7 +42,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-3).
 
 ## Dependencias nuevas
 
-**Ninguna prevista.** Los filtros usan los `search params` de TanStack Router (ADR-0003), que ya está instalado.
+Aprobadas por el PO para el rediseño (HU-28): `lucide-react` 1.59.0, `@radix-ui/react-dialog` 1.3.1, `@radix-ui/react-dropdown-menu` 2.2.1 y `sonner` 2.0.8 (estándar de shadcn/ui; versiones con más de una semana publicadas; `pnpm audit` sin hallazgos).
 
 ## Riesgos del sprint
 

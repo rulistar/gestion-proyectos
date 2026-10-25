@@ -15,21 +15,53 @@ const taskSelect = {
   endDate: true,
   completedAt: true,
   statusReason: true,
+  workspaceId: true,
+  // Nombre del responsable y sus membresías vigentes: para saber si sigue en el espacio (HU-25)
+  assignee: {
+    select: {
+      name: true,
+      status: true,
+      memberships: { where: notDeleted, select: { workspaceId: true } },
+    },
+  },
 } as const;
 
-type TaskRow = Omit<Task, 'startDate' | 'endDate' | 'completedAt'> & {
+type TaskRow = Omit<
+  Task,
+  'startDate' | 'endDate' | 'completedAt' | 'assigneeName' | 'assigneeIsMember'
+> & {
   startDate: Date | null;
   endDate: Date | null;
   completedAt: Date | null;
+  workspaceId: string;
+  assignee: { name: string; status: string; memberships: { workspaceId: string }[] } | null;
 };
 
-function toTask(row: TaskRow): Task {
+function toTask({ workspaceId, assignee, ...row }: TaskRow): Task {
   return {
     ...row,
+    assigneeName: assignee?.name ?? null,
+    // Sin responsable no hay nada que marcar; con responsable, debe ser miembro activo del espacio
+    assigneeIsMember:
+      !assignee ||
+      (assignee.status === 'ACTIVE' &&
+        assignee.memberships.some((m) => m.workspaceId === workspaceId)),
     startDate: toIsoDate(row.startDate),
     endDate: toIsoDate(row.endDate),
     completedAt: row.completedAt?.toISOString() ?? null,
   };
+}
+
+/** Responsable actual de una tarea del proyecto (undefined si la tarea no existe) */
+export async function currentAssignee(
+  db: Db,
+  where: { workspaceId: string; projectId: string; taskId: string },
+): Promise<string | null | undefined> {
+  const task = await db.task.findFirst({
+    where: { id: where.taskId, ...taskScope(where.workspaceId, where.projectId) },
+    select: { assigneeId: true },
+  });
+  return task === null ? undefined : task.assigneeId;
 }
 
 /**

@@ -15,6 +15,7 @@ export const PERMISSIONS = [
   'data.export',
   'data.import',
   'member.manage',
+  'workspace.update',
   'trash.manage',
   'integration.manage',
 ] as const;

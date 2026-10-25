@@ -10,11 +10,7 @@ import { ApiError } from '@/lib/api';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
 import { projectQueryOptions, projectsQueryOptions } from '@/lib/projects';
 import { tasksQueryOptions } from '@/lib/tasks';
-import {
-  membersQueryOptions,
-  workspaceQueryOptions,
-  workspacesQueryOptions,
-} from '@/lib/workspaces';
+import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
 import { AppLayout } from '@/routes/app-layout';
 import { ErrorPage } from '@/routes/error-page';
 import { HomePage } from '@/routes/home-page';
@@ -109,8 +105,14 @@ const appRoute = createRoute({
 const homeRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/',
-  // Pide los datos antes de mostrar la página (y los deja en la caché de TanStack Query)
-  loader: ({ context }) => context.queryClient.ensureQueryData(workspacesQueryOptions),
+  // Con espacios de trabajo, directo al primero; la página solo se ve si no hay ninguno
+  beforeLoad: async ({ context }) => {
+    const user = await context.queryClient.ensureQueryData(meQueryOptions);
+    const first = user?.workspaces[0];
+    if (first) {
+      redirect({ to: '/w/$workspaceId', params: { workspaceId: first.id }, throw: true });
+    }
+  },
   component: HomePage,
 });
 
