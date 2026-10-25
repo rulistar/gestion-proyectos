@@ -1,4 +1,9 @@
-import { taskInputSchema, taskStatusUpdateSchema, type TaskInput } from '@gestion/shared';
+import {
+  myTasksQuerySchema,
+  taskInputSchema,
+  taskStatusUpdateSchema,
+  type TaskInput,
+} from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { requireAuth } from '../auth/session.js';
@@ -8,6 +13,7 @@ import { isActiveMember } from '../workspaces/workspaces.service.js';
 import {
   createTask,
   currentAssignee,
+  listMyTasks,
   listTasks,
   softDeleteTask,
   updateTask,
@@ -16,6 +22,8 @@ import {
 
 const projectParamsSchema = z.object({ projectId: z.uuid() });
 const taskParamsSchema = z.object({ projectId: z.uuid(), taskId: z.uuid() });
+
+const WEEK_MS = 7 * 86_400_000;
 
 const BASE = '/workspaces/:workspaceId/projects/:projectId/tasks';
 
@@ -50,6 +58,22 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
     );
     return project?.id ?? null;
   }
+
+  // Mi trabajo (HU-28b): las tareas asignadas a quien pregunta, de todos los proyectos del espacio
+  app.get(
+    '/workspaces/:workspaceId/my-tasks',
+    { preHandler: requirePermission('project.read') },
+    async (request, reply) => {
+      const query = myTasksQuerySchema.safeParse(request.query);
+      if (!query.success) {
+        return reply.code(400).send({ message: z.prettifyError(query.error) });
+      }
+      const doneSince = query.data.doneSince
+        ? new Date(query.data.doneSince)
+        : new Date(Date.now() - WEEK_MS);
+      return listMyTasks(app.db, request.membership!.workspaceId, request.auth!.userId, doneSince);
+    },
+  );
 
   app.get(BASE, { preHandler: requirePermission('project.read') }, async (request, reply) => {
     const projectId = await findProjectId(request);

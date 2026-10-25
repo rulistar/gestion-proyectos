@@ -8,6 +8,8 @@ import {
 } from '@tanstack/react-router';
 import { ApiError } from '@/lib/api';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
+import { weekStartIso } from '@/lib/dates';
+import { myTasksQueryOptions } from '@/lib/my-work';
 import { projectQueryOptions, projectsQueryOptions } from '@/lib/projects';
 import { tasksQueryOptions } from '@/lib/tasks';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
@@ -17,6 +19,7 @@ import { HomePage } from '@/routes/home-page';
 import { InvitationPage } from '@/routes/invitation-page';
 import { LoginPage } from '@/routes/login-page';
 import { MembersPage } from '@/routes/members-page';
+import { MyWorkPage } from '@/routes/my-work-page';
 import { ProjectPage } from '@/routes/project-page';
 import { TrashPage } from '@/routes/trash-page';
 import { WorkspacePage } from '@/routes/workspace-page';
@@ -27,6 +30,7 @@ import { WorkspacePage } from '@/routes/workspace-page';
  *   /                          protegidas (layout "app": barra superior + página):
  *   /w/$workspaceId              inicio, un workspace con sus proyectos
  *   /w/$workspaceId/p/$projectId un proyecto
+ *   /w/$workspaceId/mi-trabajo    mis tareas en ese workspace (HU-28b)
  *   /w/$workspaceId/miembros      y sus miembros e invitaciones
  *   /w/$workspaceId/papelera      y su papelera (solo Admin)
  *   /login                     pública; si ya hay sesión, redirige a /
@@ -144,6 +148,18 @@ const projectRoute = createRoute({
   component: ProjectPage,
 });
 
+const myWorkRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/mi-trabajo',
+  loader: ({ context, params }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(myTasksQueryOptions(params.workspaceId, weekStartIso())),
+      context.queryClient.ensureQueryData(projectsQueryOptions(params.workspaceId)),
+    ]),
+  component: MyWorkPage,
+});
+
 const membersRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId/miembros',
@@ -167,7 +183,14 @@ const trashRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   loginRoute,
   invitationRoute,
-  appRoute.addChildren([homeRoute, workspaceRoute, projectRoute, membersRoute, trashRoute]),
+  appRoute.addChildren([
+    homeRoute,
+    workspaceRoute,
+    projectRoute,
+    myWorkRoute,
+    membersRoute,
+    trashRoute,
+  ]),
 ]);
 
 export const router = createRouter({

@@ -1,4 +1,4 @@
-import { taskListSchema, taskSchema, type MembershipRole } from '@gestion/shared';
+import { myTaskListSchema, taskListSchema, taskSchema, type MembershipRole } from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { auditSoftDelete } from '../../db/audit.js';
@@ -456,5 +456,70 @@ describe('responsable que ya no es miembro (HU-25)', () => {
     });
 
     expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('mi trabajo (HU-28b)', () => {
+  const myTasksUrl = (workspaceId: string) => `/api/v1/workspaces/${workspaceId}/my-tasks`;
+
+  it('devuelve solo mis tareas abiertas y hechas recientes, con su proyecto', async () => {
+    const { ana, ws, project, withRole } = await setup();
+    const luis = await withRole('luis@example.com', 'MEMBER');
+    const url = tasksUrl(ws.id, project.id);
+    const mine = { assigneeId: ana.user.id };
+    await createOk(ana.cookies, ws.id, project.id, { title: 'Pendiente', ...mine });
+    await createOk(ana.cookies, ws.id, project.id, { title: 'Hecha', status: 'DONE', ...mine });
+    await createOk(ana.cookies, ws.id, project.id, {
+      title: 'Cancelada',
+      status: 'CANCELLED',
+      statusReason: 'Ya no aplica',
+      ...mine,
+    });
+    await createOk(ana.cookies, ws.id, project.id, { title: 'De Luis', assigneeId: luis.user.id });
+    await createOk(ana.cookies, ws.id, project.id, { title: 'Sin asignar' });
+    const trashed = await createOk(ana.cookies, ws.id, project.id, { title: 'Borrada', ...mine });
+    await app.inject({ method: 'DELETE', url: `${url}/${trashed.id}`, cookies: ana.cookies });
+
+    const response = await app.inject({ url: myTasksUrl(ws.id), cookies: ana.cookies });
+
+    expect(response.statusCode).toBe(200);
+    const tasks = myTaskListSchema.parse(response.json());
+    expect(tasks.map((t) => t.title).sort()).toEqual(['Hecha', 'Pendiente']);
+    expect(tasks[0]!.projectName).toBe('Curso');
+  });
+
+  it('las hechas antes de doneSince no se incluyen; un doneSince inválido da 400', async () => {
+    const { ana, ws, project } = await setup();
+    await createOk(ana.cookies, ws.id, project.id, {
+      title: 'Hecha',
+      status: 'DONE',
+      assigneeId: ana.user.id,
+    });
+
+    const future = new Date(Date.now() + 60_000).toISOString();
+    const later = await app.inject({
+      url: `${myTasksUrl(ws.id)}?doneSince=${future}`,
+      cookies: ana.cookies,
+    });
+    const invalid = await app.inject({
+      url: `${myTasksUrl(ws.id)}?doneSince=ayer`,
+      cookies: ana.cookies,
+    });
+
+    expect(myTaskListSchema.parse(later.json())).toEqual([]);
+    expect(invalid.statusCode).toBe(400);
+  });
+
+  it('las tareas de un proyecto en la papelera no aparecen; quien no es miembro recibe 404', async () => {
+    const { ana, ws, project } = await setup();
+    await createOk(ana.cookies, ws.id, project.id, { title: 'X', assigneeId: ana.user.id });
+    await db.project.update({ where: { id: project.id }, data: auditSoftDelete(ana.user.id) });
+    const outsider = await userWithSession(db, 'otro@example.com');
+
+    const mine = await app.inject({ url: myTasksUrl(ws.id), cookies: ana.cookies });
+    const theirs = await app.inject({ url: myTasksUrl(ws.id), cookies: outsider.cookies });
+
+    expect(mine.json()).toEqual([]);
+    expect(theirs.statusCode).toBe(404);
   });
 });

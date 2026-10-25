@@ -243,9 +243,9 @@ _Como usuario nuevo, quiero una interfaz clara y atractiva, para encontrar rápi
 
 **HU-28b · Mi trabajo (5 pts)**
 
-- [ ] Indicadores: vencen hoy, vencidas, en curso y hechas esta semana (mis tareas en el espacio).
-- [ ] Mis tareas de todos los proyectos, agrupadas en Vencidas, Hoy y Esta semana, con su proyecto y tipo.
-- [ ] Resumen de proyectos activos (avance) y de mantenimientos.
+- [x] Indicadores: vencen hoy, vencidas, en curso y hechas esta semana (mis tareas en el espacio).
+- [x] Mis tareas de todos los proyectos, agrupadas en Vencidas, Hoy y Esta semana, con su proyecto y tipo (más "Más adelante o sin fecha", para que ninguna se pierda); se marcan como Hechas desde ahí.
+- [x] Resumen de proyectos activos (avance). El de mantenimientos queda reservado y se completa con HU-21.
 
 **HU-28c · Proyecto y ventanas (5 pts)**
 
