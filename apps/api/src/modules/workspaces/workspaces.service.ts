@@ -2,14 +2,28 @@ import type { CreateWorkspaceRequest, Member, WorkspaceSummary } from '@gestion/
 import type { Db } from '../../db/client.js';
 import { auditCreate, notDeleted } from '../../db/audit.js';
 
-/** Workspaces de los que el usuario es miembro activo (sin los que están en la papelera) */
+/**
+ * Workspaces que el usuario puede abrir (sin los que están en la papelera): aquellos de los que
+ * es miembro activo. El Admin del sistema ve **todos**, como Admin (decisión del PO, ADR-0002 §5).
+ */
 export async function listWorkspacesForUser(db: Db, userId: string): Promise<WorkspaceSummary[]> {
-  const memberships = await db.membership.findMany({
-    where: { userId, ...notDeleted, workspace: notDeleted },
-    include: { workspace: { select: { id: true, name: true } } },
-    orderBy: { createdAt: 'asc' },
+  const [user, memberships] = await Promise.all([
+    db.user.findUniqueOrThrow({ where: { id: userId }, select: { isSystemAdmin: true } }),
+    db.membership.findMany({
+      where: { userId, ...notDeleted, workspace: notDeleted },
+      include: { workspace: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'asc' },
+    }),
+  ]);
+  const mine = memberships.map((m) => ({ ...m.workspace, role: m.role }));
+  if (!user.isSystemAdmin) return mine;
+
+  const others = await db.workspace.findMany({
+    where: { ...notDeleted, id: { notIn: mine.map((w) => w.id) } },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
   });
-  return memberships.map((m) => ({ ...m.workspace, role: m.role }));
+  return [...mine, ...others.map((w) => ({ ...w, role: 'ADMIN' as const }))];
 }
 
 /** Membresías vigentes de usuarios activos (los desactivados no cuentan como miembros) */

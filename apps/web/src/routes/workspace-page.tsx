@@ -23,19 +23,9 @@ export function WorkspacePage() {
   return (
     <div className="grid gap-4">
       <div>
-        <Link to="/" className="text-sm text-muted-foreground hover:underline">
-          ← Mis espacios de trabajo
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{workspace.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          Tu rol: {ROLE_LABELS[workspace.role]} ·{' '}
-          <Link
-            to="/w/$workspaceId/miembros"
-            params={{ workspaceId }}
-            className="font-medium text-foreground hover:underline"
-          >
-            Miembros
-          </Link>
+        <h1 className="text-2xl font-bold tracking-tight">Proyectos</h1>
+        <p className="mt-1 text-muted-foreground">
+          {workspace.name} · tu rol: {ROLE_LABELS[workspace.role]}
         </p>
       </div>
 

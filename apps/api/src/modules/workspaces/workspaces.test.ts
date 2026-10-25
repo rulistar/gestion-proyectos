@@ -168,3 +168,76 @@ describe('GET /workspaces/:workspaceId', () => {
     expect(invalid.statusCode).toBe(404);
   });
 });
+
+describe('Admin del sistema (ve y entra a todos los espacios)', () => {
+  async function systemAdmin() {
+    const admin = await userWithSession('root@example.com');
+    await db.user.update({ where: { id: admin.user.id }, data: { isSystemAdmin: true } });
+    return admin;
+  }
+
+  it('lista todos los espacios, como Admin en los que no es miembro', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const root = await systemAdmin();
+    const deAna = workspaceSummarySchema.parse((await createWs(ana.cookies, 'De Ana')).json());
+    const propio = workspaceSummarySchema.parse((await createWs(root.cookies, 'Propio')).json());
+
+    const list = workspaceListSchema.parse((await listWs(root.cookies)).json());
+
+    expect(list).toEqual([
+      { id: propio.id, name: 'Propio', role: 'ADMIN' },
+      { id: deAna.id, name: 'De Ana', role: 'ADMIN' },
+    ]);
+  });
+
+  it('entra a un espacio ajeno con permisos de Admin', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const root = await systemAdmin();
+    const deAna = workspaceSummarySchema.parse((await createWs(ana.cookies, 'De Ana')).json());
+
+    const detail = await app.inject({
+      url: `/api/v1/workspaces/${deAna.id}`,
+      cookies: root.cookies,
+    });
+    const invite = await app.inject({
+      method: 'POST',
+      url: `/api/v1/workspaces/${deAna.id}/invitations`,
+      cookies: root.cookies,
+      payload: { email: 'nuevo@example.com', role: 'MEMBER' },
+    });
+
+    expect(detail.json()).toEqual({ id: deAna.id, name: 'De Ana', role: 'ADMIN' });
+    expect(invite.statusCode).toBe(201);
+  });
+
+  it('no ve los espacios en la papelera', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const root = await systemAdmin();
+    const borrado = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Borrado')).json());
+    await db.workspace.update({ where: { id: borrado.id }, data: auditSoftDelete(ana.user.id) });
+
+    const list = workspaceListSchema.parse((await listWs(root.cookies)).json());
+    const detail = await app.inject({
+      url: `/api/v1/workspaces/${borrado.id}`,
+      cookies: root.cookies,
+    });
+
+    expect(list).toEqual([]);
+    expect(detail.statusCode).toBe(404);
+  });
+
+  it('un usuario normal sigue sin ver ni entrar a espacios ajenos', async () => {
+    const ana = await userWithSession('ana@example.com');
+    const luis = await userWithSession('luis@example.com');
+    const deAna = workspaceSummarySchema.parse((await createWs(ana.cookies, 'De Ana')).json());
+
+    const list = workspaceListSchema.parse((await listWs(luis.cookies)).json());
+    const detail = await app.inject({
+      url: `/api/v1/workspaces/${deAna.id}`,
+      cookies: luis.cookies,
+    });
+
+    expect(list).toEqual([]);
+    expect(detail.statusCode).toBe(404);
+  });
+});

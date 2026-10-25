@@ -1,102 +1,36 @@
-import { createWorkspaceRequestSchema } from '@gestion/shared';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
-import { useState, type FormEvent } from 'react';
+import { FolderKanban, Plus } from 'lucide-react';
+import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useCurrentUser } from '@/lib/auth';
-import { ROLE_LABELS, useCreateWorkspace, workspacesQueryOptions } from '@/lib/workspaces';
 
-/** Inicio: mis workspaces (cada uno lleva a sus proyectos) y crear uno nuevo (HU-03) */
+/**
+ * Inicio sin espacios de trabajo (quien sí tiene, va directo al primero: lo decide la ruta).
+ * "Mi trabajo" reemplaza esta pantalla en HU-28b.
+ */
 export function HomePage() {
   const user = useCurrentUser();
-  // La ruta ya los cargó (loader), así que aquí están disponibles al instante
-  const { data: workspaces } = useSuspenseQuery(workspacesQueryOptions);
 
   return (
-    <div className="grid gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Hola, {user.name}</CardTitle>
-          <CardDescription>Tus espacios de trabajo</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="divide-y rounded-md border bg-background">
-            {workspaces.map((workspace) => (
-              <li key={workspace.id}>
-                <Link
-                  to="/w/$workspaceId"
-                  params={{ workspaceId: workspace.id }}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-muted"
-                >
-                  <span className="font-medium">{workspace.name}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {ROLE_LABELS[workspace.role]}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-      <CreateWorkspaceCard />
+    <div className="mx-auto mt-12 flex max-w-md flex-col items-center gap-4 text-center">
+      <span
+        aria-hidden
+        className="flex size-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground"
+      >
+        <FolderKanban className="size-7" />
+      </span>
+      <h1 className="text-2xl font-bold">Hola, {user.name}</h1>
+      <p className="text-muted-foreground">
+        Todavía no participas en ningún espacio de trabajo. Crea uno para empezar a organizar tus
+        proyectos, o pide a un Admin que te invite al suyo.
+      </p>
+      <CreateWorkspaceDialog
+        trigger={
+          <Button size="lg">
+            <Plus aria-hidden />
+            Crear mi primer espacio
+          </Button>
+        }
+      />
     </div>
-  );
-}
-
-function CreateWorkspaceCard() {
-  const createWorkspace = useCreateWorkspace();
-  const [error, setError] = useState<string>();
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    // Mismo esquema que valida la API
-    const parsed = createWorkspaceRequestSchema.safeParse({
-      name: new FormData(form).get('name'),
-    });
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message);
-      return;
-    }
-
-    setError(undefined);
-    createWorkspace.mutate(parsed.data, { onSuccess: () => form.reset() });
-  }
-
-  const message = error ?? createWorkspace.error?.message;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Nuevo espacio de trabajo</CardTitle>
-        <CardDescription>Quedarás como Admin del espacio que crees</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} noValidate className="grid gap-2">
-          <Label htmlFor="workspace-name">Nombre</Label>
-          <div className="flex gap-2">
-            <Input
-              id="workspace-name"
-              name="name"
-              maxLength={80}
-              placeholder="Por ejemplo: Equipo de cursos"
-              aria-invalid={Boolean(message)}
-              aria-describedby={message ? 'workspace-name-error' : undefined}
-            />
-            <Button type="submit" disabled={createWorkspace.isPending}>
-              {createWorkspace.isPending ? 'Creando…' : 'Crear'}
-            </Button>
-          </div>
-          {message && (
-            <p id="workspace-name-error" role="alert" className="text-sm text-destructive">
-              {message}
-            </p>
-          )}
-        </form>
-      </CardContent>
-    </Card>
   );
 }

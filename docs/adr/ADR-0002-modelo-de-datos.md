@@ -301,6 +301,7 @@ permisos del rol (tabla anterior)
 ```
 
 - Un **Admin siempre tiene todos los permisos**; no se le aplican ajustes. Así nadie puede dejar un workspace sin administrador por error.
+- _Decisión del PO (HU-28, 2026-10-25):_ el **Admin del sistema** (`isSystemAdmin`, el usuario creado con `setup:admin`) ve **todos** los espacios de trabajo y entra a cualquiera con rol **Admin**, aunque no sea miembro. Es la única excepción a "sin membresía → 404"; los espacios en la papelera tampoco los ve. Implementado en `modules/workspaces/access.ts` y `listWorkspacesForUser`, con pruebas.
 - Debe existir **al menos un Admin** por workspace: no se puede degradar ni quitar al último.
 
 **Visibilidad de proyectos (HU-16):**
