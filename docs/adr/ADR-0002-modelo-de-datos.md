@@ -214,6 +214,7 @@ El alcance del MVP (acta, sección 3) proviene de un prototipo de un solo archiv
 - **Minutos pendientes** = suma de `estimatedMinutes` de las tareas que no están `DONE`.
 - **Días restantes** respecto a `endDate`: "Faltan N día(s)", "Termina hoy", "Vencido hace N día(s)" o "Sin fecha".
 - Al pasar una tarea a `DONE` se rellena `completedAt`; al salir de `DONE`, se vacía.
+- _Nota (HU-24, 2026-10-25):_ por decisión del PO las tareas tienen además los estados **Pausada** (`PAUSED`, cuenta como pendiente) y **Cancelada** (`CANCELLED`, no cuenta en el % ni en los minutos). Ambos exigen un motivo (`statusReason`).
 
 **Compatibilidad con los respaldos del prototipo** (HU-13 y HU-14): la exportación en **CSV con BOM UTF-8** (Excel lo abre directamente) y la importación aceptan el formato del prototipo (una fila por actividad, con sus 16 columnas) y lo convierten (curso → proyecto, unidad → fase, actividad → tarea, completada → `DONE`). Las fechas se normalizan a AAAA-MM-DD con las mismas reglas: las ambiguas se leen como día/mes/año, y se aceptan los números de serie de Excel. Así se pueden **migrar los datos existentes** del prototipo.
 

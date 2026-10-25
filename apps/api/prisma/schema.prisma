@@ -77,7 +77,9 @@ enum TaskType {
 enum TaskStatus {
   PENDING
   IN_PROGRESS
+  PAUSED // detenida: sigue contando como pendiente (HU-24)
   DONE
+  CANCELLED // no se hará: no cuenta en el avance (HU-24)
 
   @@map("task_status")
 }
@@ -248,6 +250,8 @@ model Task {
   endDate          DateTime?  @map("end_date") @db.Date
   /// Se rellena al pasar a DONE y se vacía al salir de DONE
   completedAt      DateTime?  @map("completed_at") @db.Timestamptz(3)
+  /// Motivo de PAUSED o CANCELLED (obligatorio en esos estados); null en los demás
+  statusReason     String?    @map("status_reason")
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)

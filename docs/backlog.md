@@ -227,12 +227,12 @@ Ajustes que pidió el PO en la revisión del Sprint 2. Orden: HU-24 → HU-15 �
 
 _Como miembro, quiero pausar o cancelar una tarea indicando por qué, para saber qué está detenido y darle seguimiento._
 
-- [ ] Estados de tarea: Pendiente, En curso, **Pausada**, Hecha y **Cancelada**.
-- [ ] Pausar o cancelar exige un **motivo**; la tarjeta lo muestra. Al salir de Pausada o Cancelada, el motivo se limpia.
-- [ ] Una tarea Pausada se puede reactivar (Pendiente o En curso) o cancelar; una Cancelada se puede reabrir.
-- [ ] Avance (HU-06): Pausada **cuenta** como trabajo pendiente; Cancelada **no cuenta** en el % ni en los minutos.
-- [ ] El tablero muestra las columnas nuevas; Hecha y Cancelada se pueden plegar.
-- [ ] Pruebas de la regla de avance y de las transiciones.
+- [x] Estados de tarea: Pendiente, En curso, **Pausada**, Hecha y **Cancelada**.
+- [x] Pausar o cancelar exige un **motivo**; la tarjeta lo muestra. Al salir de Pausada o Cancelada, el motivo se limpia.
+- [x] Una tarea Pausada se puede reactivar (Pendiente o En curso) o cancelar; una Cancelada se puede reabrir.
+- [x] Avance (HU-06): Pausada **cuenta** como trabajo pendiente; Cancelada **no cuenta** en el % ni en los minutos.
+- [x] El tablero muestra las columnas nuevas; Hecha y Cancelada se pueden plegar.
+- [x] Pruebas de la regla de avance y de las transiciones.
 
 #### HU-15 · Papelera (5 pts)
 
