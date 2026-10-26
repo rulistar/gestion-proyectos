@@ -24,7 +24,7 @@ Responde a los comentarios del PO en la revisión del Sprint 2. **Cambio del PO 
 | 6 | HU-22 | Tipos de tarea (incidencia, fast track…) | 3 |
 | | | **Total** | **26** |
 
-**Adelantadas por el PO (2026-10-25):** tras probar HU-28a pidió ya la baja de miembros y de proyectos. Entran al sprint HU-25 Gestionar miembros (3 pts, ✅) y HU-15 Papelera (5 pts); el sprint queda en 34 pts.
+**Adelantadas por el PO (2026-10-25):** tras probar HU-28a pidió ya la baja de miembros y de proyectos. Entran al sprint HU-25 Gestionar miembros (3 pts, ✅), HU-15 Papelera (5 pts, ✅) y, para cargar información real, HU-31 Datos del proyecto (3 pts); el sprint queda en 37 pts.
 
 Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-3).
 
@@ -32,7 +32,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-3).
 
 | Sprint | Contenido |
 |---|---|
-| 4 | Filtros (HU-09), **fases (HU-07, adelantada)**, vista Lista (HU-26), campos de detalle (HU-23) y despliegue (TEC-04). Suma 31 pts: se ajusta en su planificación |
+| 4 | Mover entre espacios (HU-32), filtros (HU-09), **fases (HU-07, adelantada)**, vista Lista (HU-26), campos de detalle (HU-23) y despliegue (TEC-04). Suma 36 pts: se ajusta en su planificación |
 | 5 | Gantt (HU-27), permisos por usuario (HU-17), visibilidad por proyecto (HU-16), Mi perfil (HU-29) y usuarios del sistema (HU-30) |
 | 6 | Kanban de proyectos, exportar, Swagger y pruebas extremo a extremo → **MVP** |
 

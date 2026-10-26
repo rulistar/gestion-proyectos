@@ -199,20 +199,30 @@ model Membership {
 
 /// Proyecto (el "curso" del prototipo, ADR-0002 §1.1).
 model Project {
-  id             String            @id @default(uuid(7)) @db.Uuid
-  workspaceId    String            @map("workspace_id") @db.Uuid
-  workspace      Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  name           String
+  id                String            @id @default(uuid(7)) @db.Uuid
+  workspaceId       String            @map("workspace_id") @db.Uuid
+  workspace         Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name              String
+  /// Folio del sistema de origen (HU-31): opcional, editable, puede repetirse
+  folio             String?
+  description       String?
+  /// Personas del proyecto (HU-31): solo el nombre; pueden no tener cuenta en el sistema
+  requester         String?
+  assignedTo        String?           @map("assigned_to")
+  projectManager    String?           @map("project_manager")
+  consultingManager String?           @map("consulting_manager")
+  businessPartner   String?           @map("business_partner")
   /// Texto libre (antes "Plataforma"): Personal, Trabajo, Estudio...
-  area           String?
-  classification String?
-  status         ProjectStatus     @default(NOT_STARTED)
-  priority       ProjectPriority   @default(MEDIUM)
-  visibility     ProjectVisibility @default(WORKSPACE)
+  area              String?
+  classification    String?
+  status            ProjectStatus     @default(NOT_STARTED)
+  priority          ProjectPriority   @default(MEDIUM)
+  visibility        ProjectVisibility @default(WORKSPACE)
   /// Fechas sin hora: "termina el 15 de noviembre"
-  startDate      DateTime?         @map("start_date") @db.Date
-  endDate        DateTime?         @map("end_date") @db.Date
-  notes          String?
+  startDate         DateTime?         @map("start_date") @db.Date
+  endDate           DateTime?         @map("end_date") @db.Date
+  /// Observaciones (en pantalla; antes "Notas")
+  notes             String?
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)

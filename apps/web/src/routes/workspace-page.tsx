@@ -41,7 +41,9 @@ export function WorkspacePage() {
             <table className="w-full text-sm">
               <thead className="text-left text-muted-foreground">
                 <tr className="border-b">
+                  <th className="py-2 pr-4 font-medium">Folio</th>
                   <th className="py-2 pr-4 font-medium">Nombre</th>
+                  <th className="py-2 pr-4 font-medium">Project manager</th>
                   <th className="py-2 pr-4 font-medium">Área</th>
                   <th className="py-2 pr-4 font-medium">Clasificación</th>
                   <th className="py-2 pr-4 font-medium">Estado</th>
@@ -54,6 +56,9 @@ export function WorkspacePage() {
               <tbody>
                 {projects.map((project) => (
                   <tr key={project.id} className="border-b last:border-0">
+                    <td className="py-2 pr-4 whitespace-nowrap text-muted-foreground">
+                      {project.folio ?? '—'}
+                    </td>
                     <td className="py-2 pr-4 font-medium">
                       <Link
                         to="/w/$workspaceId/p/$projectId"
@@ -63,6 +68,7 @@ export function WorkspacePage() {
                         {project.name}
                       </Link>
                     </td>
+                    <td className="py-2 pr-4">{project.projectManager ?? '—'}</td>
                     <td className="py-2 pr-4">{project.area ?? '—'}</td>
                     <td className="py-2 pr-4">{project.classification ?? '—'}</td>
                     <td className="py-2 pr-4">

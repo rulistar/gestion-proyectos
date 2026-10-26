@@ -83,6 +83,13 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
       id: project.id,
       workspaceId: ws.id,
       name: 'Curso de TypeScript',
+      folio: null,
+      description: null,
+      requester: null,
+      assignedTo: null,
+      projectManager: null,
+      consultingManager: null,
+      businessPartner: null,
       area: 'Estudio',
       classification: null,
       status: 'NOT_STARTED',
@@ -254,5 +261,47 @@ describe('PUT /workspaces/:workspaceId/projects/:projectId', () => {
     const response = await update(ana.cookies, ws.id, project.id, { name: 'Cambiado' });
 
     expect(response.statusCode).toBe(404);
+  });
+});
+
+describe('datos del proyecto (HU-31)', () => {
+  const details = {
+    folio: '  SOL-2026-0042 ',
+    description: 'Portal para que los clientes consulten sus pedidos',
+    requester: 'Laura Méndez',
+    assignedTo: 'Equipo web',
+    projectManager: 'Carlos Ruiz',
+    consultingManager: 'Patricia Gómez',
+    businessPartner: 'Distribuidora del Norte',
+    notes: 'Arranca cuando se firme el contrato',
+  };
+
+  it('guarda folio, descripción, personas y observaciones (recortados)', async () => {
+    const { ana, ws } = await setup();
+
+    const project = await createOk(ana.cookies, ws.id, { name: 'Portal', ...details });
+
+    expect(project).toMatchObject({ ...details, folio: 'SOL-2026-0042' });
+  });
+
+  it('todo es opcional y se puede vaciar al editar; el folio puede repetirse', async () => {
+    const { ana, ws } = await setup();
+    const project = await createOk(ana.cookies, ws.id, { name: 'Portal', ...details });
+    await createOk(ana.cookies, ws.id, { name: 'Otro', folio: 'SOL-2026-0042' });
+
+    const response = await update(ana.cookies, ws.id, project.id, {
+      name: 'Portal',
+      folio: '',
+      projectManager: '',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ folio: null, projectManager: null, requester: null });
+  });
+
+  it('rechaza un folio de más de 40 caracteres (400)', async () => {
+    const { ana, ws } = await setup();
+    const response = await create(ana.cookies, ws.id, { name: 'X', folio: 'F'.repeat(41) });
+    expect(response.statusCode).toBe(400);
   });
 });
