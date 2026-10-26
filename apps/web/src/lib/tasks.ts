@@ -27,6 +27,13 @@ export const TASK_TYPES: Record<TaskType, string> = {
   EXAM: 'Examen',
 };
 
+/** Color de la etiqueta de cada tipo (maqueta de HU-28); los demás, en gris */
+export const TASK_TYPE_COLORS: Partial<Record<TaskType, string>> = {
+  DELIVERABLE: 'bg-[#EEF4FB] text-[#1D4E89]',
+  MEETING: 'bg-[#F4EBFF] text-[#5B2BA6]',
+  REVIEW: 'bg-accent text-accent-foreground',
+};
+
 const tasksPath = (workspaceId: string, projectId: string) =>
   `/workspaces/${workspaceId}/projects/${projectId}/tasks`;
 

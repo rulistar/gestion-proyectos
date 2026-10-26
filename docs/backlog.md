@@ -256,9 +256,9 @@ _Como usuario nuevo, quiero una interfaz clara y atractiva, para encontrar rápi
 
 **HU-28c · Proyecto y ventanas (5 pts)**
 
-- [ ] Página del proyecto con indicadores (avance, trabajo pendiente, fecha de fin, requiere atención) y pestañas.
-- [ ] Tarjetas de tarea con avatar del responsable y fecha coloreada según urgencia.
-- [ ] Crear y editar proyectos y tareas en ventanas; avisos breves al guardar.
+- [x] Página del proyecto con indicadores (avance, trabajo pendiente, fecha de fin, requiere atención) y pestañas (Tablero, Datos del proyecto; Lista y Gantt como "Pronto").
+- [x] Tarjetas de tarea con avatar del responsable y fecha coloreada según urgencia (vencida, hoy/mañana, después).
+- [x] Crear y editar proyectos y tareas en ventanas; avisos breves al guardar. Al crear un proyecto se abre.
 
 #### HU-31 · Datos del proyecto (3 pts)
 

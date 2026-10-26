@@ -1,5 +1,5 @@
 import { statusNeedsReason, type Member, type Task, type TaskStatus } from '@gestion/shared';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -14,8 +14,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
-import { formatDate } from '@/lib/dates';
-import { TASK_STATUSES, TASK_TYPES, useDeleteTask, useMoveTask, useUpdateTask } from '@/lib/tasks';
+import { initials } from '@/lib/brand';
+import { formatMinutes, todayIso } from '@/lib/dates';
+import { dueInfo } from '@/lib/due';
+import {
+  TASK_STATUSES,
+  TASK_TYPE_COLORS,
+  TASK_TYPES,
+  useDeleteTask,
+  useMoveTask,
+  useUpdateTask,
+} from '@/lib/tasks';
+import { cn } from '@/lib/utils';
 
 interface TaskBoardProps {
   workspaceId: string;
@@ -146,19 +156,64 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
     });
   }
 
-  const details = [
-    TASK_TYPES[task.type],
-    task.assigneeName ?? 'Sin asignar',
-    task.estimatedMinutes !== null && `${task.estimatedMinutes} min`,
-    task.endDate && `Fin: ${formatDate(task.endDate)}`,
-  ].filter(Boolean);
+  const due = dueInfo(task.endDate, todayIso());
 
   return (
-    <article className="grid gap-2 rounded-md border bg-background p-3">
+    <article
+      className={cn(
+        'grid gap-2.5 rounded-lg border bg-background p-3 shadow-xs',
+        // Lo vencido y abierto se marca en el borde, para verlo de un vistazo
+        !finished && due.overdue && 'border-l-4 border-l-destructive',
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span
+          className={cn(
+            'rounded px-1.5 py-0.5 text-[11px] font-semibold',
+            TASK_TYPE_COLORS[task.type] ?? 'bg-muted text-foreground',
+          )}
+        >
+          {TASK_TYPES[task.type]}
+        </span>
+        {canEdit && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="-mt-1 -mr-1 h-7 px-1.5 text-muted-foreground"
+            onClick={onEdit}
+            aria-label={`Editar "${task.title}"`}
+            title="Editar"
+          >
+            <Pencil aria-hidden />
+          </Button>
+        )}
+      </div>
       <p className={finished ? 'text-muted-foreground line-through' : 'font-medium'}>
         {task.title}
       </p>
-      <p className="text-xs text-muted-foreground">{details.join(' · ')}</p>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span
+          aria-hidden
+          className={cn(
+            'flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold',
+            task.assigneeName ? 'bg-primary text-primary-foreground' : 'border border-dashed',
+          )}
+        >
+          {task.assigneeName ? initials(task.assigneeName) : '?'}
+        </span>
+        <span className="min-w-0 truncate">{task.assigneeName ?? 'Sin asignar'}</span>
+        {task.estimatedMinutes !== null && (
+          <span className="shrink-0">· {formatMinutes(task.estimatedMinutes)}</span>
+        )}
+        {!finished && (
+          <span
+            className={cn('ml-auto shrink-0 rounded-full px-2 py-0.5 font-semibold', due.className)}
+          >
+            {due.text}
+          </span>
+        )}
+      </div>
       {!task.assigneeIsMember && (
         // Decisión del PO (HU-25): la tarea conserva el nombre hasta que alguien la reasigne
         <p className="rounded bg-warning/25 px-2 py-1 text-xs text-warning-foreground">
@@ -187,24 +242,19 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
         <div className="flex items-center gap-2">
           {/* Mover de columna: cambia solo el estado (PATCH .../status) */}
           {canEdit && (
-            <>
-              <NativeSelect
-                aria-label={`Estado de "${task.title}"`}
-                value={task.status}
-                disabled={move.isPending}
-                onChange={(event) => changeStatus(event.target.value as TaskStatus)}
-                className="h-8"
-              >
-                {Object.entries(TASK_STATUSES).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </NativeSelect>
-              <Button type="button" variant="outline" size="sm" onClick={onEdit}>
-                Editar
-              </Button>
-            </>
+            <NativeSelect
+              aria-label={`Estado de "${task.title}"`}
+              value={task.status}
+              disabled={move.isPending}
+              onChange={(event) => changeStatus(event.target.value as TaskStatus)}
+              className="h-8"
+            >
+              {Object.entries(TASK_STATUSES).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </NativeSelect>
           )}
           {canDelete && (
             <ConfirmDialog
