@@ -128,6 +128,8 @@ Al crear un espacio de trabajo (y, por migración, en los que ya existen) se car
 **Migración de lo existente:** los proyectos actuales pasan al tipo "Proyecto"; las tareas conservan su tipo actual, que deja de ser un `enum` y pasa a apuntar al catálogo.
 
 > **Nota de implementación (HU-21, 2026-10-26):** la migración `project_types` carga los tipos con SQL escrito a mano. PostgreSQL 17 no trae `uuidv7()`, así que arma un UUID v7 a partir de `gen_random_uuid()` y la marca de tiempo. Las fechas reales de lo que ya existía quedan vacías: no se sabe cuándo empezó de verdad. La restricción de tipos de tarea por tipo de contenedor se implementa en HU-22, junto con su catálogo.
+>
+> **Nota de implementación (HU-22, 2026-10-26):** la migración `task_types` pasa cada valor del antiguo enum al tipo del catálogo con el mismo sentido (TASK → Tarea, MEETING → Reunión…) y elimina el enum. Los tipos permitidos viven en la tabla `project_type_task_types` (sin filas = todos). Sin tipo pedido, una tarea recibe el primer tipo activo que admite su contenedor.
 
 ### 6. Modelo de datos (cambios sobre el ADR-0002)
 

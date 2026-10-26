@@ -65,7 +65,8 @@ model ProjectType {
   createdBy   User?    @relation("ProjectTypeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy   User?    @relation("ProjectTypeUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
 
-  projects Project[]
+  projects         Project[]
+  allowedTaskTypes ProjectTypeTaskType[]
 
   @@unique([workspaceId, name], where: { archivedAt: null })
   @@index([workspaceId])
@@ -98,15 +99,47 @@ enum ProjectVisibility {
 }
 
 /// Tipos genéricos de tarea (ADR-0002 §1.1)
-enum TaskType {
-  TASK
-  MEETING
-  DELIVERABLE
-  REVIEW
-  RESEARCH
-  EXAM
+/// Tipo de tarea del espacio (HU-22): Tarea, Incidencia, Fast track... Reemplaza al enum TaskType.
+/// No va a la papelera: un tipo en uso se archiva (ADR-0004 §4).
+model TaskType {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  /// Atención inmediata: se resalta y va primero en su columna (ADR-0004 §5)
+  expedited   Boolean   @default(false)
+  position    Int       @default(0)
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz(3)
 
-  @@map("task_type")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  createdBy   User?    @relation("TaskTypeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User?    @relation("TaskTypeUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  tasks        Task[]
+  projectTypes ProjectTypeTaskType[]
+
+  @@unique([workspaceId, name], where: { archivedAt: null })
+  @@index([workspaceId])
+  @@map("task_types")
+}
+
+/// Tipos de tarea que admite un tipo de contenedor (HU-22). Sin filas = admite todos.
+model ProjectTypeTaskType {
+  projectTypeId String      @map("project_type_id") @db.Uuid
+  projectType   ProjectType @relation(fields: [projectTypeId], references: [id], onDelete: Cascade)
+  taskTypeId    String      @map("task_type_id") @db.Uuid
+  taskType      TaskType    @relation(fields: [taskTypeId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdBy   User?    @relation("ProjectTypeTaskTypeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@id([projectTypeId, taskTypeId])
+  @@index([taskTypeId])
+  @@map("project_type_task_types")
 }
 
 enum TaskStatus {
@@ -144,27 +177,30 @@ model User {
   memberships Membership[] @relation("MembershipUser")
 
   // Relaciones inversas de trazabilidad
-  usersCreated        User[]        @relation("UserCreatedBy")
-  usersUpdated        User[]        @relation("UserUpdatedBy")
-  workspacesCreated   Workspace[]   @relation("WorkspaceCreatedBy")
-  workspacesUpdated   Workspace[]   @relation("WorkspaceUpdatedBy")
-  workspacesDeleted   Workspace[]   @relation("WorkspaceDeletedBy")
-  membershipsCreated  Membership[]  @relation("MembershipCreatedBy")
-  membershipsUpdated  Membership[]  @relation("MembershipUpdatedBy")
-  membershipsDeleted  Membership[]  @relation("MembershipDeletedBy")
-  projectsCreated     Project[]     @relation("ProjectCreatedBy")
-  projectsUpdated     Project[]     @relation("ProjectUpdatedBy")
-  projectsDeleted     Project[]     @relation("ProjectDeletedBy")
-  tasksAssigned       Task[]        @relation("TaskAssignee")
-  tasksCreated        Task[]        @relation("TaskCreatedBy")
-  tasksUpdated        Task[]        @relation("TaskUpdatedBy")
-  tasksDeleted        Task[]        @relation("TaskDeletedBy")
-  invitationsCreated  Invitation[]  @relation("InvitationCreatedBy")
-  invitationsUpdated  Invitation[]  @relation("InvitationUpdatedBy")
-  invitationsRevoked  Invitation[]  @relation("InvitationRevokedBy")
-  invitationsAccepted Invitation[]  @relation("InvitationAcceptedBy")
-  projectTypesCreated ProjectType[] @relation("ProjectTypeCreatedBy")
-  projectTypesUpdated ProjectType[] @relation("ProjectTypeUpdatedBy")
+  usersCreated            User[]                @relation("UserCreatedBy")
+  usersUpdated            User[]                @relation("UserUpdatedBy")
+  workspacesCreated       Workspace[]           @relation("WorkspaceCreatedBy")
+  workspacesUpdated       Workspace[]           @relation("WorkspaceUpdatedBy")
+  workspacesDeleted       Workspace[]           @relation("WorkspaceDeletedBy")
+  membershipsCreated      Membership[]          @relation("MembershipCreatedBy")
+  membershipsUpdated      Membership[]          @relation("MembershipUpdatedBy")
+  membershipsDeleted      Membership[]          @relation("MembershipDeletedBy")
+  projectsCreated         Project[]             @relation("ProjectCreatedBy")
+  projectsUpdated         Project[]             @relation("ProjectUpdatedBy")
+  projectsDeleted         Project[]             @relation("ProjectDeletedBy")
+  tasksAssigned           Task[]                @relation("TaskAssignee")
+  tasksCreated            Task[]                @relation("TaskCreatedBy")
+  tasksUpdated            Task[]                @relation("TaskUpdatedBy")
+  tasksDeleted            Task[]                @relation("TaskDeletedBy")
+  invitationsCreated      Invitation[]          @relation("InvitationCreatedBy")
+  invitationsUpdated      Invitation[]          @relation("InvitationUpdatedBy")
+  invitationsRevoked      Invitation[]          @relation("InvitationRevokedBy")
+  invitationsAccepted     Invitation[]          @relation("InvitationAcceptedBy")
+  projectTypesCreated     ProjectType[]         @relation("ProjectTypeCreatedBy")
+  projectTypesUpdated     ProjectType[]         @relation("ProjectTypeUpdatedBy")
+  taskTypesCreated        TaskType[]            @relation("TaskTypeCreatedBy")
+  taskTypesUpdated        TaskType[]            @relation("TaskTypeUpdatedBy")
+  allowedTaskTypesCreated ProjectTypeTaskType[] @relation("ProjectTypeTaskTypeCreatedBy")
 
   @@map("users")
 }
@@ -204,6 +240,7 @@ model Workspace {
   memberships  Membership[]
   projects     Project[]
   projectTypes ProjectType[]
+  taskTypes    TaskType[]
   tasks        Task[]
   invitations  Invitation[]
 
@@ -298,13 +335,17 @@ model Task {
   assigneeId       String?    @map("assignee_id") @db.Uuid
   assignee         User?      @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
   title            String
-  type             TaskType   @default(TASK)
+  /// Tipo del catálogo (HU-22); un tipo en uso no se borra, se archiva
+  typeId           String     @map("type_id") @db.Uuid
+  type             TaskType   @relation(fields: [typeId], references: [id], onDelete: Restrict)
   status           TaskStatus @default(PENDING)
   estimatedMinutes Int?       @map("estimated_minutes")
   startDate        DateTime?  @map("start_date") @db.Date
   endDate          DateTime?  @map("end_date") @db.Date
   /// Se rellena al pasar a DONE y se vacía al salir de DONE
   completedAt      DateTime?  @map("completed_at") @db.Timestamptz(3)
+  /// Inicio real (ADR-0004 §2.1): la primera vez que pasa a En curso o a Hecha; no se borra
+  startedAt        DateTime?  @map("started_at") @db.Timestamptz(3)
   /// Motivo de PAUSED o CANCELLED (obligatorio en esos estados); null en los demás
   statusReason     String?    @map("status_reason")
 
@@ -321,6 +362,7 @@ model Task {
   @@index([projectId])
   @@index([workspaceId])
   @@index([assigneeId])
+  @@index([typeId])
   @@map("tasks")
 }
 

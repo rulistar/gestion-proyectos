@@ -88,7 +88,9 @@ apps/
       workspaces/         GET/POST/PATCH /workspaces[/:id], /:id/members (PATCH rol, DELETE quitar; HU-25)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
       project-types/      catálogo de tipos de contenedor (HU-21, ADR-0004): GET (project.read), POST/PATCH (catalog.manage);
-                          seedProjectTypes carga los tipos iniciales al crear un espacio
+                          seedCatalog carga tipos de contenedor, de tarea y permitidos al crear un espacio
+      task-types/         catálogo de tipos de tarea (HU-22): GET (project.read), POST/PATCH (catalog.manage);
+                          resolveTaskType valida el tipo contra los permitidos del contenedor
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05); DELETE = a la papelera.
                           GET acepta ?today=&monthStart= (fecha local) para las métricas por comportamiento
       tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status, DELETE (HU-08);

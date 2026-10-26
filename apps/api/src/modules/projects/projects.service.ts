@@ -14,6 +14,32 @@ import { resolveProjectType } from '../project-types/project-types.service.js';
 /** El tipo pedido no existe en el espacio o está archivado (→ 400) */
 export class InvalidProjectTypeError extends Error {}
 
+/** El tipo nuevo no admite algunos tipos de tarea que ya tiene el proyecto (→ 409, ADR-0004 §4) */
+export class DisallowedTaskTypesError extends Error {
+  constructor(readonly taskTypes: string[]) {
+    super('Tipos de tarea no admitidos');
+  }
+}
+
+/** Nombres de los tipos de tarea del proyecto que el tipo de contenedor `typeId` no admite */
+async function disallowedTaskTypes(db: Db, projectId: string, typeId: string) {
+  const allowed = await db.projectTypeTaskType.findMany({
+    where: { projectTypeId: typeId },
+    select: { taskTypeId: true },
+  });
+  if (allowed.length === 0) return [];
+  const tasks = await db.task.findMany({
+    where: {
+      projectId,
+      ...notDeleted,
+      typeId: { notIn: allowed.map((row) => row.taskTypeId) },
+    },
+    select: { type: { select: { name: true } } },
+    distinct: ['typeId'],
+  });
+  return tasks.map((task) => task.type.name);
+}
+
 /** Fecha local del usuario para "vencidas" y "hechas este mes" (ADR-0004 §2) */
 export interface Metrics {
   today: string;
@@ -177,6 +203,10 @@ export async function updateProject(
   if (!previous) return null;
   const typeId = await resolveProjectType(db, workspaceId, input.typeId, previous.typeId);
   if (!typeId) throw new InvalidProjectTypeError();
+  if (typeId !== previous.typeId) {
+    const conflicts = await disallowedTaskTypes(db, projectId, typeId);
+    if (conflicts.length > 0) throw new DisallowedTaskTypesError(conflicts);
+  }
 
   await db.project.update({
     where: { id: projectId },

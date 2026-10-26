@@ -6,6 +6,7 @@ import { requirePermission } from '../workspaces/access.js';
 import {
   createProjectType,
   DuplicateTypeNameError,
+  InvalidTaskTypesError,
   LastActiveTypeError,
   listProjectTypes,
   updateProjectType,
@@ -15,12 +16,15 @@ const typeParamsSchema = z.object({ typeId: z.uuid() });
 
 const BASE = '/workspaces/:workspaceId/project-types';
 
-function catalogError(reply: FastifyReply, error: unknown) {
+export function catalogError(reply: FastifyReply, error: unknown) {
   if (error instanceof DuplicateTypeNameError) {
     return reply.code(409).send({ message: 'Ya existe un tipo activo con ese nombre' });
   }
   if (error instanceof LastActiveTypeError) {
     return reply.code(409).send({ message: 'Debe quedar al menos un tipo activo' });
+  }
+  if (error instanceof InvalidTaskTypesError) {
+    return reply.code(400).send({ message: 'Algún tipo de tarea no existe en este espacio' });
   }
   throw error;
 }

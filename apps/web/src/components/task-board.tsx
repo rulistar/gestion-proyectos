@@ -1,5 +1,11 @@
-import { statusNeedsReason, type Member, type Task, type TaskStatus } from '@gestion/shared';
-import { Pencil, Trash2 } from 'lucide-react';
+import {
+  statusNeedsReason,
+  type Member,
+  type Task,
+  type TaskStatus,
+  type TaskTypeRef,
+} from '@gestion/shared';
+import { Pencil, Trash2, Zap } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -17,14 +23,8 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { initials } from '@/lib/brand';
 import { formatMinutes, todayIso } from '@/lib/dates';
 import { dueInfo } from '@/lib/due';
-import {
-  TASK_STATUSES,
-  TASK_TYPE_COLORS,
-  TASK_TYPES,
-  useDeleteTask,
-  useMoveTask,
-  useUpdateTask,
-} from '@/lib/tasks';
+import { taskTypeClass } from '@/lib/task-types';
+import { TASK_STATUSES, useDeleteTask, useMoveTask, useUpdateTask } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
 
 interface TaskBoardProps {
@@ -32,6 +32,8 @@ interface TaskBoardProps {
   projectId: string;
   tasks: Task[];
   members: Member[];
+  /** Tipos de tarea que se pueden elegir al editar (HU-22), con el actual de la tarea */
+  taskTypeOptions: (currentId: string) => TaskTypeRef[];
   /** Si el rol permite crear y editar tareas (la API lo vuelve a comprobar) */
   canEdit: boolean;
   /** Si el rol permite dar de baja tareas (HU-15) */
@@ -47,6 +49,7 @@ export function TaskBoard({
   projectId,
   tasks,
   members,
+  taskTypeOptions,
   canEdit,
   canDelete,
 }: TaskBoardProps) {
@@ -73,12 +76,16 @@ export function TaskBoard({
           workspaceId={workspaceId}
           projectId={projectId}
           members={members}
+          types={taskTypeOptions(editing.type.id)}
           onClose={() => setEditingId(undefined)}
         />
       )}
       <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
         {(Object.keys(TASK_STATUSES) as TaskStatus[]).map((status) => {
-          const column = tasks.filter((task) => task.status === status);
+          // Las de atención inmediata (Fast track) van primero en su columna (ADR-0004 §5)
+          const column = tasks
+            .filter((task) => task.status === status)
+            .sort((a, b) => Number(b.type.expedited) - Number(a.type.expedited));
           const isFolded = folded.has(status);
           return (
             <section
@@ -162,18 +169,21 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
     <article
       className={cn(
         'grid gap-2.5 rounded-lg border bg-background p-3 shadow-xs',
-        // Lo vencido y abierto se marca en el borde, para verlo de un vistazo
+        // Atención inmediata en dorado; lo vencido y abierto, en rojo: se ven de un vistazo
+        !finished && task.type.expedited && 'border-l-4 border-l-warning',
         !finished && due.overdue && 'border-l-4 border-l-destructive',
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <span
           className={cn(
-            'rounded px-1.5 py-0.5 text-[11px] font-semibold',
-            TASK_TYPE_COLORS[task.type] ?? 'bg-muted text-foreground',
+            'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold',
+            taskTypeClass(task.type),
           )}
+          title={task.type.expedited ? 'Atención inmediata' : undefined}
         >
-          {TASK_TYPES[task.type]}
+          {task.type.expedited && <Zap aria-hidden className="size-3" />}
+          {task.type.name}
         </span>
         {canEdit && (
           <Button
@@ -342,6 +352,7 @@ interface EditTaskPanelProps {
   workspaceId: string;
   projectId: string;
   members: Member[];
+  types: TaskTypeRef[];
   onClose: () => void;
 }
 
@@ -349,7 +360,14 @@ interface EditTaskPanelProps {
  * Editar en una ventana: aparece al centro sin importar dónde esté la tarjeta. Antes era un panel
  * arriba del tablero y, con muchas tareas, se abría fuera de la vista y parecía no responder.
  */
-function EditTaskPanel({ task, workspaceId, projectId, members, onClose }: EditTaskPanelProps) {
+function EditTaskPanel({
+  task,
+  workspaceId,
+  projectId,
+  members,
+  types,
+  onClose,
+}: EditTaskPanelProps) {
   const update = useUpdateTask(workspaceId, projectId, task.id);
 
   return (
@@ -362,6 +380,7 @@ function EditTaskPanel({ task, workspaceId, projectId, members, onClose }: EditT
         <TaskForm
           task={task}
           members={members}
+          types={types}
           submitLabel="Guardar"
           isPending={update.isPending}
           error={update.error?.message}

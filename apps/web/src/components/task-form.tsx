@@ -5,6 +5,7 @@ import {
   type Task,
   type TaskInput,
   type TaskStatus,
+  type TaskTypeRef,
 } from '@gestion/shared';
 import { useState, type ReactNode } from 'react';
 import { FieldError } from '@/components/field-error';
@@ -12,12 +13,12 @@ import { FormActions } from '@/components/form-actions';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
-import { TASK_STATUSES, TASK_TYPES } from '@/lib/tasks';
+import { TASK_STATUSES } from '@/lib/tasks';
 import { useSchemaForm } from '@/lib/use-schema-form';
 
 const FIELDS = [
   'title',
-  'type',
+  'typeId',
   'status',
   'estimatedMinutes',
   'assigneeId',
@@ -30,6 +31,8 @@ interface TaskFormProps {
   /** Valores iniciales al editar; sin ellos el formulario está vacío (crear) */
   task?: Task;
   members: Member[];
+  /** Tipos que admite el contenedor (HU-22); el primero es el de por omisión al crear */
+  types: TaskTypeRef[];
   submitLabel: string;
   isPending: boolean;
   error?: string | undefined;
@@ -42,6 +45,7 @@ interface TaskFormProps {
 export function TaskForm({
   task,
   members,
+  types,
   submitLabel,
   isPending,
   error,
@@ -61,15 +65,16 @@ export function TaskForm({
           <FieldError {...form.errorProps('title')} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor={form.idOf('type')}>Tipo</Label>
-          <NativeSelect {...form.field('type')} defaultValue={task?.type ?? 'TASK'}>
-            {Object.entries(TASK_TYPES).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
+          <Label htmlFor={form.idOf('typeId')}>Tipo</Label>
+          <NativeSelect {...form.field('typeId')} defaultValue={task?.type.id ?? types[0]?.id}>
+            {types.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.name}
+                {type.expedited ? ' (atención inmediata)' : ''}
               </option>
             ))}
           </NativeSelect>
-          <FieldError {...form.errorProps('type')} />
+          <FieldError {...form.errorProps('typeId')} />
         </div>
         <div className="grid gap-2">
           <Label htmlFor={form.idOf('status')}>Estado</Label>

@@ -8,6 +8,7 @@ import { acceptInvitationRoutes } from './modules/invitations/accept.routes.js';
 import { invitationsRoutes } from './modules/invitations/invitations.routes.js';
 import { projectTypesRoutes } from './modules/project-types/project-types.routes.js';
 import { projectsRoutes } from './modules/projects/projects.routes.js';
+import { taskTypesRoutes } from './modules/task-types/task-types.routes.js';
 import { tasksRoutes } from './modules/tasks/tasks.routes.js';
 import { trashRoutes } from './modules/trash/trash.routes.js';
 import { workspacesRoutes } from './modules/workspaces/workspaces.routes.js';
@@ -64,6 +65,7 @@ export function buildApp({
   void app.register(workspacesRoutes, { prefix: '/api/v1' });
   void app.register(projectTypesRoutes, { prefix: '/api/v1' });
   void app.register(projectsRoutes, { prefix: '/api/v1' });
+  void app.register(taskTypesRoutes, { prefix: '/api/v1' });
   void app.register(tasksRoutes, { prefix: '/api/v1' });
   void app.register(trashRoutes, { prefix: '/api/v1' });
   void app.register(invitationsRoutes, { prefix: '/api/v1' });

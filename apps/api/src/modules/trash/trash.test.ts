@@ -40,7 +40,7 @@ const emptyProject = {
 } as const;
 
 const emptyTask = {
-  type: 'TASK',
+  typeId: null,
   status: 'PENDING',
   estimatedMinutes: null,
   assigneeId: null,

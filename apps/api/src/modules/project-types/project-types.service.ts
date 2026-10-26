@@ -1,5 +1,7 @@
 import {
+  DEFAULT_ALLOWED_TASK_TYPES,
   DEFAULT_PROJECT_TYPES,
+  DEFAULT_TASK_TYPES,
   type CreateProjectTypeInput,
   type ProjectType,
   type UpdateProjectTypeInput,
@@ -11,18 +13,44 @@ import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
 export class DuplicateTypeNameError extends Error {}
 /** Archivar el último tipo activo dejaría el espacio sin poder crear nada (→ 409) */
 export class LastActiveTypeError extends Error {}
+/** Algún tipo de tarea permitido no es del espacio (→ 400) */
+export class InvalidTaskTypesError extends Error {}
 
 const activeType = { archivedAt: null } as const;
 
-/** Carga los tipos iniciales (ADR-0004 §5) en un espacio recién creado */
-export async function seedProjectTypes(tx: Tx, workspaceId: string, actorId: string | null) {
-  await tx.projectType.createMany({
+/**
+ * Carga el catálogo inicial (ADR-0004 §5) en un espacio recién creado: tipos de contenedor, tipos
+ * de tarea y los tipos de tarea que admite cada mantenimiento
+ */
+export async function seedCatalog(tx: Tx, workspaceId: string, actorId: string | null) {
+  const projectTypes = await tx.projectType.createManyAndReturn({
     data: DEFAULT_PROJECT_TYPES.map((type, position) => ({
       workspaceId,
       ...type,
       position,
       ...auditCreate(actorId),
     })),
+    select: { id: true, name: true },
+  });
+  const taskTypes = await tx.taskType.createManyAndReturn({
+    data: DEFAULT_TASK_TYPES.map(({ name, expedited }, position) => ({
+      workspaceId,
+      name,
+      expedited,
+      position,
+      ...auditCreate(actorId),
+    })),
+    select: { id: true, name: true },
+  });
+  const taskTypeId = new Map(taskTypes.map((type) => [type.name, type.id]));
+  await tx.projectTypeTaskType.createMany({
+    data: projectTypes.flatMap((projectType) =>
+      (DEFAULT_ALLOWED_TASK_TYPES[projectType.name] ?? []).map((name) => ({
+        projectTypeId: projectType.id,
+        taskTypeId: taskTypeId.get(name)!,
+        createdById: actorId,
+      })),
+    ),
   });
 }
 
@@ -36,14 +64,16 @@ export async function listProjectTypes(db: Db, workspaceId: string): Promise<Pro
       behavior: true,
       position: true,
       archivedAt: true,
+      allowedTaskTypes: { select: { taskTypeId: true } },
       _count: { select: { projects: { where: notDeleted } } },
     },
     orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
   });
-  return rows.map(({ archivedAt, _count, ...row }) => ({
+  return rows.map(({ archivedAt, allowedTaskTypes, _count, ...row }) => ({
     ...row,
     archived: archivedAt !== null,
     projectCount: _count.projects,
+    allowedTaskTypeIds: allowedTaskTypes.map((allowed) => allowed.taskTypeId),
   }));
 }
 
@@ -87,7 +117,7 @@ export async function updateProjectType(
   actorId: string,
   workspaceId: string,
   typeId: string,
-  { archived, ...changes }: UpdateProjectTypeInput,
+  { archived, allowedTaskTypeIds, ...changes }: UpdateProjectTypeInput,
 ): Promise<boolean> {
   return db.$transaction(async (tx) => {
     const type = await tx.projectType.findFirst({
@@ -104,6 +134,21 @@ export async function updateProjectType(
     if (archived === true && type.archivedAt === null) {
       const active = await tx.projectType.count({ where: { workspaceId, ...activeType } });
       if (active <= 1) throw new LastActiveTypeError();
+    }
+
+    if (allowedTaskTypeIds !== undefined) {
+      const ids = [...new Set(allowedTaskTypeIds)];
+      const owned = await tx.taskType.count({ where: { id: { in: ids }, workspaceId } });
+      if (owned !== ids.length) throw new InvalidTaskTypesError();
+      // Se reemplaza la lista completa; vacía = admite todos (HU-22)
+      await tx.projectTypeTaskType.deleteMany({ where: { projectTypeId: typeId } });
+      await tx.projectTypeTaskType.createMany({
+        data: ids.map((taskTypeId) => ({
+          projectTypeId: typeId,
+          taskTypeId,
+          createdById: actorId,
+        })),
+      });
     }
 
     await tx.projectType.update({
