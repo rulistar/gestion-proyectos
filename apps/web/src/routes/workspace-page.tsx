@@ -43,9 +43,8 @@ export function WorkspacePage() {
                 <tr className="border-b">
                   <th className="py-2 pr-4 font-medium">Folio</th>
                   <th className="py-2 pr-4 font-medium">Nombre</th>
-                  <th className="py-2 pr-4 font-medium">Project manager</th>
                   <th className="py-2 pr-4 font-medium">Área</th>
-                  <th className="py-2 pr-4 font-medium">Clasificación</th>
+                  <th className="py-2 pr-4 font-medium">Solicitante</th>
                   <th className="py-2 pr-4 font-medium">Estado</th>
                   <th className="py-2 pr-4 font-medium">Prioridad</th>
                   <th className="py-2 pr-4 font-medium">Avance</th>
@@ -68,9 +67,8 @@ export function WorkspacePage() {
                         {project.name}
                       </Link>
                     </td>
-                    <td className="py-2 pr-4">{project.projectManager ?? '—'}</td>
                     <td className="py-2 pr-4">{project.area ?? '—'}</td>
-                    <td className="py-2 pr-4">{project.classification ?? '—'}</td>
+                    <td className="py-2 pr-4">{project.requester ?? '—'}</td>
                     <td className="py-2 pr-4">
                       <ProjectStatusBadge status={project.status} />
                     </td>
