@@ -33,7 +33,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-3).
 | Sprint | Contenido |
 |---|---|
 | 4 | Filtros (HU-09), **fases (HU-07, adelantada)**, vista Lista (HU-26), campos de detalle (HU-23) y despliegue (TEC-04). Suma 31 pts: se ajusta en su planificación |
-| 5 | Gantt (HU-27), permisos por usuario (HU-17) y visibilidad por proyecto (HU-16) |
+| 5 | Gantt (HU-27), permisos por usuario (HU-17), visibilidad por proyecto (HU-16), Mi perfil (HU-29) y usuarios del sistema (HU-30) |
 | 6 | Kanban de proyectos, exportar, Swagger y pruebas extremo a extremo → **MVP** |
 
 ## Plan de trabajo
