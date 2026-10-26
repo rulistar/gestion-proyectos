@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FOLIO_PREFIXES, folioPeriod, formatFolio } from './folios.js';
+import { FOLIO_PREFIXES, folioPeriod, formatFolio, parseFolioTemplate } from './folios.js';
 
 describe('folios automáticos (HU-38)', () => {
   it('el periodo es AAMM de la fecha local', () => {
@@ -11,6 +11,15 @@ describe('folios automáticos (HU-38)', () => {
     expect(formatFolio(FOLIO_PREFIXES.ONGOING, '2610', 1)).toBe('MT2610-001');
     expect(formatFolio(FOLIO_PREFIXES.WITH_END, '2611', 42)).toBe('PY2611-042');
     expect(formatFolio(FOLIO_PREFIXES.ON_DEMAND, '2612', 7)).toBe('ACT2612-007');
+  });
+
+  it('reconoce el formato sin número para completarlo', () => {
+    expect(parseFolioTemplate('MT')).toEqual({ prefix: 'MT', period: null });
+    expect(parseFolioTemplate(' py2611- ')).toEqual({ prefix: 'PY', period: '2611' });
+    expect(parseFolioTemplate('ACT2610')).toEqual({ prefix: 'ACT', period: '2610' });
+    expect(parseFolioTemplate('MT2610-004')).toBeNull();
+    expect(parseFolioTemplate('SOL-123')).toBeNull();
+    expect(parseFolioTemplate('MTX')).toBeNull();
   });
 
   it('pasado el 999 sigue creciendo', () => {

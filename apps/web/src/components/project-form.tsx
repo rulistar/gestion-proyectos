@@ -115,6 +115,10 @@ export function ProjectForm({
                 : `Vacío = automático (${folioExample})`
             }
           />
+          <p className="text-xs text-muted-foreground">
+            Escribe solo PY, MT o ACT y se completa con el número vigente. No se repite en el
+            espacio.
+          </p>
           <FieldError {...form.errorProps('folio')} />
         </div>
         <div className="grid gap-2 sm:col-span-2">

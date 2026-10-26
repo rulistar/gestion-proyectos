@@ -307,10 +307,9 @@ describe('datos del proyecto (HU-31)', () => {
     expect(project).toMatchObject({ ...details, folio: 'SOL-2026-0042' });
   });
 
-  it('todo es opcional y se puede vaciar al editar; el folio puede repetirse', async () => {
+  it('todo es opcional y se puede vaciar al editar', async () => {
     const { ana, ws } = await setup();
     const project = await createOk(ana.cookies, ws.id, { name: 'Portal', ...details });
-    await createOk(ana.cookies, ws.id, { name: 'Otro', folio: 'SOL-2026-0042' });
 
     const response = await update(ana.cookies, ws.id, project.id, {
       name: 'Portal',
@@ -407,5 +406,59 @@ describe('folios automáticos (HU-38)', () => {
     const response = await update(ana.cookies, ws.id, project.id, { name: 'A', folio: '' });
 
     expect(response.json()).toMatchObject({ folio: null });
+  });
+});
+
+describe('folio sin duplicados y formato que se completa (HU-38)', () => {
+  function createOn(cookies: Cookies, workspaceId: string, payload: object) {
+    return app.inject({
+      method: 'POST',
+      url: `${url(workspaceId)}?today=2026-10-28`,
+      cookies,
+      payload,
+    });
+  }
+
+  it('un folio repetido en el espacio da 409 (sin distinguir mayúsculas, papelera incluida)', async () => {
+    const { ana, ws } = await setup();
+    const first = await createOk(ana.cookies, ws.id, { name: 'A', folio: 'SOL-1' });
+    await db.project.update({ where: { id: first.id }, data: auditSoftDelete(ana.user.id) });
+
+    const response = await create(ana.cookies, ws.id, { name: 'B', folio: 'sol-1' });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json<{ message: string }>().message).toContain('sol-1');
+  });
+
+  it('al editar se conserva el folio propio, pero no se toma el de otro', async () => {
+    const { ana, ws } = await setup();
+    const a = await createOk(ana.cookies, ws.id, { name: 'A', folio: 'SOL-1' });
+    await createOk(ana.cookies, ws.id, { name: 'B', folio: 'SOL-2' });
+
+    const keep = await update(ana.cookies, ws.id, a.id, { name: 'A renombrado', folio: 'SOL-1' });
+    const steal = await update(ana.cookies, ws.id, a.id, { name: 'A', folio: 'SOL-2' });
+
+    expect(keep.statusCode).toBe(200);
+    expect(steal.statusCode).toBe(409);
+  });
+
+  it('teclear solo el formato lo completa con el número vigente', async () => {
+    const { ana, ws } = await setup();
+    const folios: (string | null)[] = [];
+    for (const folio of ['MT', 'mt2610-', 'PY2611', 'ACT']) {
+      const response = await createOn(ana.cookies, ws.id, { name: folio, folio });
+      folios.push(projectSchema.parse(response.json()).folio);
+    }
+
+    expect(folios).toEqual(['MT2610-001', 'MT2610-002', 'PY2611-001', 'ACT2610-001']);
+  });
+
+  it('el automático se salta un número que alguien ya tecleó a mano', async () => {
+    const { ana, ws } = await setup();
+    await createOn(ana.cookies, ws.id, { name: 'Manual', folio: 'PY2610-001' });
+
+    const auto = await createOn(ana.cookies, ws.id, { name: 'Auto' });
+
+    expect(projectSchema.parse(auto.json()).folio).toBe('PY2610-002');
   });
 });

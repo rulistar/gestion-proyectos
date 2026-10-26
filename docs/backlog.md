@@ -386,12 +386,14 @@ _Como responsable, quiero limitar los tipos de tarea de cada mantenimiento, para
 
 #### HU-38 · Folios automáticos (3 pts)
 
-_Como responsable, quiero que cada proyecto, mantenimiento y actividad reciba un folio consecutivo si no trae uno de otro sistema, para identificarlos igual que en mi operación._ Pedido del PO a mitad del sprint (2026-10-26).
+_Como responsable, quiero que cada proyecto, mantenimiento y actividad reciba un folio consecutivo si no trae uno de otro sistema, para identificarlos igual que en mi operación._ Pedido del PO a mitad del sprint (2026-10-26). Cambia la regla de HU-31: el folio ya **no** puede repetirse.
 
 - [x] Formato: **prefijo + AAMM + "-" + contador de 3 dígitos**. **PY** para proyectos, **MT** para todos los mantenimientos y **ACT** para actividades. Ejemplo: MT2610-001, MT2610-002… y en noviembre MT2611-001.
 - [x] El contador es **por espacio** y vuelve a 1 **cada mes** (y cada año); el mes es el de la fecha local del usuario.
 - [x] Se asigna **solo si el folio se deja vacío al crear**; un folio de otro sistema se respeta y no consume número. Al editar, vaciarlo lo deja vacío.
-- [x] Contador atómico en la BD (dos altas a la vez no repiten número). Pruebas de formato, secuencia, cambio de mes, espacios y folio manual.
+- [x] **Sin folios repetidos** en el espacio (sin distinguir mayúsculas, papelera incluida): 409. Al editar se conserva el propio; los repetidos de antes de esta regla siguen editables mientras no cambie su folio.
+- [x] **Teclear solo el formato** ("MT", "PY2611-", "act") lo completa con el número vigente de ese prefijo y mes; el automático se salta los números que alguien ya tecleó a mano.
+- [x] Contador atómico en la BD (dos altas a la vez no repiten número). Pruebas de formato, secuencia, cambio de mes, espacios, folio manual, duplicados y formato.
 
 #### HU-32 · Mover entre espacios de trabajo (5 pts)
 
