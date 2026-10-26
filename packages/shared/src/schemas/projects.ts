@@ -18,12 +18,22 @@ export type ProjectPriority = z.infer<typeof projectPrioritySchema>;
 export const projectInputSchema = z
   .object({
     name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Máximo 120 caracteres'),
+    /** Folio del sistema de origen (HU-31): opcional, editable y sin regla de unicidad */
+    folio: optionalText(40),
+    description: optionalText(2000),
+    /** Personas del proyecto (HU-31): solo el nombre, pueden no tener cuenta en el sistema */
+    requester: optionalText(120),
+    assignedTo: optionalText(120),
+    projectManager: optionalText(120),
+    consultingManager: optionalText(120),
+    businessPartner: optionalText(120),
     area: optionalText(80),
     classification: optionalText(80),
     status: projectStatusSchema.default('NOT_STARTED'),
     priority: projectPrioritySchema.default('MEDIUM'),
     startDate: optionalDate,
     endDate: optionalDate,
+    /** Observaciones (antes "Notas") */
     notes: optionalText(2000),
   })
   .refine(endAfterStart, endAfterStartError);
@@ -33,6 +43,13 @@ export const projectSchema = z.object({
   id: z.uuid(),
   workspaceId: z.uuid(),
   name: z.string(),
+  folio: z.string().nullable(),
+  description: z.string().nullable(),
+  requester: z.string().nullable(),
+  assignedTo: z.string().nullable(),
+  projectManager: z.string().nullable(),
+  consultingManager: z.string().nullable(),
+  businessPartner: z.string().nullable(),
   area: z.string().nullable(),
   classification: z.string().nullable(),
   status: projectStatusSchema,

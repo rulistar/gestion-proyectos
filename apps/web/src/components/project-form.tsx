@@ -10,7 +10,14 @@ import { PROJECT_PRIORITIES, PROJECT_STATUSES } from '@/lib/projects';
 import { useSchemaForm } from '@/lib/use-schema-form';
 
 const FIELDS = [
+  'folio',
   'name',
+  'description',
+  'requester',
+  'assignedTo',
+  'projectManager',
+  'consultingManager',
+  'businessPartner',
   'area',
   'classification',
   'status',
@@ -19,6 +26,23 @@ const FIELDS = [
   'endDate',
   'notes',
 ] as const;
+
+/** Personas del proyecto (HU-31): solo se escribe el nombre; pueden no tener cuenta */
+const PEOPLE = [
+  { name: 'requester', label: 'Solicitante' },
+  { name: 'assignedTo', label: 'Asignado a' },
+  { name: 'projectManager', label: 'Project manager' },
+  { name: 'consultingManager', label: 'Gte. Consultoría' },
+  { name: 'businessPartner', label: 'Business partner' },
+] as const;
+
+function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="border-t pt-4 text-sm font-semibold text-muted-foreground sm:col-span-2">
+      {children}
+    </h3>
+  );
+}
 
 interface ProjectFormProps {
   /** Valores iniciales al editar; sin ellos el formulario está vacío (crear) */
@@ -49,11 +73,41 @@ export function ProjectForm({
   return (
     <form onSubmit={form.onSubmit} noValidate>
       <fieldset disabled={readOnly || isPending} className="grid gap-4 sm:grid-cols-2">
-        <div className="grid gap-2 sm:col-span-2">
+        <div className="grid gap-2">
+          <Label htmlFor={form.idOf('folio')}>Folio</Label>
+          <Input
+            {...form.field('folio')}
+            defaultValue={project?.folio ?? ''}
+            maxLength={40}
+            placeholder="El del sistema de origen (opcional)"
+          />
+          <FieldError {...form.errorProps('folio')} />
+        </div>
+        <div className="grid gap-2">
           <Label htmlFor={form.idOf('name')}>Nombre</Label>
           <Input {...form.field('name')} defaultValue={project?.name} maxLength={120} />
           <FieldError {...form.errorProps('name')} />
         </div>
+        <div className="grid gap-2 sm:col-span-2">
+          <Label htmlFor={form.idOf('description')}>Descripción</Label>
+          <Textarea
+            {...form.field('description')}
+            defaultValue={project?.description ?? ''}
+            maxLength={2000}
+          />
+          <FieldError {...form.errorProps('description')} />
+        </div>
+
+        <SectionTitle>Personas</SectionTitle>
+        {PEOPLE.map(({ name, label }) => (
+          <div key={name} className="grid gap-2">
+            <Label htmlFor={form.idOf(name)}>{label}</Label>
+            <Input {...form.field(name)} defaultValue={project?.[name] ?? ''} maxLength={120} />
+            <FieldError {...form.errorProps(name)} />
+          </div>
+        ))}
+
+        <SectionTitle>Planeación</SectionTitle>
         <div className="grid gap-2">
           <Label htmlFor={form.idOf('area')}>Área</Label>
           <Input
@@ -106,7 +160,7 @@ export function ProjectForm({
           <FieldError {...form.errorProps('endDate')} />
         </div>
         <div className="grid gap-2 sm:col-span-2">
-          <Label htmlFor={form.idOf('notes')}>Notas</Label>
+          <Label htmlFor={form.idOf('notes')}>Observaciones</Label>
           <Textarea {...form.field('notes')} defaultValue={project?.notes ?? ''} maxLength={2000} />
           <FieldError {...form.errorProps('notes')} />
         </div>

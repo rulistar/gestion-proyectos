@@ -2,6 +2,7 @@ import {
   daysRemainingLabel,
   roleHasPermission,
   type Member,
+  type Project,
   type ProjectProgress,
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -47,6 +48,11 @@ export function ProjectPage() {
           ← {workspace.name}
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-3">
+          {project.folio && (
+            <span className="rounded-md bg-muted px-2 py-0.5 text-sm font-medium text-muted-foreground">
+              {project.folio}
+            </span>
+          )}
           <h1 className="text-2xl font-semibold">{project.name}</h1>
           <ProjectStatusBadge status={project.status} />
           {canDeleteProject && (
@@ -58,6 +64,8 @@ export function ProjectPage() {
           )}
         </div>
       </div>
+
+      <ProjectPeople project={project} />
 
       <ProgressSummary progress={project.progress} endDate={project.endDate} />
 
@@ -122,6 +130,36 @@ function DeleteProjectButton({
       confirmLabel="Dar de baja"
       onConfirm={handleConfirm}
     />
+  );
+}
+
+/** Descripción y personas del proyecto (HU-31); solo se muestra lo que tiene valor */
+function ProjectPeople({ project }: { project: Project }) {
+  const people = [
+    { label: 'Solicitante', value: project.requester },
+    { label: 'Asignado a', value: project.assignedTo },
+    { label: 'Project manager', value: project.projectManager },
+    { label: 'Gte. Consultoría', value: project.consultingManager },
+    { label: 'Business partner', value: project.businessPartner },
+  ].filter((person) => person.value);
+  if (!project.description && people.length === 0) return null;
+
+  return (
+    <div className="grid gap-3">
+      {project.description && (
+        <p className="max-w-3xl whitespace-pre-line text-muted-foreground">{project.description}</p>
+      )}
+      {people.length > 0 && (
+        <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          {people.map((person) => (
+            <div key={person.label}>
+              <dt className="text-muted-foreground">{person.label}</dt>
+              <dd className="font-medium">{person.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
   );
 }
 

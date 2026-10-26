@@ -23,6 +23,13 @@ beforeEach(async () => {
 type Cookies = Record<string, string>;
 
 const emptyProject = {
+  folio: null,
+  description: null,
+  requester: null,
+  assignedTo: null,
+  projectManager: null,
+  consultingManager: null,
+  businessPartner: null,
   area: null,
   classification: null,
   status: 'NOT_STARTED',
