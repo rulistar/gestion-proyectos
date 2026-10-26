@@ -1,11 +1,13 @@
-import { projectInputSchema } from '@gestion/shared';
+import { projectInputSchema, projectMetricsQuerySchema } from '@gestion/shared';
 import { z } from 'zod';
-import type { FastifyPluginCallback, FastifyReply } from 'fastify';
+import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { requireAuth } from '../auth/session.js';
 import { requirePermission } from '../workspaces/access.js';
 import {
   createProject,
+  defaultMetrics,
   getProject,
+  InvalidProjectTypeError,
   listProjects,
   softDeleteProject,
   updateProject,
@@ -17,6 +19,23 @@ function projectNotFound(reply: FastifyReply) {
   return reply.code(404).send({ message: 'Proyecto no encontrado' });
 }
 
+/** La fecha local que manda la web (inválida u omitida → día y mes en UTC) */
+function metricsOf(request: FastifyRequest) {
+  const query = projectMetricsQuerySchema.safeParse(request.query);
+  const fallback = defaultMetrics();
+  return {
+    today: (query.success && query.data.today) || fallback.today,
+    monthStart: (query.success && query.data.monthStart) || fallback.monthStart,
+  };
+}
+
+function invalidType(reply: FastifyReply, error: unknown) {
+  if (error instanceof InvalidProjectTypeError) {
+    return reply.code(400).send({ message: 'El tipo no existe en este espacio o está archivado' });
+  }
+  throw error;
+}
+
 /** Proyectos de un workspace (HU-05). Cada ruta exige sesión, membresía y el permiso del rol */
 export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
   app.addHook('preHandler', requireAuth);
@@ -24,7 +43,7 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
   app.get(
     '/workspaces/:workspaceId/projects',
     { preHandler: requirePermission('project.read') },
-    async (request) => listProjects(app.db, request.membership!.workspaceId),
+    async (request) => listProjects(app.db, request.membership!.workspaceId, metricsOf(request)),
   );
 
   app.post(
@@ -35,13 +54,17 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
       if (!parsed.success) {
         return reply.code(400).send({ message: z.prettifyError(parsed.error) });
       }
-      const project = await createProject(
-        app.db,
-        request.auth!.userId,
-        request.membership!.workspaceId,
-        parsed.data,
-      );
-      return reply.code(201).send(project);
+      try {
+        const project = await createProject(
+          app.db,
+          request.auth!.userId,
+          request.membership!.workspaceId,
+          parsed.data,
+        );
+        return await reply.code(201).send(project);
+      } catch (error) {
+        return invalidType(reply, error);
+      }
     },
   );
 
@@ -51,7 +74,12 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
     async (request, reply) => {
       const params = projectParamsSchema.safeParse(request.params);
       const project = params.success
-        ? await getProject(app.db, request.membership!.workspaceId, params.data.projectId)
+        ? await getProject(
+            app.db,
+            request.membership!.workspaceId,
+            params.data.projectId,
+            metricsOf(request),
+          )
         : null;
       return project ?? projectNotFound(reply);
     },
@@ -68,14 +96,18 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
       if (!parsed.success) {
         return reply.code(400).send({ message: z.prettifyError(parsed.error) });
       }
-      const project = await updateProject(
-        app.db,
-        request.auth!.userId,
-        request.membership!.workspaceId,
-        params.data.projectId,
-        parsed.data,
-      );
-      return project ?? projectNotFound(reply);
+      try {
+        const project = await updateProject(
+          app.db,
+          request.auth!.userId,
+          request.membership!.workspaceId,
+          params.data.projectId,
+          parsed.data,
+        );
+        return project ?? projectNotFound(reply);
+      } catch (error) {
+        return invalidType(reply, error);
+      }
     },
   );
 

@@ -1,4 +1,9 @@
-import { projectInputSchema, type Project, type ProjectInput } from '@gestion/shared';
+import {
+  projectInputSchema,
+  type Project,
+  type ProjectInput,
+  type ProjectType,
+} from '@gestion/shared';
 import type { ReactNode } from 'react';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
@@ -10,6 +15,7 @@ import { PROJECT_PRIORITIES, PROJECT_STATUSES } from '@/lib/projects';
 import { useSchemaForm } from '@/lib/use-schema-form';
 
 const FIELDS = [
+  'typeId',
   'folio',
   'name',
   'description',
@@ -47,6 +53,8 @@ function SectionTitle({ children }: { children: ReactNode }) {
 interface ProjectFormProps {
   /** Valores iniciales al editar; sin ellos el formulario está vacío (crear) */
   project?: Project;
+  /** Tipos que se pueden elegir (HU-21); el primero es el de por omisión al crear */
+  types: ProjectType[];
   submitLabel: string;
   isPending: boolean;
   /** Error de la API, si la última petición falló */
@@ -61,6 +69,7 @@ interface ProjectFormProps {
 /** Formulario de proyecto (HU-05): se valida con el mismo esquema que la API */
 export function ProjectForm({
   project,
+  types,
   submitLabel,
   isPending,
   error,
@@ -74,6 +83,18 @@ export function ProjectForm({
     <form onSubmit={form.onSubmit} noValidate>
       <fieldset disabled={readOnly || isPending} className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
+          <Label htmlFor={form.idOf('typeId')}>Tipo</Label>
+          <NativeSelect {...form.field('typeId')} defaultValue={project?.type.id ?? types[0]?.id}>
+            {types.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.name}
+                {type.archived ? ' (archivado)' : ''}
+              </option>
+            ))}
+          </NativeSelect>
+          <FieldError {...form.errorProps('typeId')} />
+        </div>
+        <div className="grid gap-2">
           <Label htmlFor={form.idOf('folio')}>Folio</Label>
           <Input
             {...form.field('folio')}
@@ -83,7 +104,7 @@ export function ProjectForm({
           />
           <FieldError {...form.errorProps('folio')} />
         </div>
-        <div className="grid gap-2">
+        <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor={form.idOf('name')}>Nombre</Label>
           <Input {...form.field('name')} defaultValue={project?.name} maxLength={120} />
           <FieldError {...form.errorProps('name')} />

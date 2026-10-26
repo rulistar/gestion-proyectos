@@ -110,15 +110,7 @@ export function MyWorkPage() {
 
         <div className="grid gap-4">
           <ActiveProjectsCard workspaceId={workspaceId} projects={projects} today={today} />
-          <Card>
-            <CardHeader>
-              <CardTitle>Mantenimientos</CardTitle>
-              <CardDescription>
-                <Wrench aria-hidden className="mr-1 inline size-4" />
-                Llegan con los tipos de trabajo (HU-21): aquí verás sus tareas abiertas y vencidas.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <MaintenanceCard workspaceId={workspaceId} projects={projects} />
         </div>
       </div>
     </div>
@@ -194,7 +186,9 @@ function ActiveProjectsCard({
   projects: Project[];
   today: string;
 }) {
-  const active = projects.filter((p) => p.status !== 'DONE' && p.status !== 'CANCELLED');
+  const active = projects.filter(
+    (p) => p.type.behavior === 'WITH_END' && p.status !== 'DONE' && p.status !== 'CANCELLED',
+  );
 
   return (
     <Card>
@@ -228,6 +222,58 @@ function ActiveProjectsCard({
             <p className="text-xs text-muted-foreground">
               {daysRemainingLabel(project.endDate, today)}
             </p>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Mantenimientos (comportamiento Continuo, HU-21) con sus tareas abiertas y vencidas */
+function MaintenanceCard({ workspaceId, projects }: { workspaceId: string; projects: Project[] }) {
+  const maintenance = projects.filter(
+    (p) => p.type.behavior === 'ONGOING' && p.status !== 'DONE' && p.status !== 'CANCELLED',
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Mantenimientos</CardTitle>
+        <CardDescription>
+          <Link
+            to="/w/$workspaceId/mantenimientos"
+            params={{ workspaceId }}
+            className="font-medium"
+          >
+            Ver todos
+          </Link>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        {maintenance.length === 0 && (
+          <p className="text-sm text-muted-foreground">No hay mantenimientos activos.</p>
+        )}
+        {maintenance.map((project) => (
+          <div key={project.id} className="flex items-center gap-3">
+            <Wrench aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+            <div className="min-w-0 flex-1">
+              <Link
+                to="/w/$workspaceId/p/$projectId"
+                params={{ workspaceId, projectId: project.id }}
+                className="block truncate text-sm font-medium"
+              >
+                {project.name}
+              </Link>
+              <p className="text-xs text-muted-foreground">{project.type.name}</p>
+            </div>
+            <div className="text-right text-xs">
+              <p className="tabular-nums">{project.progress.openTasks} abiertas</p>
+              {project.progress.overdueTasks > 0 && (
+                <p className="font-semibold text-destructive tabular-nums">
+                  {project.progress.overdueTasks} vencidas
+                </p>
+              )}
+            </div>
           </div>
         ))}
       </CardContent>

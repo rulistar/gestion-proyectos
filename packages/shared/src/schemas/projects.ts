@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { endAfterStart, endAfterStartError, optionalDate, optionalText } from './common.js';
+import {
+  endAfterStart,
+  endAfterStartError,
+  optionalDate,
+  optionalId,
+  optionalText,
+} from './common.js';
+import { projectTypeRefSchema } from './project-types.js';
 import { projectProgressSchema } from './progress.js';
 
 export const projectStatusSchema = z.enum([
@@ -18,6 +25,8 @@ export type ProjectPriority = z.infer<typeof projectPrioritySchema>;
 export const projectInputSchema = z
   .object({
     name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Máximo 120 caracteres'),
+    /** Tipo de contenedor (HU-21). Sin él: al crear, el primer tipo "Con fin"; al editar, el actual */
+    typeId: optionalId,
     /** Folio del sistema de origen (HU-31): opcional, editable y sin regla de unicidad */
     folio: optionalText(40),
     description: optionalText(2000),
@@ -42,6 +51,7 @@ export type ProjectInput = z.infer<typeof projectInputSchema>;
 export const projectSchema = z.object({
   id: z.uuid(),
   workspaceId: z.uuid(),
+  type: projectTypeRefSchema,
   name: z.string(),
   folio: z.string().nullable(),
   description: z.string().nullable(),
@@ -57,6 +67,9 @@ export const projectSchema = z.object({
   startDate: z.iso.date().nullable(),
   endDate: z.iso.date().nullable(),
   notes: z.string().nullable(),
+  /** Fechas reales (ADR-0004 §2.1): las pone el sistema al cambiar el estado */
+  startedAt: z.iso.datetime().nullable(),
+  finishedAt: z.iso.datetime().nullable(),
   progress: projectProgressSchema,
 });
 export type Project = z.infer<typeof projectSchema>;

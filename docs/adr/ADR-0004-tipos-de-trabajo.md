@@ -57,7 +57,7 @@ Para poder hacer estadística, todo contenedor y toda tarea, **sea del tipo que 
 | Entidad | Inicio real | Fin real |
 |---|---|---|
 | Tarea | La **primera vez** que pasa a En curso (o a Hecha, si se salta En curso) | Al pasar a Hecha |
-| Contenedor | La **primera vez** que pasa a En curso | Al pasar a Terminado o Cancelado |
+| Contenedor | La **primera vez** que pasa a En curso (o a Terminado, si se salta En curso; igual que las tareas) | Al pasar a Terminado o Cancelado |
 
 - Si una tarea sale de Hecha, su fin real se vacía (regla de HU-08), pero **su inicio real se conserva**: ya había empezado. Lo mismo con un contenedor que se reabre.
 - La fecha de creación (createdAt, RNF-01) completa la información.
@@ -126,6 +126,8 @@ Al crear un espacio de trabajo (y, por migración, en los que ya existen) se car
 **Atención inmediata (vía rápida):** cada tipo de tarea tiene una casilla **"Atención inmediata"**. Las tareas de esos tipos (como Fast track) se **resaltan** con una etiqueta y aparecen **primero** en su columna del tablero. Es una propiedad del tipo y no un nombre fijo: si mañana se crea "Urgencia de seguridad", también puede marcarse así.
 
 **Migración de lo existente:** los proyectos actuales pasan al tipo "Proyecto"; las tareas conservan su tipo actual, que deja de ser un `enum` y pasa a apuntar al catálogo.
+
+> **Nota de implementación (HU-21, 2026-10-26):** la migración `project_types` carga los tipos con SQL escrito a mano. PostgreSQL 17 no trae `uuidv7()`, así que arma un UUID v7 a partir de `gen_random_uuid()` y la marca de tiempo. Las fechas reales de lo que ya existía quedan vacías: no se sabe cuándo empezó de verdad. La restricción de tipos de tarea por tipo de contenedor se implementa en HU-22, junto con su catálogo.
 
 ### 6. Modelo de datos (cambios sobre el ADR-0002)
 

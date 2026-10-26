@@ -6,6 +6,7 @@ import type {
 } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
+import { seedProjectTypes } from '../project-types/project-types.service.js';
 
 /**
  * Workspaces que el usuario puede abrir (sin los que están en la papelera): aquellos de los que
@@ -156,6 +157,7 @@ export async function createWorkspace(
         ...auditCreate(actorId),
       },
     });
+    await seedProjectTypes(tx, workspace.id, actorId);
     return { id: workspace.id, name: workspace.name, role: membership.role };
   });
 }

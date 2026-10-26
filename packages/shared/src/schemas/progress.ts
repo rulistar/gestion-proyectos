@@ -9,6 +9,10 @@ export const projectProgressSchema = z.object({
   percent: z.number().int().min(0).max(100),
   /** Suma de los minutos estimados de las tareas que no están Hechas */
   pendingMinutes: z.number().int(),
+  /** Para los contenedores Continuos y Por demanda (ADR-0004 §2): ver countTaskActivity */
+  openTasks: z.number().int(),
+  overdueTasks: z.number().int(),
+  doneThisMonth: z.number().int(),
 });
 export type ProjectProgress = z.infer<typeof projectProgressSchema>;
 
@@ -19,7 +23,7 @@ export type ProjectProgress = z.infer<typeof projectProgressSchema>;
  */
 export function summarizeTasks(
   tasks: readonly { status: TaskStatus; estimatedMinutes: number | null }[],
-): ProjectProgress {
+): Pick<ProjectProgress, 'totalTasks' | 'doneTasks' | 'percent' | 'pendingMinutes'> {
   const counted = tasks.filter((task) => task.status !== 'CANCELLED');
   const doneTasks = counted.filter((task) => task.status === 'DONE').length;
   const pendingMinutes = counted
@@ -50,4 +54,31 @@ export function daysRemainingLabel(endDate: string | null, today: string): strin
   if (days === 0) return 'Termina hoy';
   if (days > 0) return days === 1 ? 'Falta 1 día' : `Faltan ${days} días`;
   return days === -1 ? 'Vencido hace 1 día' : `Vencido hace ${-days} días`;
+}
+
+/** Query de GET .../projects: la fecha local del usuario, para "vencidas" y "este mes" */
+export const projectMetricsQuerySchema = z.object({
+  today: z.iso.date().optional(),
+  monthStart: z.iso.datetime().optional(),
+});
+export type ProjectMetricsQuery = z.infer<typeof projectMetricsQuerySchema>;
+
+/**
+ * Lo que se mide en los contenedores Continuos y Por demanda (ADR-0004 §2): tareas abiertas
+ * (Pausada cuenta), vencidas (abiertas con fin planeado antes de hoy) y Hechas desde
+ * `monthStart`. `today` (AAAA-MM-DD) y `monthStart` (instante ISO) vienen de la zona del usuario.
+ */
+export function countTaskActivity(
+  tasks: readonly { status: TaskStatus; endDate: string | null; completedAt: string | null }[],
+  { today, monthStart }: { today: string; monthStart: string },
+): Pick<ProjectProgress, 'openTasks' | 'overdueTasks' | 'doneThisMonth'> {
+  const open = tasks.filter((t) => t.status !== 'DONE' && t.status !== 'CANCELLED');
+  const since = Date.parse(monthStart);
+  return {
+    openTasks: open.length,
+    overdueTasks: open.filter((t) => t.endDate !== null && t.endDate < today).length,
+    doneThisMonth: tasks.filter(
+      (t) => t.status === 'DONE' && t.completedAt !== null && Date.parse(t.completedAt) >= since,
+    ).length,
+  };
 }

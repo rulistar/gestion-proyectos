@@ -3,6 +3,7 @@ import {
   roleHasPermission,
   type Member,
   type Project,
+  type ProjectType,
   type Task,
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -32,6 +33,7 @@ import {
   useDeleteProject,
   useUpdateProject,
 } from '@/lib/projects';
+import { projectTypesQueryOptions, SECTIONS, selectableTypes } from '@/lib/project-types';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
@@ -58,6 +60,8 @@ export function ProjectPage() {
   const { data: project } = useSuspenseQuery(projectQueryOptions(workspaceId, projectId));
   const { data: tasks } = useSuspenseQuery(tasksQueryOptions(workspaceId, projectId));
   const { data: members } = useSuspenseQuery(membersQueryOptions(workspaceId));
+  const { data: types } = useSuspenseQuery(projectTypesQueryOptions(workspaceId));
+  const section = SECTIONS[project.type.behavior];
   const [tab, setTab] = useState<TabId>('board');
   const [dialog, setDialog] = useState<'edit' | 'task'>();
   const can = (permission: Parameters<typeof roleHasPermission>[1]) =>
@@ -67,8 +71,8 @@ export function ProjectPage() {
     <div className="grid gap-5">
       <header className="grid gap-3">
         <nav aria-label="Ruta" className="text-sm text-muted-foreground">
-          <Link to="/w/$workspaceId" params={{ workspaceId }} className="hover:underline">
-            Proyectos
+          <Link to={section.to} params={{ workspaceId }} className="hover:underline">
+            {section.title}
           </Link>
           <span aria-hidden> / </span>
           <span>{project.name}</span>
@@ -80,6 +84,9 @@ export function ProjectPage() {
             </span>
           )}
           <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
+          <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
+            {project.type.name}
+          </span>
           <ProjectStatusBadge status={project.status} />
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
             Prioridad {PROJECT_PRIORITIES[project.priority].toLowerCase()}
@@ -161,6 +168,7 @@ export function ProjectPage() {
       <EditProjectDialog
         workspaceId={workspaceId}
         project={project}
+        types={selectableTypes(types, project.type.id)}
         readOnly={!can('project.update')}
         open={dialog === 'edit'}
         onClose={() => setDialog(undefined)}
@@ -194,26 +202,55 @@ function ProjectKpis({ project, tasks }: { project: Project; tasks: Task[] }) {
       .filter(Boolean)
       .join(' · ') || 'Todo en orden';
 
+  const pendingWork = (
+    <Kpi label="Trabajo pendiente" value={formatMinutes(progress.pendingMinutes)}>
+      {paused > 0
+        ? `Incluye ${paused} tarea${paused === 1 ? '' : 's'} pausada${paused === 1 ? '' : 's'}`
+        : `${open.length} tarea${open.length === 1 ? '' : 's'} abierta${open.length === 1 ? '' : 's'}`}
+    </Kpi>
+  );
+
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <Kpi label="Avance" value={`${progress.percent}%`}>
-        <ProgressBar percent={progress.percent} label="Avance del proyecto" />
-        <span>
-          {progress.doneTasks} de {progress.totalTasks} tareas
-        </span>
-      </Kpi>
-      <Kpi label="Trabajo pendiente" value={formatMinutes(progress.pendingMinutes)}>
-        {paused > 0
-          ? `Incluye ${paused} tarea${paused === 1 ? '' : 's'} pausada${paused === 1 ? '' : 's'}`
-          : `${open.length} tarea${open.length === 1 ? '' : 's'} abierta${open.length === 1 ? '' : 's'}`}
-      </Kpi>
-      <Kpi
-        label="Fecha de fin"
-        value={daysRemainingLabel(project.endDate, today)}
-        tone={late ? 'text-destructive' : undefined}
-      >
-        {project.endDate ? formatDate(project.endDate) : 'Sin fecha planeada'}
-      </Kpi>
+      {project.type.behavior === 'WITH_END' ? (
+        <>
+          <Kpi label="Avance" value={`${progress.percent}%`}>
+            <ProgressBar percent={progress.percent} label="Avance del proyecto" />
+            <span>
+              {progress.doneTasks} de {progress.totalTasks} tareas
+            </span>
+          </Kpi>
+          {pendingWork}
+          <Kpi
+            label="Fecha de fin"
+            value={daysRemainingLabel(project.endDate, today)}
+            tone={late ? 'text-destructive' : undefined}
+          >
+            {project.endDate ? formatDate(project.endDate) : 'Sin fecha planeada'}
+          </Kpi>
+        </>
+      ) : (
+        // Continuo y Por demanda no tienen % ni "vencido" del contenedor (ADR-0004 §2)
+        <>
+          <Kpi label="Abiertas" value={String(progress.openTasks)}>
+            Pendientes, en curso y pausadas
+          </Kpi>
+          {project.type.behavior === 'ONGOING' ? (
+            <Kpi label="Hechas este mes" value={String(progress.doneThisMonth)}>
+              Desde el día 1
+            </Kpi>
+          ) : (
+            pendingWork
+          )}
+          {project.type.behavior === 'ONGOING' ? (
+            pendingWork
+          ) : (
+            <Kpi label="Hechas" value={String(progress.doneTasks)}>
+              De {progress.totalTasks} en total
+            </Kpi>
+          )}
+        </>
+      )}
       <Kpi
         label="Requiere atención"
         value={String(overdue + orphan)}
@@ -247,6 +284,23 @@ function Kpi({
   );
 }
 
+/** Fecha real (un instante) como fecha local: "18 nov 2026" */
+function formatInstant(iso: string) {
+  const date = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return formatDate(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`);
+}
+
+/** Fin real contra fin planeado: "3 días tarde", "A tiempo"; sin alguno de los dos, nada */
+function deviationLabel(endDate: string | null, finishedAt: string | null) {
+  if (!endDate || !finishedAt) return null;
+  const finished = new Date(finishedAt);
+  const local = Date.UTC(finished.getFullYear(), finished.getMonth(), finished.getDate());
+  const days = Math.round((local - Date.parse(`${endDate}T00:00:00Z`)) / 86_400_000);
+  if (days <= 0) return days === 0 ? 'A tiempo' : `${-days} día${days === -1 ? '' : 's'} antes`;
+  return `${days} día${days === 1 ? '' : 's'} tarde`;
+}
+
 /** Pestaña "Datos del proyecto": todo lo capturado, solo lectura (se edita en la ventana) */
 function ProjectDetails({ project }: { project: Project }) {
   const sections = [
@@ -263,18 +317,28 @@ function ProjectDetails({ project }: { project: Project }) {
     {
       title: 'Planeación',
       rows: [
+        ['Tipo', project.type.name],
         ['Folio', project.folio],
         ['Área', project.area],
         ['Clasificación', project.classification],
         ['Prioridad', PROJECT_PRIORITIES[project.priority]],
+      ],
+    },
+    {
+      // Planeadas las captura la persona; reales las pone el sistema (ADR-0004 §2.1)
+      title: 'Fechas',
+      rows: [
         ['Inicio planeado', project.startDate && formatDate(project.startDate)],
+        ['Inicio real', project.startedAt && formatInstant(project.startedAt)],
         ['Fin planeado', project.endDate && formatDate(project.endDate)],
+        ['Fin real', project.finishedAt && formatInstant(project.finishedAt)],
+        ['Desviación', deviationLabel(project.endDate, project.finishedAt)],
       ],
     },
   ];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-3">
       {sections.map((section) => (
         <Card key={section.title}>
           <CardContent className="grid gap-3">
@@ -290,7 +354,7 @@ function ProjectDetails({ project }: { project: Project }) {
           </CardContent>
         </Card>
       ))}
-      <Card className="lg:col-span-2">
+      <Card className="lg:col-span-3">
         <CardContent className="grid gap-2">
           <h2 className="font-semibold">Observaciones</h2>
           <p className="text-sm whitespace-pre-line text-muted-foreground">
@@ -305,12 +369,14 @@ function ProjectDetails({ project }: { project: Project }) {
 function EditProjectDialog({
   workspaceId,
   project,
+  types,
   readOnly,
   open,
   onClose,
 }: {
   workspaceId: string;
   project: Project;
+  types: ProjectType[];
   readOnly: boolean;
   open: boolean;
   onClose: () => void;
@@ -328,6 +394,7 @@ function EditProjectDialog({
         <ProjectForm
           key={JSON.stringify(project)}
           project={project}
+          types={types}
           submitLabel="Guardar cambios"
           readOnly={readOnly}
           isPending={update.isPending}
