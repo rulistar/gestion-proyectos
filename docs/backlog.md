@@ -266,7 +266,7 @@ _Como responsable, quiero registrar el folio, la descripción y las personas de 
 
 - [x] Campos **Folio** (opcional, editable, hasta 40 caracteres, puede repetirse), **Descripción** y **Observaciones** (antes "Notas").
 - [x] Personas como texto libre: **Solicitante**, **Asignado a**, **Project manager**, **Gte. Consultoría** y **Business partner**.
-- [x] El formulario se ordena en secciones (datos, personas, planeación); la tabla de proyectos muestra Folio y Project manager; el proyecto muestra su folio, descripción y personas.
+- [x] El formulario se ordena en secciones (datos, personas, planeación); la tabla de proyectos muestra Folio y Solicitante (en lugar de Clasificación; el Project manager se ve en el detalle); el proyecto muestra su folio, descripción y personas.
 - [x] Migración sin pérdida de datos (columnas opcionales) y pruebas. Buscar por folio llega con los filtros (HU-09).
 
 #### HU-24 · Pausar y cancelar tareas (3 pts)

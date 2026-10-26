@@ -47,7 +47,7 @@ Para poder hacer estadística, todo contenedor y toda tarea, **sea del tipo que 
 
 | | **Planeadas** (lo que se espera) | **Reales** (lo que pasó) |
 |---|---|---|
-| Campos | startDate, endDate | startedAt, inishedAt (en tareas, completedAt, que ya existe) |
+| Campos | startDate, endDate | startedAt, finishedAt (en tareas, completedAt, que ya existe) |
 | Quién las pone | La persona, en el formulario | **El sistema, automáticamente** |
 | ¿Se pueden cambiar? | Sí, al replanear | No: son el registro histórico |
 | ¿Obligatorias? | No, en ningún comportamiento | Se llenan solas al ocurrir el evento |

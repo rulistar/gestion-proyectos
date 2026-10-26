@@ -21,7 +21,7 @@ export function AppLayout() {
         <header className="flex h-16 items-center justify-end gap-3 border-b bg-card px-4 md:px-8">
           <UserMenu />
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:px-8 md:py-7">
+        <main className="mx-auto w-full max-w-screen-2xl flex-1 p-4 md:px-8 md:py-7">
           <Outlet />
         </main>
       </div>
