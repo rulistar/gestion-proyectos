@@ -82,6 +82,8 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
     expect(project).toEqual({
       id: project.id,
       workspaceId: ws.id,
+      // Sin tipo pedido, el primer tipo "Con fin" del espacio (HU-21)
+      type: { id: project.type.id, name: 'Proyecto', behavior: 'WITH_END' },
       name: 'Curso de TypeScript',
       folio: null,
       description: null,
@@ -97,7 +99,17 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
       startDate: '2026-11-01',
       endDate: null,
       notes: null,
-      progress: { totalTasks: 0, doneTasks: 0, percent: 0, pendingMinutes: 0 },
+      startedAt: null,
+      finishedAt: null,
+      progress: {
+        totalTasks: 0,
+        doneTasks: 0,
+        percent: 0,
+        pendingMinutes: 0,
+        openTasks: 0,
+        overdueTasks: 0,
+        doneThisMonth: 0,
+      },
     });
   });
 
@@ -182,8 +194,8 @@ describe('avance del proyecto (HU-06)', () => {
     );
 
     const expected = { totalTasks: 2, doneTasks: 1, percent: 50, pendingMinutes: 30 };
-    expect(list[0]?.progress).toEqual(expected);
-    expect(detail.progress).toEqual(expected);
+    expect(list[0]?.progress).toMatchObject(expected);
+    expect(detail.progress).toMatchObject(expected);
   });
 });
 

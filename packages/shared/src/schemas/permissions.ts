@@ -17,6 +17,8 @@ export const PERMISSIONS = [
   'member.manage',
   'workspace.update',
   'trash.manage',
+  /** Tipos de contenedor y de tarea, campos de detalle (ADR-0004) */
+  'catalog.manage',
   'integration.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];

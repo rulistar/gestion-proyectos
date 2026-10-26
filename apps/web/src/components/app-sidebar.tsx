@@ -142,7 +142,17 @@ export function AppSidebar() {
         ) : (
           <SoonItem icon={FolderKanban} label="Proyectos" story="un espacio elegido" />
         )}
-        <SoonItem icon={Wrench} label="Mantenimientos" story="HU-21" />
+        {current && (
+          <Link
+            to="/w/$workspaceId/mantenimientos"
+            params={{ workspaceId: current.id }}
+            className={itemClass}
+            activeProps={{ className: 'bg-accent text-accent-foreground', 'aria-current': 'page' }}
+          >
+            <Wrench aria-hidden />
+            Mantenimientos
+          </Link>
+        )}
         {current && (
           <Link
             to="/w/$workspaceId/mi-trabajo"
@@ -154,7 +164,17 @@ export function AppSidebar() {
             Mi trabajo
           </Link>
         )}
-        <SoonItem icon={Inbox} label="Actividades" story="HU-21" />
+        {current && (
+          <Link
+            to="/w/$workspaceId/actividades"
+            params={{ workspaceId: current.id }}
+            className={itemClass}
+            activeProps={{ className: 'bg-accent text-accent-foreground', 'aria-current': 'page' }}
+          >
+            <Inbox aria-hidden />
+            Actividades
+          </Link>
+        )}
         <SoonItem icon={ChartGantt} label="Gantt" story="HU-27" />
       </div>
 
@@ -185,7 +205,20 @@ export function AppSidebar() {
               Papelera
             </Link>
           )}
-          <SoonItem icon={Settings} label="Configuración" story="HU-21" />
+          {roleHasPermission(current.role, 'catalog.manage') && (
+            <Link
+              to="/w/$workspaceId/configuracion"
+              params={{ workspaceId: current.id }}
+              className={itemClass}
+              activeProps={{
+                className: 'bg-accent text-accent-foreground',
+                'aria-current': 'page',
+              }}
+            >
+              <Settings aria-hidden />
+              Configuración
+            </Link>
+          )}
         </div>
       )}
     </nav>

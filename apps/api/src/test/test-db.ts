@@ -31,6 +31,6 @@ export function createTestDb(): Db {
 /** Vacía todas las tablas entre pruebas para que cada una empiece desde cero. */
 export async function resetDb(db: Db): Promise<void> {
   await db.$executeRawUnsafe(
-    'TRUNCATE TABLE "invitations", "tasks", "projects", "sessions", "memberships", "workspaces", "users" RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE "invitations", "tasks", "projects", "project_types", "sessions", "memberships", "workspaces", "users" RESTART IDENTITY CASCADE',
   );
 }

@@ -260,6 +260,20 @@ _Como usuario nuevo, quiero una interfaz clara y atractiva, para encontrar rápi
 - [x] Tarjetas de tarea con avatar del responsable y fecha coloreada según urgencia (vencida, hoy/mañana, después).
 - [x] Crear y editar proyectos y tareas en ventanas; avisos breves al guardar. Al crear un proyecto se abre.
 
+#### HU-21 · Tipos de contenedor (5 pts)
+
+_Como Admin, quiero clasificar el trabajo en proyectos, mantenimientos y actividades, para medir cada uno como corresponde._ Diseño: [ADR-0004](adr/ADR-0004-tipos-de-trabajo.md).
+
+- [x] Catálogo de **tipos de contenedor** por espacio, con comportamiento **Con fin**, **Continuo** o **Por demanda**; cada espacio nuevo trae Proyecto, Mtto correctivo, Mtto evolutivo y Actividades.
+- [x] Migración: los espacios existentes reciben los tipos iniciales y sus proyectos quedan como "Proyecto".
+- [x] Página **Configuración** (solo Admin, `catalog.manage`): agregar, renombrar, cambiar comportamiento y archivar/reactivar tipos. Nombres únicos en el espacio; siempre queda al menos un tipo activo; un tipo archivado ya no se ofrece, pero lo existente lo conserva.
+- [x] Menú: **Proyectos** (Con fin), **Mantenimientos** (Continuo) y **Actividades** (Por demanda), cada uno con sus columnas: % y fin en proyectos; abiertas, vencidas y hechas del mes en mantenimientos; abiertas y vencidas en actividades. "Vencidas" y "este mes" usan la fecha local del usuario.
+- [x] El tipo se elige al crear y se puede cambiar al editar; el proyecto muestra su tipo y sus indicadores según el comportamiento.
+- [x] **Fechas reales** del contenedor (inicio la primera vez que pasa a En curso o a Terminado; fin al Terminar o Cancelar, se vacía si se reabre), visibles en "Datos del proyecto" con la desviación contra el fin planeado. Lo anterior a HU-21 queda sin fecha real.
+- [x] "Mi trabajo" muestra los mantenimientos activos con sus abiertas y vencidas.
+- [x] Pruebas: catálogo, permisos, tipo de otro espacio, archivados, métricas y fechas reales.
+- Los **tipos de tarea permitidos** por tipo de contenedor pasan a HU-22: necesitan el catálogo de tipos de tarea.
+
 #### HU-31 · Datos del proyecto (3 pts)
 
 _Como responsable, quiero registrar el folio, la descripción y las personas de cada proyecto, para tener la misma información que en el sistema de origen._

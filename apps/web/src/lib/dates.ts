@@ -34,3 +34,9 @@ export function weekStartIso(): string {
   start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
   return start.toISOString();
 }
+
+/** Instante en que empezó el mes del usuario (día 1, 00:00 en su zona horaria), en ISO */
+export function monthStartIso(): string {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+}

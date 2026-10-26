@@ -10,6 +10,7 @@ import { ApiError } from '@/lib/api';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
 import { weekStartIso } from '@/lib/dates';
 import { myTasksQueryOptions } from '@/lib/my-work';
+import { projectTypesQueryOptions } from '@/lib/project-types';
 import { projectQueryOptions, projectsQueryOptions } from '@/lib/projects';
 import { tasksQueryOptions } from '@/lib/tasks';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
@@ -22,7 +23,8 @@ import { MembersPage } from '@/routes/members-page';
 import { MyWorkPage } from '@/routes/my-work-page';
 import { ProjectPage } from '@/routes/project-page';
 import { TrashPage } from '@/routes/trash-page';
-import { WorkspacePage } from '@/routes/workspace-page';
+import { CatalogPage } from '@/routes/catalog-page';
+import { ActivitiesPage, MaintenancePage, WorkspacePage } from '@/routes/workspace-page';
 
 /*
  * Rutas definidas en código (ADR-0003):
@@ -30,7 +32,9 @@ import { WorkspacePage } from '@/routes/workspace-page';
  *   /                          protegidas (layout "app": barra superior + página):
  *   /w/$workspaceId              inicio, un workspace con sus proyectos
  *   /w/$workspaceId/p/$projectId un proyecto
+ *   /w/$workspaceId/mantenimientos y /actividades: los contenedores de esos tipos (HU-21)
  *   /w/$workspaceId/mi-trabajo    mis tareas en ese workspace (HU-28b)
+ *   /w/$workspaceId/configuracion tipos de contenedor (HU-21, solo Admin)
  *   /w/$workspaceId/miembros      y sus miembros e invitaciones
  *   /w/$workspaceId/papelera      y su papelera (solo Admin)
  *   /login                     pública; si ya hay sesión, redirige a /
@@ -122,15 +126,45 @@ const homeRoute = createRoute({
   component: HomePage,
 });
 
+/** Lo que necesita la lista de contenedores (proyectos, mantenimientos o actividades) */
+function loadContainers(queryClient: QueryClient, workspaceId: string) {
+  return Promise.all([
+    queryClient.ensureQueryData(workspaceQueryOptions(workspaceId)),
+    queryClient.ensureQueryData(projectsQueryOptions(workspaceId)),
+    queryClient.ensureQueryData(projectTypesQueryOptions(workspaceId)),
+  ]);
+}
+
 const workspaceRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId',
+  loader: ({ context, params }) => loadContainers(context.queryClient, params.workspaceId),
+  component: WorkspacePage,
+});
+
+const maintenanceRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/mantenimientos',
+  loader: ({ context, params }) => loadContainers(context.queryClient, params.workspaceId),
+  component: MaintenancePage,
+});
+
+const activitiesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/actividades',
+  loader: ({ context, params }) => loadContainers(context.queryClient, params.workspaceId),
+  component: ActivitiesPage,
+});
+
+const catalogRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/configuracion',
   loader: ({ context, params }) =>
     Promise.all([
       context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
-      context.queryClient.ensureQueryData(projectsQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(projectTypesQueryOptions(params.workspaceId)),
     ]),
-  component: WorkspacePage,
+  component: CatalogPage,
 });
 
 const projectRoute = createRoute({
@@ -144,6 +178,7 @@ const projectRoute = createRoute({
       ),
       context.queryClient.ensureQueryData(tasksQueryOptions(params.workspaceId, params.projectId)),
       context.queryClient.ensureQueryData(membersQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(projectTypesQueryOptions(params.workspaceId)),
     ]),
   component: ProjectPage,
 });
@@ -186,6 +221,9 @@ const routeTree = rootRoute.addChildren([
   appRoute.addChildren([
     homeRoute,
     workspaceRoute,
+    maintenanceRoute,
+    activitiesRoute,
+    catalogRoute,
     projectRoute,
     myWorkRoute,
     membersRoute,

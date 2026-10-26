@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysRemainingLabel, summarizeTasks } from './progress.js';
+import { countTaskActivity, daysRemainingLabel, summarizeTasks } from './progress.js';
 
 describe('summarizeTasks (HU-06)', () => {
   it('sin tareas: 0 % y 0 minutos', () => {
@@ -85,5 +85,25 @@ describe('daysRemainingLabel (HU-06)', () => {
   it('cruza meses y años sin desfasarse', () => {
     expect(daysRemainingLabel('2027-01-01', '2026-12-31')).toBe('Falta 1 día');
     expect(daysRemainingLabel('2026-03-01', '2026-02-28')).toBe('Falta 1 día');
+  });
+});
+
+describe('countTaskActivity (contenedores Continuos y Por demanda, HU-21)', () => {
+  const when = { today: '2026-10-28', monthStart: '2026-10-01T06:00:00.000Z' };
+
+  it('cuenta abiertas (Pausada incluida), vencidas y hechas este mes', () => {
+    const tasks = [
+      { status: 'PENDING', endDate: '2026-10-27', completedAt: null },
+      { status: 'PAUSED', endDate: null, completedAt: null },
+      { status: 'IN_PROGRESS', endDate: '2026-10-28', completedAt: null },
+      { status: 'DONE', endDate: '2026-10-01', completedAt: '2026-10-15T12:00:00.000Z' },
+      { status: 'DONE', endDate: null, completedAt: '2026-10-01T05:00:00.000Z' },
+      { status: 'CANCELLED', endDate: '2026-10-01', completedAt: null },
+    ] as const;
+    expect(countTaskActivity(tasks, when)).toEqual({
+      openTasks: 3,
+      overdueTasks: 1,
+      doneThisMonth: 1,
+    });
   });
 });
