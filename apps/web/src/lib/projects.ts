@@ -51,7 +51,8 @@ export function useCreateProject(workspaceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: ProjectInput) =>
-      apiFetch(`/workspaces/${workspaceId}/projects`, {
+      // Con la fecha local: decide el mes del folio automático (HU-38)
+      apiFetch(`/workspaces/${workspaceId}/projects${metricsQuery()}`, {
         method: 'POST',
         body: data,
         schema: projectSchema,

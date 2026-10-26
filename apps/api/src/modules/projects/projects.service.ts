@@ -6,10 +6,11 @@ import {
   type ProjectStatus,
   type TaskStatus,
 } from '@gestion/shared';
-import type { Db } from '../../db/client.js';
+import type { Db, Tx } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
 import { resolveProjectType } from '../project-types/project-types.service.js';
+import { resolveFolio } from './folios.js';
 
 /** El tipo pedido no existe en el espacio o está archivado (→ 400) */
 export class InvalidProjectTypeError extends Error {}
@@ -133,6 +134,15 @@ export function realDatesFor(
   return { startedAt, finishedAt: wasFinished ? previous.finishedAt : now };
 }
 
+/** Comportamiento del tipo: decide el prefijo del folio automático (HU-38) */
+async function behaviorOf(tx: Tx, typeId: string) {
+  const type = await tx.projectType.findUniqueOrThrow({
+    where: { id: typeId },
+    select: { behavior: true },
+  });
+  return type.behavior;
+}
+
 function toData(input: ProjectInput, typeId: string) {
   return {
     ...input,
@@ -175,19 +185,27 @@ export async function createProject(
   actorId: string,
   workspaceId: string,
   input: ProjectInput,
+  metrics = defaultMetrics(),
 ): Promise<Project> {
   const typeId = await resolveProjectType(db, workspaceId, input.typeId);
   if (!typeId) throw new InvalidProjectTypeError();
-  const row = await db.project.create({
-    data: {
-      workspaceId,
-      ...toData(input, typeId),
-      ...realDatesFor(input.status, null),
-      ...auditCreate(actorId),
-    },
-    select: projectSelect,
+  const row = await db.$transaction(async (tx) => {
+    // Vacío o solo el formato → automático; uno de otro sistema se respeta si no está repetido (HU-38)
+    const folio = await resolveFolio(tx, workspaceId, input.folio, {
+      behavior: await behaviorOf(tx, typeId),
+      today: metrics.today,
+    });
+    return tx.project.create({
+      data: {
+        workspaceId,
+        ...toData({ ...input, folio }, typeId),
+        ...realDatesFor(input.status, null),
+        ...auditCreate(actorId),
+      },
+      select: projectSelect,
+    });
   });
-  return toProject(row, defaultMetrics());
+  return toProject(row, metrics);
 }
 
 /** Reemplaza los datos del proyecto; null si no existe en ese workspace */
@@ -197,10 +215,11 @@ export async function updateProject(
   workspaceId: string,
   projectId: string,
   input: ProjectInput,
+  metrics = defaultMetrics(),
 ): Promise<Project | null> {
   const previous = await db.project.findFirst({
     where: { id: projectId, workspaceId, ...notDeleted },
-    select: { typeId: true, status: true, startedAt: true, finishedAt: true },
+    select: { typeId: true, folio: true, status: true, startedAt: true, finishedAt: true },
   });
   if (!previous) return null;
   const typeId = await resolveProjectType(db, workspaceId, input.typeId, previous.typeId);
@@ -210,15 +229,22 @@ export async function updateProject(
     if (conflicts.length > 0) throw new DisallowedTaskTypesError(conflicts);
   }
 
-  await db.project.update({
-    where: { id: projectId },
-    data: {
-      ...toData(input, typeId),
-      ...realDatesFor(input.status, previous),
-      ...auditUpdate(actorId),
-    },
+  await db.$transaction(async (tx) => {
+    const folio = await resolveFolio(tx, workspaceId, input.folio, {
+      behavior: await behaviorOf(tx, typeId),
+      today: metrics.today,
+      current: { id: projectId, folio: previous.folio },
+    });
+    await tx.project.update({
+      where: { id: projectId },
+      data: {
+        ...toData({ ...input, folio }, typeId),
+        ...realDatesFor(input.status, previous),
+        ...auditUpdate(actorId),
+      },
+    });
   });
-  return getProject(db, workspaceId, projectId);
+  return getProject(db, workspaceId, projectId, metrics);
 }
 
 /**
