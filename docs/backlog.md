@@ -1,7 +1,7 @@
 # Product Backlog
 
 > Lista priorizada de todo lo que el producto debe hacer. La ordena el **Product Owner**. Nada entra al desarrollo sin estar aquí (acta, riesgo "crecimiento desordenado del alcance").
-> Última actualización: 2026-10-25 (fases: HU-07 se adelanta al Sprint 4).
+> Última actualización: 2026-10-25 (perfil y usuarios del sistema: HU-29 y HU-30 en el Sprint 5).
 
 ## Cómo leer este documento
 
@@ -32,6 +32,7 @@
 | Revisión del Sprint 2 (2026-10-25) | Tareas con estados **Pausada** (cuenta como pendiente) y **Cancelada** (se descuenta), con **motivo obligatorio**. **Papelera** adelantada al Sprint 3. Al quitar a un miembro, **sus tareas conservan su nombre** (marcado "ya no es miembro") hasta reasignarlas. **Gantt** del proyecto y del espacio. Prioridad: ajustes de la revisión → tipos de trabajo → Gantt y permisos. |
 | Rediseño (2026-10-25) | Antes de seguir, **rediseñar la interfaz** según la [maqueta](https://claude.ai/artifact/QkTijPe4GF7EtTePxQHYFR): menú lateral (Proyectos, Mantenimientos, Mi trabajo, Actividades, Gantt), combo **Espacio de trabajo**, color **turquesa matizado** y login con el formulario a la izquierda. El **Admin del sistema ve y entra a todos los espacios**. Nombre provisional: "Gestor de Proyectos". Después, los tipos de trabajo (HU-21, HU-22). |
 | Fases (2026-10-25) | Las tareas de un proyecto se agrupan en **fases**, como las tareas resumen de Project: una fase puede contener tareas y otras fases, hasta **4 niveles**. Su avance y sus fechas **se calculan** a partir de lo que contiene. HU-07 se adelanta al Sprint 4, antes de la vista Lista (HU-26) y el Gantt (HU-27), que dependen de ella. |
+| Cambiar correos (2026-10-25) | Una persona puede estar en varios espacios, así que el **Admin de un espacio no cambia correos**. Cada usuario cambia su nombre, correo y contraseña en **Mi perfil**, confirmando con su contraseña (HU-29); el **Admin del sistema** puede cambiar el correo de cualquiera y desactivar cuentas (HU-30). Sprint 5. |
 
 ## Requisitos no funcionales (aplican a todas las historias)
 
@@ -74,19 +75,21 @@
 | 23 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
 | 24 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 5 |
 | 25 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
-| 26 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 27 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 28 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 29 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
-| 30 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
-| 31 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 32 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 33 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 34 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 35 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 36 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 37 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 38 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 26 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 27 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
+| 28 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 29 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 30 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 31 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
+| 32 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 33 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 34 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 35 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 36 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 37 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 38 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 39 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 40 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -323,6 +326,8 @@ _Como miembro, quiero ver las tareas en lista y filtrarlas, para manejar proyect
 
 - **HU-16 · Visibilidad:** un proyecto puede marcarse como restringido, con una lista de usuarios autorizados; los demás no lo ven en ninguna vista, búsqueda ni exportación.
 - **HU-17 · Permisos por usuario:** pantalla con la **matriz de permisos** de cada miembro (filas: ver, crear, editar, borrar, exportar... sobre proyectos y tareas; columnas: lo que da su rol y el ajuste personal). El Admin concede o quita acciones concretas, por ejemplo limitar las altas o las modificaciones.
+- **HU-29 · Mi perfil:** desde el menú del usuario, cambiar mi nombre, mi correo y mi contraseña. Cambiar el correo o la contraseña pide la **contraseña actual**; el correo nuevo se guarda en minúsculas y no puede estar en uso; al cambiarlos se **cierran mis demás sesiones**. Cumple RNF-01. Sin verificación por correo mientras no haya servicio de correo.
+- **HU-30 · Usuarios del sistema:** pantalla solo para el **Admin del sistema** con todos los usuarios (nombre, correo, espacios, estado). Puede **cambiar el correo** de cualquiera (mismas reglas que HU-29; se cierran sus sesiones) y **desactivar o reactivar** una cuenta (una cuenta desactivada no inicia sesión y sus sesiones se cierran). El Admin de un espacio no cambia correos: quita al miembro e invita el correo correcto.
 - **HU-27 · Gantt:** dentro de cada proyecto (sus tareas) y uno general del espacio (los proyectos como barras, con sus tareas desplegables). Barras con las fechas planeadas coloreadas por estado, línea de "hoy", vencido resaltado, **planeado contra real** (ADR-0004 §2.1), zoom semana / mes / trimestre, **fases como barras resumen** (HU-07) y Entregables como hitos (rombo). Sin librería nueva (cuadrícula de CSS). Dependencias entre tareas: más adelante, si hacen falta.
 - **HU-13 · Exportar:** JSON (respaldo completo) y CSV con BOM UTF-8 (una fila por tarea, compatible con el formato del prototipo); respeta la visibilidad y excluye lo borrado. Sin dependencias nuevas.
 - **HU-14 · Importar:** JSON o CSV, incluidos los respaldos del prototipo; "Actualizar" busca coincidencias por ID o, si no hay, por nombre sin distinguir mayúsculas; "Reemplazar" pide doble confirmación y manda lo anterior a la papelera; fechas normalizadas a AAAA-MM-DD (ambiguas = día/mes/año).
