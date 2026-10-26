@@ -13,6 +13,7 @@ import {
   softDeleteProject,
   updateProject,
 } from './projects.service.js';
+import { DuplicateFolioError } from './folios.js';
 
 const projectParamsSchema = z.object({ projectId: z.uuid() });
 
@@ -33,6 +34,9 @@ function metricsOf(request: FastifyRequest) {
 function invalidType(reply: FastifyReply, error: unknown) {
   if (error instanceof InvalidProjectTypeError) {
     return reply.code(400).send({ message: 'El tipo no existe en este espacio o está archivado' });
+  }
+  if (error instanceof DuplicateFolioError) {
+    return reply.code(409).send({ message: `El folio ${error.folio} ya existe en este espacio` });
   }
   if (error instanceof DisallowedTaskTypesError) {
     return reply.code(409).send({
@@ -61,11 +65,13 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
         return reply.code(400).send({ message: z.prettifyError(parsed.error) });
       }
       try {
+        // La fecha local del usuario decide el mes del folio automático (HU-38)
         const project = await createProject(
           app.db,
           request.auth!.userId,
           request.membership!.workspaceId,
           parsed.data,
+          metricsOf(request),
         );
         return await reply.code(201).send(project);
       } catch (error) {
@@ -109,6 +115,7 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
           request.membership!.workspaceId,
           params.data.projectId,
           parsed.data,
+          metricsOf(request),
         );
         return project ?? projectNotFound(reply);
       } catch (error) {

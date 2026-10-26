@@ -25,6 +25,15 @@ Responde a la revisión del Sprint 3: catálogo de personas con alias, tres resp
 | 7 | HU-09 | Filtros y orden en la lista de proyectos | 5 |
 | | | **Total** | **28** |
 
+**Agregadas por el PO durante el sprint (acuerdo 2 de la retrospectiva):**
+
+| Fecha | ID | Elemento | Pts |
+|---|---|---|---|
+| 2026-10-26 | — | Quitar la columna Solicitante de Proyectos y Mantenimientos | — |
+| 2026-10-26 | HU-38 | Folios automáticos PY / MT / ACT + AAMM + contador mensual | 3 |
+
+El compromiso queda en **31 puntos**.
+
 Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-4).
 
 **Pasan al Sprint 5:**
