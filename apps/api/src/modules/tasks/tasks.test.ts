@@ -24,6 +24,8 @@ type Cookies = Record<string, string>;
 
 const emptyProject = {
   typeId: null,
+  sprint: null,
+  sprintActivities: null,
   folio: null,
   description: null,
   requester: null,

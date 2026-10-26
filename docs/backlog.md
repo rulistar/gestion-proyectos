@@ -340,10 +340,10 @@ Orden del PO (2026-10-26): HU-33 → HU-34 → HU-35 → HU-36 → HU-37 → HU-
 
 _Como responsable, quiero anotar en qué sprint va cada proyecto y mantenimiento y qué se hace en él, para que el equipo lo vea sin buscar en otro lado._
 
-- [ ] Campos de texto **Sprint** (corto, p. ej. "Sprint 4") y **Actividades del sprint** (largo), opcionales y editables, en **proyectos y mantenimientos** (pedido del PO, 2026-10-26). Como todos los contenedores comparten formulario, también aparecen en Actividades.
-- [ ] Se ven en "Datos del proyecto" y, si tienen valor, bajo la descripción.
-- [ ] La lista de proyectos y la de mantenimientos muestran la columna **Sprint**.
-- [ ] Migración sin pérdida de datos y pruebas.
+- [x] Campos de texto **Sprint** (corto, p. ej. "Sprint 4") y **Actividades del sprint** (largo), opcionales y editables, en **proyectos y mantenimientos** (pedido del PO, 2026-10-26). Como todos los contenedores comparten formulario, también aparecen en Actividades.
+- [x] Se ven en "Datos del proyecto" y, si tienen valor, bajo la descripción.
+- [x] La lista de proyectos y la de mantenimientos muestran la columna **Sprint**.
+- [x] Migración sin pérdida de datos y pruebas.
 
 #### HU-34 · Catálogo de personas (5 pts)
 

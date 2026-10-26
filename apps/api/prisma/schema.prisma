@@ -301,6 +301,9 @@ model Project {
   endDate           DateTime?         @map("end_date") @db.Date
   /// Observaciones (en pantalla; antes "Notas")
   notes             String?
+  /// Sprint en curso y lo que se hace en él (HU-33): texto libre
+  sprint            String?
+  sprintActivities  String?           @map("sprint_activities")
   /// Fechas reales (ADR-0004 §2.1): las pone el sistema al cambiar el estado, no se editan
   startedAt         DateTime?         @map("started_at") @db.Timestamptz(3)
   finishedAt        DateTime?         @map("finished_at") @db.Timestamptz(3)
