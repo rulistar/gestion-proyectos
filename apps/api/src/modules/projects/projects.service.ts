@@ -71,6 +71,8 @@ const projectSelect = {
   startDate: true,
   endDate: true,
   notes: true,
+  sprint: true,
+  sprintActivities: true,
   startedAt: true,
   finishedAt: true,
   // Para medir el avance (HU-06, ADR-0004 §2); las tareas en la papelera no cuentan (RNF-05)

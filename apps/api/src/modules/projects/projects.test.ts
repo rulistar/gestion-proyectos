@@ -99,6 +99,8 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
       startDate: '2026-11-01',
       endDate: null,
       notes: null,
+      sprint: null,
+      sprintActivities: null,
       startedAt: null,
       finishedAt: null,
       progress: {
@@ -316,6 +318,31 @@ describe('datos del proyecto (HU-31)', () => {
   it('rechaza un folio de más de 40 caracteres (400)', async () => {
     const { ana, ws } = await setup();
     const response = await create(ana.cookies, ws.id, { name: 'X', folio: 'F'.repeat(41) });
+    expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('sprint del proyecto (HU-33)', () => {
+  it('guarda Sprint y Actividades del sprint, y se pueden vaciar', async () => {
+    const { ana, ws } = await setup();
+    const project = await createOk(ana.cookies, ws.id, {
+      name: 'ERP',
+      sprint: ' Sprint 4 ',
+      sprintActivities: 'Cerrar incidencias de facturación',
+    });
+
+    const cleared = await update(ana.cookies, ws.id, project.id, { name: 'ERP', sprint: '' });
+
+    expect(project).toMatchObject({
+      sprint: 'Sprint 4',
+      sprintActivities: 'Cerrar incidencias de facturación',
+    });
+    expect(cleared.json()).toMatchObject({ sprint: null, sprintActivities: null });
+  });
+
+  it('rechaza un Sprint de más de 60 caracteres (400)', async () => {
+    const { ana, ws } = await setup();
+    const response = await create(ana.cookies, ws.id, { name: 'X', sprint: 'S'.repeat(61) });
     expect(response.statusCode).toBe(400);
   });
 });

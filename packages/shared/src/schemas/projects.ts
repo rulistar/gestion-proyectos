@@ -44,6 +44,9 @@ export const projectInputSchema = z
     endDate: optionalDate,
     /** Observaciones (antes "Notas") */
     notes: optionalText(2000),
+    /** Sprint en curso y lo que se hace en él (HU-33): texto libre */
+    sprint: optionalText(60),
+    sprintActivities: optionalText(4000),
   })
   .refine(endAfterStart, endAfterStartError);
 export type ProjectInput = z.infer<typeof projectInputSchema>;
@@ -67,6 +70,8 @@ export const projectSchema = z.object({
   startDate: z.iso.date().nullable(),
   endDate: z.iso.date().nullable(),
   notes: z.string().nullable(),
+  sprint: z.string().nullable(),
+  sprintActivities: z.string().nullable(),
   /** Fechas reales (ADR-0004 §2.1): las pone el sistema al cambiar el estado */
   startedAt: z.iso.datetime().nullable(),
   finishedAt: z.iso.datetime().nullable(),

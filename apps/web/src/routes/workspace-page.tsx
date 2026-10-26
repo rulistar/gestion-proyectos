@@ -133,6 +133,7 @@ function ContainersTable({
           <Th>Folio</Th>
           <Th>Nombre</Th>
           {showType && <Th>Tipo</Th>}
+          {behavior !== 'ON_DEMAND' && <Th>Sprint</Th>}
           <Th>Solicitante</Th>
           <Th>Estado</Th>
           <Th>Prioridad</Th>
@@ -165,6 +166,9 @@ function ContainersTable({
               </Link>
             </Td>
             {showType && <Td className="whitespace-nowrap">{project.type.name}</Td>}
+            {behavior !== 'ON_DEMAND' && (
+              <Td className="whitespace-nowrap">{project.sprint ?? '—'}</Td>
+            )}
             <Td>{project.requester ?? '—'}</Td>
             <Td>
               <ProjectStatusBadge status={project.status} />

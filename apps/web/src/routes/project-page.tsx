@@ -118,6 +118,16 @@ export function ProjectPage() {
             {project.description}
           </p>
         )}
+        {(project.sprint || project.sprintActivities) && (
+          <div className="max-w-4xl rounded-lg border bg-card p-3 text-sm">
+            <p className="font-semibold">{project.sprint ?? 'Sprint'}</p>
+            {project.sprintActivities && (
+              <p className="mt-1 whitespace-pre-line text-muted-foreground">
+                {project.sprintActivities}
+              </p>
+            )}
+          </div>
+        )}
       </header>
 
       <ProjectKpis project={project} tasks={tasks} />
@@ -362,6 +372,14 @@ function ProjectDetails({ project }: { project: Project }) {
           </CardContent>
         </Card>
       ))}
+      <Card className="lg:col-span-3">
+        <CardContent className="grid gap-2">
+          <h2 className="font-semibold">{project.sprint ?? 'Sprint'}</h2>
+          <p className="text-sm whitespace-pre-line text-muted-foreground">
+            {project.sprintActivities ?? 'Sin actividades del sprint.'}
+          </p>
+        </CardContent>
+      </Card>
       <Card className="lg:col-span-3">
         <CardContent className="grid gap-2">
           <h2 className="font-semibold">Observaciones</h2>

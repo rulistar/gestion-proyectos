@@ -31,6 +31,8 @@ const FIELDS = [
   'startDate',
   'endDate',
   'notes',
+  'sprint',
+  'sprintActivities',
 ] as const;
 
 /** Personas del proyecto (HU-31): solo se escribe el nombre; pueden no tener cuenta */
@@ -127,6 +129,28 @@ export function ProjectForm({
             <FieldError {...form.errorProps(name)} />
           </div>
         ))}
+
+        <SectionTitle>Sprint</SectionTitle>
+        <div className="grid gap-2">
+          <Label htmlFor={form.idOf('sprint')}>Sprint</Label>
+          <Input
+            {...form.field('sprint')}
+            defaultValue={project?.sprint ?? ''}
+            maxLength={60}
+            placeholder="Por ejemplo: Sprint 4"
+          />
+          <FieldError {...form.errorProps('sprint')} />
+        </div>
+        <div className="grid gap-2 sm:col-span-2">
+          <Label htmlFor={form.idOf('sprintActivities')}>Actividades del sprint</Label>
+          <Textarea
+            {...form.field('sprintActivities')}
+            defaultValue={project?.sprintActivities ?? ''}
+            maxLength={4000}
+            placeholder="Qué se hará en este sprint"
+          />
+          <FieldError {...form.errorProps('sprintActivities')} />
+        </div>
 
         <SectionTitle>Planeación</SectionTitle>
         <div className="grid gap-2">
