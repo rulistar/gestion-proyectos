@@ -16,7 +16,7 @@ import { todayIso, weekStartIso } from '@/lib/dates';
 import { dueInfo } from '@/lib/due';
 import { myTasksQueryOptions } from '@/lib/my-work';
 import { projectsQueryOptions } from '@/lib/projects';
-import { TASK_STATUSES, TASK_TYPES, useMoveTask } from '@/lib/tasks';
+import { TASK_STATUSES, useMoveTask } from '@/lib/tasks';
 import { workspaceQueryOptions } from '@/lib/workspaces';
 
 // Es el id de la ruta (no la URL): cuelga de la ruta sin URL "app", de ahí el /app
@@ -158,7 +158,7 @@ function MyTaskRow({
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{task.title}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {TASK_TYPES[task.type]} ·{' '}
+          {task.type.expedited ? `⚡ ${task.type.name}` : task.type.name} ·{' '}
           <Link
             to="/w/$workspaceId/p/$projectId"
             params={{ workspaceId, projectId: task.projectId }}

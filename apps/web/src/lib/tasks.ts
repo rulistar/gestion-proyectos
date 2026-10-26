@@ -4,7 +4,6 @@ import {
   type TaskInput,
   type TaskStatus,
   type TaskStatusUpdate,
-  type TaskType,
 } from '@gestion/shared';
 import { queryOptions, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
@@ -16,22 +15,6 @@ export const TASK_STATUSES: Record<TaskStatus, string> = {
   PAUSED: 'Pausada',
   DONE: 'Hecha',
   CANCELLED: 'Cancelada',
-};
-
-export const TASK_TYPES: Record<TaskType, string> = {
-  TASK: 'Tarea',
-  MEETING: 'Reunión',
-  DELIVERABLE: 'Entregable',
-  REVIEW: 'Revisión',
-  RESEARCH: 'Investigación',
-  EXAM: 'Examen',
-};
-
-/** Color de la etiqueta de cada tipo (maqueta de HU-28); los demás, en gris */
-export const TASK_TYPE_COLORS: Partial<Record<TaskType, string>> = {
-  DELIVERABLE: 'bg-[#EEF4FB] text-[#1D4E89]',
-  MEETING: 'bg-[#F4EBFF] text-[#5B2BA6]',
-  REVIEW: 'bg-accent text-accent-foreground',
 };
 
 const tasksPath = (workspaceId: string, projectId: string) =>

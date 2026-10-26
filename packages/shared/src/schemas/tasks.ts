@@ -7,17 +7,7 @@ import {
   optionalInt,
   optionalText,
 } from './common.js';
-
-/** Tipos genéricos (ADR-0002 §1.1): reemplazan a los tipos de actividad del prototipo */
-export const taskTypeSchema = z.enum([
-  'TASK',
-  'MEETING',
-  'DELIVERABLE',
-  'REVIEW',
-  'RESEARCH',
-  'EXAM',
-]);
-export type TaskType = z.infer<typeof taskTypeSchema>;
+import { taskTypeRefSchema } from './task-types.js';
 
 export const taskStatusSchema = z.enum(['PENDING', 'IN_PROGRESS', 'PAUSED', 'DONE', 'CANCELLED']);
 export type TaskStatus = z.infer<typeof taskStatusSchema>;
@@ -43,7 +33,8 @@ const reasonRequiredError = {
 export const taskInputSchema = z
   .object({
     title: z.string().trim().min(1, 'El título es obligatorio').max(200, 'Máximo 200 caracteres'),
-    type: taskTypeSchema.default('TASK'),
+    /** Tipo del catálogo (HU-22). Sin él: al crear, el primero permitido; al editar, el actual */
+    typeId: optionalId,
     status: taskStatusSchema.default('PENDING'),
     /** Hasta una semana de trabajo continuo (10 080 min) por tarea */
     estimatedMinutes: optionalInt(10_080),
@@ -68,7 +59,7 @@ export const taskSchema = z.object({
   id: z.uuid(),
   projectId: z.uuid(),
   title: z.string(),
-  type: taskTypeSchema,
+  type: taskTypeRefSchema,
   status: taskStatusSchema,
   estimatedMinutes: z.number().int().nullable(),
   assigneeId: z.uuid().nullable(),
@@ -80,6 +71,8 @@ export const taskSchema = z.object({
   endDate: z.iso.date().nullable(),
   /** Por qué está Pausada o Cancelada; null en los demás estados */
   statusReason: z.string().nullable(),
+  /** Inicio real (ADR-0004 §2.1): la primera vez que pasó a En curso o a Hecha; no se borra */
+  startedAt: z.iso.datetime().nullable(),
   /** Cuándo pasó a Hecha; null si no está Hecha */
   completedAt: z.iso.datetime().nullable(),
 });

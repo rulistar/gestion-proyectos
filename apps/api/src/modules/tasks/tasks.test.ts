@@ -54,6 +54,12 @@ async function setup() {
   return { ana, ws, project, withRole };
 }
 
+/** ID de un tipo de tarea del catálogo del espacio, por nombre (HU-22) */
+async function typeIdOf(workspaceId: string, name: string) {
+  const type = await db.taskType.findFirstOrThrow({ where: { workspaceId, name } });
+  return type.id;
+}
+
 const tasksUrl = (workspaceId: string, projectId: string) =>
   `/api/v1/workspaces/${workspaceId}/projects/${projectId}/tasks`;
 
@@ -164,7 +170,8 @@ describe('POST .../tasks (HU-08)', () => {
       id: task.id,
       projectId: project.id,
       title: 'Ver la unidad 1',
-      type: 'TASK',
+      // Sin tipo pedido, el primero que admite el tipo del proyecto (HU-22)
+      type: { id: task.type.id, name: 'Tarea', expedited: false },
       status: 'PENDING',
       estimatedMinutes: 45,
       assigneeId: null,
@@ -173,6 +180,7 @@ describe('POST .../tasks (HU-08)', () => {
       startDate: null,
       endDate: '2026-11-20',
       completedAt: null,
+      startedAt: null,
       statusReason: null,
     });
     const row = await db.task.findUniqueOrThrow({ where: { id: task.id } });
@@ -185,11 +193,11 @@ describe('POST .../tasks (HU-08)', () => {
 
     const task = await createOk(ana.cookies, ws.id, project.id, {
       title: 'Revisar',
-      type: 'REVIEW',
+      typeId: await typeIdOf(ws.id, 'Revisión'),
       assigneeId: miembro.user.id,
     });
 
-    expect(task).toMatchObject({ type: 'REVIEW', assigneeId: miembro.user.id });
+    expect(task).toMatchObject({ type: { name: 'Revisión' }, assigneeId: miembro.user.id });
   });
 
   it('rechaza un responsable que no es miembro del workspace (400)', async () => {
@@ -220,7 +228,7 @@ describe('POST .../tasks (HU-08)', () => {
     ['sin título', { title: ' ' }],
     ['con minutos negativos', { title: 'X', estimatedMinutes: -5 }],
     ['con minutos no enteros', { title: 'X', estimatedMinutes: 1.5 }],
-    ['con un tipo desconocido', { title: 'X', type: 'VIDEO' }],
+    ['con un tipo que no es un ID', { title: 'X', typeId: 'VIDEO' }],
     ['con fin antes del inicio', { title: 'X', startDate: '2026-11-10', endDate: '2026-11-01' }],
   ])('rechaza una tarea %s con 400', async (_caso, payload) => {
     const { ana, ws, project } = await setup();
@@ -287,7 +295,7 @@ describe('mover y editar tareas', () => {
       cookies: miembro.cookies,
       payload: {
         title: 'Editada',
-        type: 'MEETING',
+        typeId: await typeIdOf(ws.id, 'Reunión'),
         estimatedMinutes: 30,
         assigneeId: miembro.user.id,
       },
@@ -296,7 +304,7 @@ describe('mover y editar tareas', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       title: 'Editada',
-      type: 'MEETING',
+      type: { name: 'Reunión' },
       estimatedMinutes: 30,
       assigneeId: miembro.user.id,
     });

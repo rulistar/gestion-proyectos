@@ -274,6 +274,17 @@ _Como Admin, quiero clasificar el trabajo en proyectos, mantenimientos y activid
 - [x] Pruebas: catálogo, permisos, tipo de otro espacio, archivados, métricas y fechas reales.
 - Los **tipos de tarea permitidos** por tipo de contenedor pasan a HU-22: necesitan el catálogo de tipos de tarea.
 
+#### HU-22 · Tipos de tarea (3 pts)
+
+_Como Admin, quiero definir los tipos de tarea de mi espacio y cuáles admite cada tipo de trabajo, para clasificar incidencias, fast track y demás sin pedir cambios al sistema._ Diseño: [ADR-0004](adr/ADR-0004-tipos-de-trabajo.md).
+
+- [x] Catálogo de **tipos de tarea** por espacio (antes era una lista fija): Tarea, Incidencia, **Fast track**, Reunión, Entregable, Revisión, Investigación y Examen. Migración: las tareas existentes conservan su tipo.
+- [x] **Atención inmediata**: propiedad de cada tipo (Fast track la trae). Sus tareas se resaltan en dorado con ⚡ y van **primero** en su columna del tablero.
+- [x] **Tipos permitidos** por tipo de contenedor (sin elegir = todos). Mtto correctivo: Incidencia, Fast track y Tarea; Mtto evolutivo: Tarea, Fast track, Entregable y Revisión. La API rechaza un tipo no admitido (400) y no deja cambiar el tipo de un contenedor si tiene tareas de tipos que el nuevo no admite (409).
+- [x] En **Configuración** (solo Admin): agregar, renombrar, marcar atención inmediata y archivar tipos de tarea; elegir los tipos que admite cada tipo de contenedor.
+- [x] **Inicio real** de la tarea (la primera vez que pasa a En curso o a Hecha; no se borra al reabrir). Las tareas anteriores quedan sin él.
+- [x] Pruebas: catálogo, permisos, tipos permitidos, cambio de tipo con conflicto e inicio real.
+
 #### HU-31 · Datos del proyecto (3 pts)
 
 _Como responsable, quiero registrar el folio, la descripción y las personas de cada proyecto, para tener la misma información que en el sistema de origen._

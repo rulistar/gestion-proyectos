@@ -22,6 +22,8 @@ export const projectTypeSchema = projectTypeRefSchema.extend({
   archived: z.boolean(),
   /** Contenedores (sin papelera) de este tipo */
   projectCount: z.number().int(),
+  /** Tipos de tarea que admite (HU-22); vacío = todos */
+  allowedTaskTypeIds: z.array(z.uuid()),
 });
 export type ProjectType = z.infer<typeof projectTypeSchema>;
 
@@ -42,7 +44,12 @@ export type CreateProjectTypeInput = z.infer<typeof createProjectTypeSchema>;
 
 /** Cuerpo de PATCH .../project-types/:typeId: renombrar, cambiar comportamiento, archivar */
 export const updateProjectTypeSchema = z
-  .object({ name: typeName, behavior: projectBehaviorSchema, archived: z.boolean() })
+  .object({
+    name: typeName,
+    behavior: projectBehaviorSchema,
+    archived: z.boolean(),
+    allowedTaskTypeIds: z.array(z.uuid()).max(100),
+  })
   .partial();
 export type UpdateProjectTypeInput = z.infer<typeof updateProjectTypeSchema>;
 

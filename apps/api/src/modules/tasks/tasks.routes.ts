@@ -13,6 +13,7 @@ import { isActiveMember } from '../workspaces/workspaces.service.js';
 import {
   createTask,
   currentAssignee,
+  InvalidTaskTypeError,
   listMyTasks,
   listTasks,
   softDeleteTask,
@@ -29,6 +30,15 @@ const BASE = '/workspaces/:workspaceId/projects/:projectId/tasks';
 
 function notFound(reply: FastifyReply, message: 'Proyecto no encontrado' | 'Tarea no encontrada') {
   return reply.code(404).send({ message });
+}
+
+function invalidType(reply: FastifyReply, error: unknown) {
+  if (error instanceof InvalidTaskTypeError) {
+    return reply
+      .code(400)
+      .send({ message: 'Ese tipo de tarea no existe, está archivado o no se admite aquí' });
+  }
+  throw error;
 }
 
 /**
@@ -92,14 +102,18 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
     if (await invalidAssignee(request, parsed.data)) {
       return reply.code(400).send({ message: 'El responsable debe ser miembro del workspace' });
     }
-    const task = await createTask(
-      app.db,
-      request.auth!.userId,
-      request.membership!.workspaceId,
-      projectId,
-      parsed.data,
-    );
-    return reply.code(201).send(task);
+    try {
+      const task = await createTask(
+        app.db,
+        request.auth!.userId,
+        request.membership!.workspaceId,
+        projectId,
+        parsed.data,
+      );
+      return await reply.code(201).send(task);
+    } catch (error) {
+      return invalidType(reply, error);
+    }
   });
 
   app.put(
@@ -119,13 +133,12 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
       if (await invalidAssignee(request, parsed.data, kept)) {
         return reply.code(400).send({ message: 'El responsable debe ser miembro del workspace' });
       }
-      const task = await updateTask(
-        app.db,
-        request.auth!.userId,
-        { workspaceId: request.membership!.workspaceId, ...params.data },
-        parsed.data,
-      );
-      return task ?? notFound(reply, 'Tarea no encontrada');
+      try {
+        const task = await updateTask(app.db, request.auth!.userId, where, parsed.data);
+        return task ?? notFound(reply, 'Tarea no encontrada');
+      } catch (error) {
+        return invalidType(reply, error);
+      }
     },
   );
 

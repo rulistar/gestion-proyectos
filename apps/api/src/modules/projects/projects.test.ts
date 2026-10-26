@@ -170,11 +170,13 @@ describe('avance del proyecto (HU-06)', () => {
   it('calcula % y minutos pendientes sin contar las tareas en la papelera', async () => {
     const { ana, ws } = await setup();
     const project = await createOk(ana.cookies, ws.id, { name: 'Curso' });
+    const { id: typeId } = await db.taskType.findFirstOrThrow({ where: { workspaceId: ws.id } });
     const task = (status: 'PENDING' | 'DONE', estimatedMinutes: number, deleted = false) =>
       db.task.create({
         data: {
           workspaceId: ws.id,
           projectId: project.id,
+          typeId,
           title: 'T',
           status,
           estimatedMinutes,

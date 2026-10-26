@@ -8,18 +8,23 @@ import {
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
+import { resolveTaskType } from '../task-types/task-types.service.js';
+
+/** El tipo pedido no existe, está archivado o no lo admite el tipo del proyecto (→ 400) */
+export class InvalidTaskTypeError extends Error {}
 
 const taskSelect = {
   id: true,
   projectId: true,
   title: true,
-  type: true,
+  type: { select: { id: true, name: true, expedited: true } },
   status: true,
   estimatedMinutes: true,
   assigneeId: true,
   startDate: true,
   endDate: true,
   completedAt: true,
+  startedAt: true,
   statusReason: true,
   workspaceId: true,
   // Nombre del responsable y sus membresías vigentes: para saber si sigue en el espacio (HU-25)
@@ -34,11 +39,12 @@ const taskSelect = {
 
 type TaskRow = Omit<
   Task,
-  'startDate' | 'endDate' | 'completedAt' | 'assigneeName' | 'assigneeIsMember'
+  'startDate' | 'endDate' | 'completedAt' | 'startedAt' | 'assigneeName' | 'assigneeIsMember'
 > & {
   startDate: Date | null;
   endDate: Date | null;
   completedAt: Date | null;
+  startedAt: Date | null;
   workspaceId: string;
   assignee: { name: string; status: string; memberships: { workspaceId: string }[] } | null;
 };
@@ -55,6 +61,7 @@ function toTask({ workspaceId, assignee, ...row }: TaskRow): Task {
     startDate: toIsoDate(row.startDate),
     endDate: toIsoDate(row.endDate),
     completedAt: row.completedAt?.toISOString() ?? null,
+    startedAt: row.startedAt?.toISOString() ?? null,
   };
 }
 
@@ -81,6 +88,18 @@ export function completedAtFor(
 ): Date | null {
   if (status !== 'DONE') return null;
   return previous?.status === 'DONE' ? previous.completedAt : now;
+}
+
+/**
+ * Inicio real (ADR-0004 §2.1): la primera vez que la tarea pasa a En curso, o a Hecha si se salta
+ * En curso. Una vez registrado no se borra, aunque la tarea se reabra.
+ */
+export function startedAtFor(
+  status: TaskStatus,
+  previous: Date | null,
+  now = new Date(),
+): Date | null {
+  return previous ?? (status === 'IN_PROGRESS' || status === 'DONE' ? now : null);
 }
 
 /** El motivo solo se guarda en Pausada y Cancelada (HU-24); al salir de esos estados se limpia */
@@ -135,16 +154,20 @@ export async function createTask(
   actorId: string,
   workspaceId: string,
   projectId: string,
-  input: TaskInput,
+  { typeId: requestedType, ...input }: TaskInput,
 ): Promise<Task> {
+  const typeId = await resolveTaskType(db, workspaceId, projectId, requestedType);
+  if (!typeId) throw new InvalidTaskTypeError();
   const row = await db.task.create({
     data: {
       workspaceId,
       projectId,
       ...input,
+      typeId,
       startDate: fromIsoDate(input.startDate),
       endDate: fromIsoDate(input.endDate),
       completedAt: completedAtFor(input.status, null),
+      startedAt: startedAtFor(input.status, null),
       statusReason: reasonFor(input.status, input.statusReason),
       ...auditCreate(actorId),
     },
@@ -161,18 +184,32 @@ async function applyUpdate(
   db: Db,
   actorId: string,
   where: { workspaceId: string; projectId: string; taskId: string },
-  changes: Partial<TaskInput> & { status: TaskStatus },
+  { typeId: requestedType, ...changes }: Partial<TaskInput> & { status: TaskStatus },
 ): Promise<Task | null> {
   const previous = await db.task.findFirst({
     where: { id: where.taskId, ...taskScope(where.workspaceId, where.projectId) },
-    select: { status: true, completedAt: true },
+    select: { status: true, completedAt: true, startedAt: true, typeId: true },
   });
   if (!previous) return null;
+  // Solo la edición completa trae typeId; mover de columna no cambia el tipo
+  const typeId =
+    requestedType === undefined
+      ? previous.typeId
+      : await resolveTaskType(
+          db,
+          where.workspaceId,
+          where.projectId,
+          requestedType,
+          previous.typeId,
+        );
+  if (!typeId) throw new InvalidTaskTypeError();
 
   const row = await db.task.update({
     where: { id: where.taskId },
     data: {
       ...changes,
+      typeId,
+      startedAt: startedAtFor(changes.status, previous.startedAt),
       ...(changes.startDate !== undefined && { startDate: fromIsoDate(changes.startDate) }),
       ...(changes.endDate !== undefined && { endDate: fromIsoDate(changes.endDate) }),
       completedAt: completedAtFor(changes.status, previous),

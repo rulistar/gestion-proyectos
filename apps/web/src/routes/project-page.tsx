@@ -5,6 +5,7 @@ import {
   type Project,
   type ProjectType,
   type Task,
+  type TaskTypeRef,
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
@@ -34,6 +35,7 @@ import {
   useUpdateProject,
 } from '@/lib/projects';
 import { projectTypesQueryOptions, SECTIONS, selectableTypes } from '@/lib/project-types';
+import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
@@ -61,6 +63,10 @@ export function ProjectPage() {
   const { data: tasks } = useSuspenseQuery(tasksQueryOptions(workspaceId, projectId));
   const { data: members } = useSuspenseQuery(membersQueryOptions(workspaceId));
   const { data: types } = useSuspenseQuery(projectTypesQueryOptions(workspaceId));
+  const { data: taskTypes } = useSuspenseQuery(taskTypesQueryOptions(workspaceId));
+  const projectType = types.find((type) => type.id === project.type.id);
+  const taskTypeOptions = (currentId?: string) =>
+    allowedTaskTypes(taskTypes, projectType, currentId);
   const section = SECTIONS[project.type.behavior];
   const [tab, setTab] = useState<TabId>('board');
   const [dialog, setDialog] = useState<'edit' | 'task'>();
@@ -158,6 +164,7 @@ export function ProjectPage() {
               members={members}
               canEdit={can('task.update')}
               canDelete={can('task.delete')}
+              taskTypeOptions={taskTypeOptions}
             />
           ) : (
             <ProjectDetails project={project} />
@@ -177,6 +184,7 @@ export function ProjectPage() {
         workspaceId={workspaceId}
         projectId={projectId}
         members={members}
+        types={taskTypeOptions()}
         open={dialog === 'task'}
         onClose={() => setDialog(undefined)}
       />
@@ -417,12 +425,14 @@ function CreateTaskDialog({
   workspaceId,
   projectId,
   members,
+  types,
   open,
   onClose,
 }: {
   workspaceId: string;
   projectId: string;
   members: Member[];
+  types: TaskTypeRef[];
   open: boolean;
   onClose: () => void;
 }) {
@@ -437,6 +447,7 @@ function CreateTaskDialog({
         </DialogHeader>
         <TaskForm
           members={members}
+          types={types}
           submitLabel="Crear tarea"
           isPending={createTask.isPending}
           error={createTask.error?.message}

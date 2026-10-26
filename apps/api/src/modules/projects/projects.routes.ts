@@ -6,6 +6,7 @@ import { requirePermission } from '../workspaces/access.js';
 import {
   createProject,
   defaultMetrics,
+  DisallowedTaskTypesError,
   getProject,
   InvalidProjectTypeError,
   listProjects,
@@ -32,6 +33,11 @@ function metricsOf(request: FastifyRequest) {
 function invalidType(reply: FastifyReply, error: unknown) {
   if (error instanceof InvalidProjectTypeError) {
     return reply.code(400).send({ message: 'El tipo no existe en este espacio o está archivado' });
+  }
+  if (error instanceof DisallowedTaskTypesError) {
+    return reply.code(409).send({
+      message: `El tipo nuevo no admite tareas de tipo ${error.taskTypes.join(', ')}: cámbialas primero`,
+    });
   }
   throw error;
 }

@@ -6,6 +6,7 @@ export * from './schemas/permissions.js';
 export * from './schemas/progress.js';
 export * from './schemas/project-types.js';
 export * from './schemas/projects.js';
+export * from './schemas/task-types.js';
 export * from './schemas/tasks.js';
 export * from './schemas/trash.js';
 export * from './schemas/workspaces.js';

@@ -3,6 +3,7 @@ import {
   roleHasPermission,
   type ProjectBehavior,
   type ProjectType,
+  type TaskType,
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
@@ -11,6 +12,7 @@ import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
+import { AllowedTaskTypesDialog, TaskTypesCard } from '@/components/task-type-catalog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,6 +25,7 @@ import {
   useCreateProjectType,
   useUpdateProjectType,
 } from '@/lib/project-types';
+import { taskTypesQueryOptions } from '@/lib/task-types';
 import { useSchemaForm } from '@/lib/use-schema-form';
 import { workspaceQueryOptions } from '@/lib/workspaces';
 
@@ -36,6 +39,7 @@ export function CatalogPage() {
   const { workspaceId } = route.useParams();
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
   const { data: types } = useSuspenseQuery(projectTypesQueryOptions(workspaceId));
+  const { data: taskTypes } = useSuspenseQuery(taskTypesQueryOptions(workspaceId));
 
   if (!roleHasPermission(workspace.role, 'catalog.manage')) {
     return (
@@ -79,7 +83,12 @@ export function CatalogPage() {
               ) : (
                 <ul className="divide-y rounded-md border">
                   {group.map((type) => (
-                    <TypeRow key={type.id} workspaceId={workspaceId} type={type} />
+                    <TypeRow
+                      key={type.id}
+                      workspaceId={workspaceId}
+                      type={type}
+                      taskTypes={taskTypes}
+                    />
                   ))}
                 </ul>
               )}
@@ -89,11 +98,20 @@ export function CatalogPage() {
       })}
 
       <NewTypeCard workspaceId={workspaceId} />
+      <TaskTypesCard workspaceId={workspaceId} taskTypes={taskTypes} />
     </div>
   );
 }
 
-function TypeRow({ workspaceId, type }: { workspaceId: string; type: ProjectType }) {
+function TypeRow({
+  workspaceId,
+  type,
+  taskTypes,
+}: {
+  workspaceId: string;
+  type: ProjectType;
+  taskTypes: TaskType[];
+}) {
   const update = useUpdateProjectType(workspaceId);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(type.name);
@@ -176,6 +194,7 @@ function TypeRow({ workspaceId, type }: { workspaceId: string; type: ProjectType
             </option>
           ))}
         </NativeSelect>
+        <AllowedTaskTypesDialog workspaceId={workspaceId} type={type} taskTypes={taskTypes} />
         {!editing && (
           <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
             <Pencil aria-hidden />
