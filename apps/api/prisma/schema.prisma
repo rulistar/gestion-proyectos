@@ -37,6 +37,21 @@ enum MembershipRole {
   @@map("membership_role")
 }
 
+/// Contador de folios automáticos (HU-38): uno por espacio, prefijo (PY, MT, ACT) y periodo AAMM.
+/// Registro técnico: solo lo cambia el sistema al crear un contenedor sin folio.
+model FolioCounter {
+  workspaceId String    @map("workspace_id") @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  prefix      String
+  /// AAMM de la fecha local del usuario: el contador vuelve a 1 cada mes
+  period      String
+  lastNumber  Int       @map("last_number")
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@id([workspaceId, prefix, period])
+  @@map("folio_counters")
+}
+
 /// Cómo se mide un tipo de contenedor (ADR-0004 §2)
 enum ProjectBehavior {
   WITH_END
@@ -237,12 +252,13 @@ model Workspace {
   updatedBy   User?     @relation("WorkspaceUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
   deletedBy   User?     @relation("WorkspaceDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
 
-  memberships  Membership[]
-  projects     Project[]
-  projectTypes ProjectType[]
-  taskTypes    TaskType[]
-  tasks        Task[]
-  invitations  Invitation[]
+  memberships   Membership[]
+  projects      Project[]
+  projectTypes  ProjectType[]
+  taskTypes     TaskType[]
+  folioCounters FolioCounter[]
+  tasks         Task[]
+  invitations   Invitation[]
 
   @@map("workspaces")
 }

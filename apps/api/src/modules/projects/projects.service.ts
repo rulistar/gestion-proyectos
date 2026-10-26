@@ -10,6 +10,7 @@ import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
 import { resolveProjectType } from '../project-types/project-types.service.js';
+import { nextFolio } from './folios.js';
 
 /** El tipo pedido no existe en el espacio o está archivado (→ 400) */
 export class InvalidProjectTypeError extends Error {}
@@ -175,19 +176,31 @@ export async function createProject(
   actorId: string,
   workspaceId: string,
   input: ProjectInput,
+  metrics = defaultMetrics(),
 ): Promise<Project> {
   const typeId = await resolveProjectType(db, workspaceId, input.typeId);
   if (!typeId) throw new InvalidProjectTypeError();
-  const row = await db.project.create({
-    data: {
-      workspaceId,
-      ...toData(input, typeId),
-      ...realDatesFor(input.status, null),
-      ...auditCreate(actorId),
-    },
-    select: projectSelect,
+  const row = await db.$transaction(async (tx) => {
+    // Sin folio, el siguiente automático (HU-38); uno de otro sistema se respeta y no consume número
+    let folio = input.folio;
+    if (folio === null) {
+      const { behavior } = await tx.projectType.findUniqueOrThrow({
+        where: { id: typeId },
+        select: { behavior: true },
+      });
+      folio = await nextFolio(tx, workspaceId, behavior, metrics.today);
+    }
+    return tx.project.create({
+      data: {
+        workspaceId,
+        ...toData({ ...input, folio }, typeId),
+        ...realDatesFor(input.status, null),
+        ...auditCreate(actorId),
+      },
+      select: projectSelect,
+    });
   });
-  return toProject(row, defaultMetrics());
+  return toProject(row, metrics);
 }
 
 /** Reemplaza los datos del proyecto; null si no existe en ese workspace */

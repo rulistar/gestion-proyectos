@@ -61,11 +61,13 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
         return reply.code(400).send({ message: z.prettifyError(parsed.error) });
       }
       try {
+        // La fecha local del usuario decide el mes del folio automático (HU-38)
         const project = await createProject(
           app.db,
           request.auth!.userId,
           request.membership!.workspaceId,
           parsed.data,
+          metricsOf(request),
         );
         return await reply.code(201).send(project);
       } catch (error) {

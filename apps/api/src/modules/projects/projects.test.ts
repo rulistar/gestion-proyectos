@@ -1,4 +1,10 @@
-import { projectListSchema, projectSchema, type MembershipRole } from '@gestion/shared';
+import {
+  folioPeriod,
+  formatFolio,
+  projectListSchema,
+  projectSchema,
+  type MembershipRole,
+} from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { auditCreate, auditSoftDelete } from '../../db/audit.js';
@@ -85,7 +91,8 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
       // Sin tipo pedido, el primer tipo "Con fin" del espacio (HU-21)
       type: { id: project.type.id, name: 'Proyecto', behavior: 'WITH_END' },
       name: 'Curso de TypeScript',
-      folio: null,
+      // Sin folio, el primero automático del mes en UTC (HU-38; sin ?today= de la web)
+      folio: formatFolio('PY', folioPeriod(new Date().toISOString().slice(0, 10)), 1),
       description: null,
       requester: null,
       assignedTo: null,
@@ -344,5 +351,61 @@ describe('sprint del proyecto (HU-33)', () => {
     const { ana, ws } = await setup();
     const response = await create(ana.cookies, ws.id, { name: 'X', sprint: 'S'.repeat(61) });
     expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('folios automáticos (HU-38)', () => {
+  async function typeId(workspaceId: string, name: string) {
+    const type = await db.projectType.findFirstOrThrow({ where: { workspaceId, name } });
+    return type.id;
+  }
+
+  function createOn(cookies: Cookies, workspaceId: string, today: string, payload: object) {
+    return app.inject({
+      method: 'POST',
+      url: `${url(workspaceId)}?today=${today}`,
+      cookies,
+      payload,
+    });
+  }
+
+  it('numera por prefijo y mes con la fecha del usuario; el folio manual no consume número', async () => {
+    const { ana, ws } = await setup();
+    const mtto = await typeId(ws.id, 'Mtto correctivo');
+    const evolutivo = await typeId(ws.id, 'Mtto evolutivo');
+    const folios: (string | null)[] = [];
+    for (const payload of [
+      { name: 'A', typeId: mtto },
+      { name: 'B', typeId: mtto, folio: 'SOL-99' },
+      { name: 'C', typeId: evolutivo },
+      { name: 'D' },
+    ]) {
+      const response = await createOn(ana.cookies, ws.id, '2026-10-28', payload);
+      folios.push(projectSchema.parse(response.json()).folio);
+    }
+    const nextMonth = await createOn(ana.cookies, ws.id, '2026-11-01', { name: 'E', typeId: mtto });
+
+    expect(folios).toEqual(['MT2610-001', 'SOL-99', 'MT2610-002', 'PY2610-001']);
+    expect(projectSchema.parse(nextMonth.json()).folio).toBe('MT2611-001');
+  });
+
+  it('cada espacio lleva su propia numeración', async () => {
+    const { ana, ws } = await setup();
+    const other = await createWorkspace(db, ana.user.id, { name: 'Otro' });
+
+    const first = await createOn(ana.cookies, ws.id, '2026-10-28', { name: 'A' });
+    const second = await createOn(ana.cookies, other.id, '2026-10-28', { name: 'B' });
+
+    expect(projectSchema.parse(first.json()).folio).toBe('PY2610-001');
+    expect(projectSchema.parse(second.json()).folio).toBe('PY2610-001');
+  });
+
+  it('al editar, vaciar el folio lo deja vacío (no se genera otro)', async () => {
+    const { ana, ws } = await setup();
+    const project = await createOk(ana.cookies, ws.id, { name: 'A' });
+
+    const response = await update(ana.cookies, ws.id, project.id, { name: 'A', folio: '' });
+
+    expect(response.json()).toMatchObject({ folio: null });
   });
 });

@@ -1,4 +1,7 @@
 import {
+  FOLIO_PREFIXES,
+  folioPeriod,
+  formatFolio,
   projectInputSchema,
   type Project,
   type ProjectInput,
@@ -11,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
+import { todayIso } from '@/lib/dates';
 import { PROJECT_PRIORITIES, PROJECT_STATUSES } from '@/lib/projects';
 import { useSchemaForm } from '@/lib/use-schema-form';
 
@@ -80,6 +84,9 @@ export function ProjectForm({
   onSubmit,
 }: ProjectFormProps) {
   const form = useSchemaForm(projectInputSchema, FIELDS, onSubmit);
+  // Ejemplo del folio que recibirá si se deja vacío (HU-38): prefijo de la sección y mes actual
+  const behavior = types[0]?.behavior ?? 'WITH_END';
+  const folioExample = formatFolio(FOLIO_PREFIXES[behavior], folioPeriod(todayIso()), 1);
 
   return (
     <form onSubmit={form.onSubmit} noValidate>
@@ -102,7 +109,11 @@ export function ProjectForm({
             {...form.field('folio')}
             defaultValue={project?.folio ?? ''}
             maxLength={40}
-            placeholder="El del sistema de origen (opcional)"
+            placeholder={
+              project
+                ? 'El del sistema de origen (opcional)'
+                : `Vacío = automático (${folioExample})`
+            }
           />
           <FieldError {...form.errorProps('folio')} />
         </div>
