@@ -1,7 +1,7 @@
 # Product Backlog
 
 > Lista priorizada de todo lo que el producto debe hacer. La ordena el **Product Owner**. Nada entra al desarrollo sin estar aquí (acta, riesgo "crecimiento desordenado del alcance").
-> Última actualización: 2026-10-25 (datos del proyecto HU-31; mover entre espacios HU-32).
+> Última actualización: 2026-10-26 (revisión del Sprint 3 y planificación del Sprint 4).
 
 ## Cómo leer este documento
 
@@ -33,6 +33,7 @@
 | Rediseño (2026-10-25) | Antes de seguir, **rediseñar la interfaz** según la [maqueta](https://claude.ai/artifact/QkTijPe4GF7EtTePxQHYFR): menú lateral (Proyectos, Mantenimientos, Mi trabajo, Actividades, Gantt), combo **Espacio de trabajo**, color **turquesa matizado** y login con el formulario a la izquierda. El **Admin del sistema ve y entra a todos los espacios**. Nombre provisional: "Gestor de Proyectos". Después, los tipos de trabajo (HU-21, HU-22). |
 | Fases (2026-10-25) | Las tareas de un proyecto se agrupan en **fases**, como las tareas resumen de Project: una fase puede contener tareas y otras fases, hasta **4 niveles**. Su avance y sus fechas **se calculan** a partir de lo que contiene. HU-07 se adelanta al Sprint 4, antes de la vista Lista (HU-26) y el Gantt (HU-27), que dependen de ella. |
 | Cambiar correos (2026-10-25) | Una persona puede estar en varios espacios, así que el **Admin de un espacio no cambia correos**. Cada usuario cambia su nombre, correo y contraseña en **Mi perfil**, confirmando con su contraseña (HU-29); el **Admin del sistema** puede cambiar el correo de cualquiera y desactivar cuentas (HU-30). Sprint 5. |
+| Revisión del Sprint 3 (2026-10-26) | Se hizo lo pedido. Nuevos: **Sprint** y **Actividades del sprint** en el proyecto; en cada tarea **Actividad, Gestión y Seguimiento** (una persona cada una; Actividad reemplaza a Responsable); **catálogo de personas por espacio**, con o sin cuenta, vinculables a un usuario para mostrarlo con otro nombre; personas del proyecto desde el catálogo; **tipos de tarea limitados por contenedor**. Diseño en [ADR-0005](adr/ADR-0005-personas-y-responsabilidades.md). Sprint 4: estas historias + HU-32 + HU-09 (28 pts); HU-23 pasa al Sprint 5. |
 | Datos del proyecto (2026-10-25) | Los proyectos llevan **Folio** (viene de otro sistema: opcional, editable, puede repetirse), **Descripción**, **Observaciones** (antes "Notas") y personas como **texto libre** (solo el nombre): Solicitante, Asignado a, Project manager, Gte. Consultoría y Business partner. Se hace ya (HU-31). **Mover** proyectos, mantenimientos y tareas **entre espacios**, solo Admin (HU-32, Sprint 4). |
 
 ## Requisitos no funcionales (aplican a todas las historias)
@@ -67,32 +68,37 @@
 | 14 | HU-21 | Tipos de contenedor con comportamiento (ADR-0004) | Tipos | 5 | 🔴 | 3 |
 | 15 | HU-22 | Tipos de tarea configurables (ADR-0004) | Tipos | 3 | 🔴 | 3 |
 | 16 | HU-31 | Datos del proyecto: folio, descripción, observaciones y personas (solicitante, asignado a, PM, Gte. Consultoría, Business partner) | Proyectos | 3 | 🔴 | 3 |
-| 17 | HU-15 | Papelera: dar de baja proyectos y tareas, restaurar y borrar definitivamente | Datos | 5 | 🔴 | 4 |
-| 18 | HU-25 | Gestionar miembros: cambiar el rol y quitar del espacio | Workspaces | 3 | 🔴 | 4 |
-| 19 | HU-32 | Mover un proyecto, mantenimiento o tarea a otro espacio de trabajo (solo Admin) | Workspaces | 5 | 🔴 | 4 |
-| 20 | HU-09 | Tabla de proyectos con filtros y orden por columna | Vistas | 5 | 🔴 | 4 |
-| 21 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 4 |
-| 22 | HU-26 | Muchas tareas: vista Lista, filtros y columnas plegables | Vistas | 5 | 🔴 | 4 |
-| 23 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 4 |
-| 24 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 4 |
-| 25 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
-| 26 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 5 |
-| 27 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
-| 28 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
-| 29 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 30 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 31 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 32 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 33 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
-| 34 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
-| 35 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 36 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 37 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 38 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 39 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 40 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 41 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 42 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 17 | HU-15 | Papelera: dar de baja proyectos y tareas, restaurar y borrar definitivamente | Datos | 5 | 🔴 | 3 |
+| 18 | HU-25 | Gestionar miembros: cambiar el rol y quitar del espacio | Workspaces | 3 | 🔴 | 3 |
+| 19 | HU-33 | Sprint del proyecto: "Sprint" y "Actividades del sprint" (texto) | Proyectos | 2 | 🔴 | 4 |
+| 20 | HU-34 | Catálogo de personas por espacio, con o sin cuenta, vinculables a un usuario (alias) | Personas | 5 | 🔴 | 4 |
+| 21 | HU-35 | Responsabilidades de la tarea: Actividad, Gestión y Seguimiento | Tareas | 5 | 🔴 | 4 |
+| 22 | HU-36 | Personas del proyecto desde el catálogo | Personas | 3 | 🔴 | 4 |
+| 23 | HU-37 | Tipos de tarea por contenedor (subconjunto de los de su tipo) | Tipos | 3 | 🔴 | 4 |
+| 24 | HU-32 | Mover un proyecto, mantenimiento o tarea a otro espacio de trabajo (solo Admin) | Workspaces | 5 | 🔴 | 4 |
+| 25 | HU-09 | Tabla de proyectos con filtros y orden por columna | Vistas | 5 | 🔴 | 4 |
+| 26 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
+| 27 | HU-26 | Muchas tareas: vista Lista, filtros y columnas plegables | Vistas | 5 | 🔴 | 5 |
+| 28 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 5 |
+| 29 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
+| 30 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
+| 31 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 5 |
+| 32 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
+| 33 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 34 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
+| 35 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 36 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 37 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 38 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
+| 39 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 40 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 41 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 42 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 43 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 44 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 45 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 46 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 47 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -325,6 +331,56 @@ _Como Admin, quiero cambiar el rol de un miembro o quitarlo del espacio, para co
 - [x] Sus tareas asignadas **conservan su nombre**, marcado "ya no es miembro", hasta que se reasignen; no se le pueden asignar tareas nuevas.
 - [x] Nunca se puede quitar ni degradar al **último Admin**.
 - [x] Cumple RNF-01 y tiene pruebas.
+
+### Sprint 4
+
+Orden del PO (2026-10-26): HU-33 → HU-34 → HU-35 → HU-36 → HU-37 → HU-32 → HU-09. Diseño de personas y responsabilidades: [ADR-0005](adr/ADR-0005-personas-y-responsabilidades.md).
+
+#### HU-33 · Sprint del proyecto (2 pts)
+
+_Como responsable, quiero anotar en qué sprint va el proyecto y qué se hace en él, para que el equipo lo vea sin buscar en otro lado._
+
+- [ ] Campos de texto **Sprint** (corto, p. ej. "Sprint 4") y **Actividades del sprint** (largo), opcionales y editables.
+- [ ] Se ven en "Datos del proyecto" y, si tienen valor, bajo la descripción del proyecto.
+- [ ] Migración sin pérdida de datos y pruebas.
+
+#### HU-34 · Catálogo de personas (5 pts)
+
+_Como Admin, quiero dar de alta a las personas con las que trabajo, tengan o no cuenta, y mostrar a los usuarios con el nombre que usamos, para asignarles responsabilidades._
+
+- [ ] Página **Personas** (Administración): nombre, usuario vinculado (opcional) y uso. Se puede agregar, renombrar, vincular o desvincular un usuario del espacio, y archivar.
+- [ ] Nombre único en el espacio; un usuario se vincula a lo más a una persona por espacio.
+- [ ] El nombre que se muestra en tareas y proyectos es el de la persona: "adminrul" puede verse como "Rodrigo".
+- [ ] Cada miembro tiene su persona vinculada: se crea al crear el espacio o al aceptar una invitación, y la migración la crea para los miembros actuales.
+- [ ] Una persona en uso no se borra, se archiva; quitar a un miembro no borra su persona (queda "sin acceso").
+- [ ] Permisos: ver con `project.read`; administrar con `member.manage`. Pruebas.
+
+#### HU-35 · Responsabilidades de la tarea (5 pts)
+
+_Como responsable, quiero indicar en cada tarea quién la hace, quién la gestiona y quién le da seguimiento, para que cada uno sepa qué le toca._
+
+- [ ] Tres campos opcionales, una persona del catálogo cada uno: **Actividad**, **Gestión** y **Seguimiento**. **Actividad reemplaza a Responsable**; la migración pasa cada responsable a Actividad.
+- [ ] En el formulario se elige de la lista de personas y se puede dar de alta una nueva desde ahí.
+- [ ] La tarjeta muestra el avatar de Actividad y, al pasar el cursor, las tres responsabilidades.
+- [ ] **Mi trabajo** muestra las tareas donde aparezco en cualquiera de las tres, con la etiqueta de cuál me toca.
+- [ ] Solo personas activas del espacio (400 si no); al editar se conserva una archivada que ya estaba. Pruebas.
+
+#### HU-36 · Personas del proyecto desde el catálogo (3 pts)
+
+_Como responsable, quiero elegir al solicitante, al PM y a los demás de la lista de personas, para no escribir el mismo nombre de formas distintas._
+
+- [ ] Solicitante, Asignado a, Project manager, Gte. Consultoría y Business partner se eligen del catálogo, con alta rápida.
+- [ ] Migración: cada texto distinto (sin mayúsculas ni espacios sobrantes) se convierte en persona del espacio; si coincide con la persona de un miembro, se usa esa.
+- [ ] La tabla de proyectos y los filtros (HU-09) usan el nombre de la persona. Pruebas.
+
+#### HU-37 · Tipos de tarea por contenedor (3 pts)
+
+_Como responsable, quiero limitar los tipos de tarea de cada mantenimiento, para que el Mtto A use 3 tipos y el Mtto B, 2._
+
+- [ ] En los datos del contenedor se eligen sus tipos de tarea; sin elegir, admite los de su tipo (HU-22).
+- [ ] Solo se puede elegir un subconjunto de los que admite su tipo; la API lo valida (400).
+- [ ] No se quita un tipo que ya usan sus tareas (409); al cambiar el tipo del contenedor, la lista propia se descarta si ya no es subconjunto.
+- [ ] El selector de tipo de la tarea ofrece solo los del contenedor. Pruebas.
 
 #### HU-32 · Mover entre espacios de trabajo (5 pts)
 
