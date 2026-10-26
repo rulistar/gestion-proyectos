@@ -12,7 +12,8 @@ import { toast } from 'sonner';
 import { ProgressBar } from '@/components/progress-bar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrentUser } from '@/lib/auth';
-import { formatDate, todayIso, weekStartIso } from '@/lib/dates';
+import { todayIso, weekStartIso } from '@/lib/dates';
+import { dueInfo } from '@/lib/due';
 import { myTasksQueryOptions } from '@/lib/my-work';
 import { projectsQueryOptions } from '@/lib/projects';
 import { TASK_STATUSES, TASK_TYPES, useMoveTask } from '@/lib/tasks';
@@ -124,19 +125,6 @@ export function MyWorkPage() {
   );
 }
 
-/** Fecha de fin relativa a hoy: "Hoy", "Vencida: 20 oct 2026", "30 oct 2026", "Sin fecha" */
-function dueLabel(endDate: string | null, today: string) {
-  if (endDate === null) return { text: 'Sin fecha', className: 'bg-muted text-muted-foreground' };
-  if (endDate === today) return { text: 'Hoy', className: 'bg-warning/30 text-warning-foreground' };
-  if (endDate < today) {
-    return {
-      text: `Vencida: ${formatDate(endDate)}`,
-      className: 'bg-destructive/10 text-destructive',
-    };
-  }
-  return { text: formatDate(endDate), className: 'bg-muted text-foreground' };
-}
-
 function MyTaskRow({
   workspaceId,
   task,
@@ -149,7 +137,7 @@ function MyTaskRow({
   canUpdate: boolean;
 }) {
   const move = useMoveTask(workspaceId, task.projectId, task.id);
-  const due = dueLabel(task.endDate, today);
+  const due = dueInfo(task.endDate, today);
 
   function markDone() {
     move.mutate(
