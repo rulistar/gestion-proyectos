@@ -33,7 +33,7 @@
 | Rediseño (2026-10-25) | Antes de seguir, **rediseñar la interfaz** según la [maqueta](https://claude.ai/artifact/QkTijPe4GF7EtTePxQHYFR): menú lateral (Proyectos, Mantenimientos, Mi trabajo, Actividades, Gantt), combo **Espacio de trabajo**, color **turquesa matizado** y login con el formulario a la izquierda. El **Admin del sistema ve y entra a todos los espacios**. Nombre provisional: "Gestor de Proyectos". Después, los tipos de trabajo (HU-21, HU-22). |
 | Fases (2026-10-25) | Las tareas de un proyecto se agrupan en **fases**, como las tareas resumen de Project: una fase puede contener tareas y otras fases, hasta **4 niveles**. Su avance y sus fechas **se calculan** a partir de lo que contiene. HU-07 se adelanta al Sprint 4, antes de la vista Lista (HU-26) y el Gantt (HU-27), que dependen de ella. |
 | Cambiar correos (2026-10-25) | Una persona puede estar en varios espacios, así que el **Admin de un espacio no cambia correos**. Cada usuario cambia su nombre, correo y contraseña en **Mi perfil**, confirmando con su contraseña (HU-29); el **Admin del sistema** puede cambiar el correo de cualquiera y desactivar cuentas (HU-30). Sprint 5. |
-| Revisión del Sprint 3 (2026-10-26) | Se hizo lo pedido. Nuevos: **Sprint** y **Actividades del sprint** en el proyecto; en cada tarea **Actividad, Gestión y Seguimiento** (una persona cada una; Actividad reemplaza a Responsable); **catálogo de personas por espacio**, con o sin cuenta, vinculables a un usuario para mostrarlo con otro nombre; personas del proyecto desde el catálogo; **tipos de tarea limitados por contenedor**. Diseño en [ADR-0005](adr/ADR-0005-personas-y-responsabilidades.md). Sprint 4: estas historias + HU-32 + HU-09 (28 pts); HU-23 pasa al Sprint 5. |
+| Revisión del Sprint 3 (2026-10-26) | Se hizo lo pedido. Nuevos: **Sprint** y **Actividades del sprint** en proyectos y mantenimientos; en cada tarea **Actividad, Gestión y Seguimiento** (una persona cada una; Actividad reemplaza a Responsable); **catálogo de personas por espacio**, con o sin cuenta, vinculables a un usuario para mostrarlo con otro nombre; personas del proyecto desde el catálogo; **tipos de tarea limitados por contenedor**. Diseño en [ADR-0005](adr/ADR-0005-personas-y-responsabilidades.md). Sprint 4: estas historias + HU-32 + HU-09 (28 pts); HU-23 pasa al Sprint 5. |
 | Datos del proyecto (2026-10-25) | Los proyectos llevan **Folio** (viene de otro sistema: opcional, editable, puede repetirse), **Descripción**, **Observaciones** (antes "Notas") y personas como **texto libre** (solo el nombre): Solicitante, Asignado a, Project manager, Gte. Consultoría y Business partner. Se hace ya (HU-31). **Mover** proyectos, mantenimientos y tareas **entre espacios**, solo Admin (HU-32, Sprint 4). |
 
 ## Requisitos no funcionales (aplican a todas las historias)
@@ -70,7 +70,7 @@
 | 16 | HU-31 | Datos del proyecto: folio, descripción, observaciones y personas (solicitante, asignado a, PM, Gte. Consultoría, Business partner) | Proyectos | 3 | 🔴 | 3 |
 | 17 | HU-15 | Papelera: dar de baja proyectos y tareas, restaurar y borrar definitivamente | Datos | 5 | 🔴 | 3 |
 | 18 | HU-25 | Gestionar miembros: cambiar el rol y quitar del espacio | Workspaces | 3 | 🔴 | 3 |
-| 19 | HU-33 | Sprint del proyecto: "Sprint" y "Actividades del sprint" (texto) | Proyectos | 2 | 🔴 | 4 |
+| 19 | HU-33 | Sprint en proyectos y mantenimientos: "Sprint" y "Actividades del sprint" (texto) | Proyectos | 2 | 🔴 | 4 |
 | 20 | HU-34 | Catálogo de personas por espacio, con o sin cuenta, vinculables a un usuario (alias) | Personas | 5 | 🔴 | 4 |
 | 21 | HU-35 | Responsabilidades de la tarea: Actividad, Gestión y Seguimiento | Tareas | 5 | 🔴 | 4 |
 | 22 | HU-36 | Personas del proyecto desde el catálogo | Personas | 3 | 🔴 | 4 |
@@ -336,12 +336,13 @@ _Como Admin, quiero cambiar el rol de un miembro o quitarlo del espacio, para co
 
 Orden del PO (2026-10-26): HU-33 → HU-34 → HU-35 → HU-36 → HU-37 → HU-32 → HU-09. Diseño de personas y responsabilidades: [ADR-0005](adr/ADR-0005-personas-y-responsabilidades.md).
 
-#### HU-33 · Sprint del proyecto (2 pts)
+#### HU-33 · Sprint en proyectos y mantenimientos (2 pts)
 
-_Como responsable, quiero anotar en qué sprint va el proyecto y qué se hace en él, para que el equipo lo vea sin buscar en otro lado._
+_Como responsable, quiero anotar en qué sprint va cada proyecto y mantenimiento y qué se hace en él, para que el equipo lo vea sin buscar en otro lado._
 
-- [ ] Campos de texto **Sprint** (corto, p. ej. "Sprint 4") y **Actividades del sprint** (largo), opcionales y editables.
-- [ ] Se ven en "Datos del proyecto" y, si tienen valor, bajo la descripción del proyecto.
+- [ ] Campos de texto **Sprint** (corto, p. ej. "Sprint 4") y **Actividades del sprint** (largo), opcionales y editables, en **proyectos y mantenimientos** (pedido del PO, 2026-10-26). Como todos los contenedores comparten formulario, también aparecen en Actividades.
+- [ ] Se ven en "Datos del proyecto" y, si tienen valor, bajo la descripción.
+- [ ] La lista de proyectos y la de mantenimientos muestran la columna **Sprint**.
 - [ ] Migración sin pérdida de datos y pruebas.
 
 #### HU-34 · Catálogo de personas (5 pts)

@@ -16,7 +16,7 @@ Responde a la revisión del Sprint 3: catálogo de personas con alias, tres resp
 
 | Orden | ID | Elemento | Pts |
 |---|---|---|---|
-| 1 | HU-33 | Sprint del proyecto: "Sprint" y "Actividades del sprint" | 2 |
+| 1 | HU-33 | Sprint en proyectos y mantenimientos: "Sprint" y "Actividades del sprint" | 2 |
 | 2 | HU-34 | Catálogo de personas por espacio, con vínculo a usuarios (alias) | 5 |
 | 3 | HU-35 | Responsabilidades de la tarea: Actividad, Gestión y Seguimiento | 5 |
 | 4 | HU-36 | Personas del proyecto desde el catálogo | 3 |

@@ -90,7 +90,7 @@ Aprobadas por el PO para el rediseño (HU-28): `lucide-react` 1.59.0, `@radix-ui
 
 | Comentario | Respuesta |
 |---|---|
-| El proyecto necesita "Sprint" y "Actividades del sprint" (texto) | HU-33 |
+| Proyectos y mantenimientos necesitan "Sprint" y "Actividades del sprint" (texto) | HU-33 |
 | Las tareas necesitan tres responsabilidades: Actividad, Gestión y Seguimiento | HU-35 (Actividad reemplaza a Responsable) |
 | Un catálogo de personas que incluya a quien no tiene cuenta | HU-34, por espacio |
 | Usar a los usuarios con otro nombre ("adminrul" → "Rodrigo") | HU-34: la persona vinculada al usuario lleva el nombre que se muestra |
