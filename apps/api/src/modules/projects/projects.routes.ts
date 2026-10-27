@@ -8,6 +8,7 @@ import {
   defaultMetrics,
   DisallowedTaskTypesError,
   getProject,
+  InvalidProjectPeopleError,
   InvalidProjectTypeError,
   InvalidTaskTypeSelectionError,
   listProjects,
@@ -35,6 +36,11 @@ function metricsOf(request: FastifyRequest) {
 function invalidType(reply: FastifyReply, error: unknown) {
   if (error instanceof InvalidProjectTypeError) {
     return reply.code(400).send({ message: 'El tipo no existe en este espacio o está archivado' });
+  }
+  if (error instanceof InvalidProjectPeopleError) {
+    return reply
+      .code(400)
+      .send({ message: 'Las personas del proyecto deben ser del catálogo de este espacio' });
   }
   if (error instanceof InvalidTaskTypeSelectionError) {
     return reply.code(400).send({

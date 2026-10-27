@@ -1,7 +1,6 @@
 import {
   statusNeedsReason,
   type MyTask,
-  type PersonRef,
   type Task,
   type TaskInput,
   type TaskStatus,
@@ -9,45 +8,11 @@ import {
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
+import { personSelect, toPersonRef, type PersonRow } from '../people/people.service.js';
 import { resolveTaskType } from '../task-types/task-types.service.js';
 
 /** El tipo pedido no existe, está archivado o no lo admite el tipo del proyecto (→ 400) */
 export class InvalidTaskTypeError extends Error {}
-
-/** Lo que se lee de cada persona responsable: si su cuenta sigue teniendo acceso al espacio */
-const personSelect = {
-  select: {
-    id: true,
-    name: true,
-    userId: true,
-    archivedAt: true,
-    user: {
-      select: { status: true, memberships: { where: notDeleted, select: { workspaceId: true } } },
-    },
-  },
-} as const;
-
-type PersonRow = {
-  id: string;
-  name: string;
-  userId: string | null;
-  archivedAt: Date | null;
-  user: { status: string; memberships: { workspaceId: string }[] } | null;
-} | null;
-
-function toPersonRef(person: PersonRow, workspaceId: string): PersonRef | null {
-  if (!person) return null;
-  const { archivedAt, user, ...rest } = person;
-  return {
-    ...rest,
-    // Sin cuenta no hay acceso que perder; con cuenta, debe seguir siendo miembro (ADR-0005 §1)
-    hasAccess:
-      user !== null &&
-      user.status === 'ACTIVE' &&
-      user.memberships.some((m) => m.workspaceId === workspaceId),
-    archived: archivedAt !== null,
-  };
-}
 
 const taskSelect = {
   id: true,

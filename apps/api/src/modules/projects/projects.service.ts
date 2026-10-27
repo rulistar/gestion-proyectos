@@ -9,11 +9,48 @@ import {
 import type { Db, Tx } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
+import {
+  assignablePeople,
+  personSelect,
+  toPersonRef,
+  type PersonRow,
+} from '../people/people.service.js';
 import { resolveProjectType } from '../project-types/project-types.service.js';
 import { resolveFolio } from './folios.js';
 
 /** El tipo pedido no existe en el espacio o está archivado (→ 400) */
 export class InvalidProjectTypeError extends Error {}
+
+/** Alguna persona del proyecto no es del catálogo de este espacio o está archivada (→ 400) */
+export class InvalidProjectPeopleError extends Error {}
+
+/** Personas del proyecto (HU-36): referencias al catálogo */
+type PersonKey =
+  'requester' | 'assignedTo' | 'projectManager' | 'consultingManager' | 'businessPartner';
+
+const PERSON_FIELDS = [
+  'requesterId',
+  'assignedToId',
+  'projectManagerId',
+  'consultingManagerId',
+  'businessPartnerId',
+] as const;
+
+/**
+ * Las personas pedidas deben ser activas del catálogo del espacio; al editar valen también las que
+ * el proyecto ya tenía aunque estén archivadas (ADR-0005 §3)
+ */
+async function checkPeople(
+  db: Db,
+  workspaceId: string,
+  input: ProjectInput,
+  kept: (string | null)[] = [],
+) {
+  const requested = PERSON_FIELDS.map((field) => input[field]);
+  if (!(await assignablePeople(db, workspaceId, requested, kept))) {
+    throw new InvalidProjectPeopleError();
+  }
+}
 
 /** El tipo nuevo no admite algunos tipos de tarea que ya tiene el proyecto (→ 409, ADR-0004 §4) */
 export class DisallowedTaskTypesError extends Error {
@@ -90,11 +127,11 @@ const projectSelect = {
   name: true,
   folio: true,
   description: true,
-  requester: true,
-  assignedTo: true,
-  projectManager: true,
-  consultingManager: true,
-  businessPartner: true,
+  requester: personSelect,
+  assignedTo: personSelect,
+  projectManager: personSelect,
+  consultingManager: personSelect,
+  businessPartner: personSelect,
   area: true,
   classification: true,
   status: true,
@@ -116,22 +153,41 @@ const projectSelect = {
 
 type ProjectRow = Omit<
   Project,
-  'startDate' | 'endDate' | 'startedAt' | 'finishedAt' | 'progress' | 'allowedTaskTypeIds'
-> & {
-  allowedTaskTypes: { taskTypeId: string }[];
-  startDate: Date | null;
-  endDate: Date | null;
-  startedAt: Date | null;
-  finishedAt: Date | null;
-  tasks: {
-    status: TaskStatus;
-    estimatedMinutes: number | null;
+  | 'startDate'
+  | 'endDate'
+  | 'startedAt'
+  | 'finishedAt'
+  | 'progress'
+  | 'allowedTaskTypeIds'
+  | PersonKey
+> &
+  Record<PersonKey, PersonRow> & {
+    allowedTaskTypes: { taskTypeId: string }[];
+    startDate: Date | null;
     endDate: Date | null;
-    completedAt: Date | null;
-  }[];
-};
+    startedAt: Date | null;
+    finishedAt: Date | null;
+    tasks: {
+      status: TaskStatus;
+      estimatedMinutes: number | null;
+      endDate: Date | null;
+      completedAt: Date | null;
+    }[];
+  };
 
-function toProject({ tasks, allowedTaskTypes, ...row }: ProjectRow, metrics: Metrics): Project {
+function toProject(
+  {
+    tasks,
+    allowedTaskTypes,
+    requester,
+    assignedTo,
+    projectManager,
+    consultingManager,
+    businessPartner,
+    ...row
+  }: ProjectRow,
+  metrics: Metrics,
+): Project {
   const activity = tasks.map((task) => ({
     status: task.status,
     endDate: toIsoDate(task.endDate),
@@ -144,6 +200,11 @@ function toProject({ tasks, allowedTaskTypes, ...row }: ProjectRow, metrics: Met
     startedAt: row.startedAt?.toISOString() ?? null,
     finishedAt: row.finishedAt?.toISOString() ?? null,
     allowedTaskTypeIds: allowedTaskTypes.map((allowed) => allowed.taskTypeId),
+    requester: toPersonRef(requester, row.workspaceId),
+    assignedTo: toPersonRef(assignedTo, row.workspaceId),
+    projectManager: toPersonRef(projectManager, row.workspaceId),
+    consultingManager: toPersonRef(consultingManager, row.workspaceId),
+    businessPartner: toPersonRef(businessPartner, row.workspaceId),
     progress: { ...summarizeTasks(tasks), ...countTaskActivity(activity, metrics) },
   };
 }
@@ -223,6 +284,7 @@ export async function createProject(
 ): Promise<Project> {
   const typeId = await resolveProjectType(db, workspaceId, input.typeId);
   if (!typeId) throw new InvalidProjectTypeError();
+  await checkPeople(db, workspaceId, input);
   const ownTypes = await resolveOwnTaskTypes(
     db,
     workspaceId,
@@ -269,9 +331,20 @@ export async function updateProject(
       startedAt: true,
       finishedAt: true,
       allowedTaskTypes: { select: { taskTypeId: true } },
+      requesterId: true,
+      assignedToId: true,
+      projectManagerId: true,
+      consultingManagerId: true,
+      businessPartnerId: true,
     },
   });
   if (!previous) return null;
+  await checkPeople(
+    db,
+    workspaceId,
+    input,
+    PERSON_FIELDS.map((field) => previous[field]),
+  );
   const typeId = await resolveProjectType(db, workspaceId, input.typeId, previous.typeId);
   if (!typeId) throw new InvalidProjectTypeError();
   const typeAllowed = await typeAllowedTaskTypes(db, typeId);

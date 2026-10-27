@@ -3,6 +3,7 @@ import {
   roleHasPermission,
   type Project,
   type ProjectBehavior,
+  type Person,
   type ProjectType,
   type TaskType,
 } from '@gestion/shared';
@@ -27,6 +28,7 @@ import {
 import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
 import { projectTypesQueryOptions, SECTIONS } from '@/lib/project-types';
 import { PROJECT_PRIORITIES, projectsQueryOptions, useCreateProject } from '@/lib/projects';
+import { peopleQueryOptions } from '@/lib/people';
 import { taskTypesQueryOptions } from '@/lib/task-types';
 import { ROLE_LABELS, workspaceQueryOptions } from '@/lib/workspaces';
 
@@ -65,6 +67,7 @@ function ContainersPage({
   const { data: allProjects } = useSuspenseQuery(projectsQueryOptions(workspaceId));
   const { data: allTypes } = useSuspenseQuery(projectTypesQueryOptions(workspaceId));
   const { data: taskTypes } = useSuspenseQuery(taskTypesQueryOptions(workspaceId));
+  const { data: people } = useSuspenseQuery(peopleQueryOptions(workspaceId));
   const section = SECTIONS[behavior];
   const projects = allProjects.filter((p) => p.type.behavior === behavior);
   const types = allTypes.filter((t) => t.behavior === behavior && !t.archived);
@@ -87,6 +90,7 @@ function ContainersPage({
             label={section.newLabel}
             types={types}
             taskTypes={taskTypes}
+            people={people}
           />
         )}
       </div>
@@ -178,7 +182,7 @@ function ContainersTable({
             {behavior !== 'ON_DEMAND' && (
               <Td className="whitespace-nowrap">{project.sprint ?? '—'}</Td>
             )}
-            {behavior === 'ON_DEMAND' && <Td>{project.requester ?? '—'}</Td>}
+            {behavior === 'ON_DEMAND' && <Td>{project.requester?.name ?? '—'}</Td>}
             <Td>
               <ProjectStatusBadge status={project.status} />
             </Td>
@@ -234,11 +238,13 @@ function CreateProjectDialog({
   label,
   types,
   taskTypes,
+  people,
 }: {
   workspaceId: string;
   label: string;
   types: ProjectType[];
   taskTypes: TaskType[];
+  people: Person[];
 }) {
   const createProject = useCreateProject(workspaceId);
   const navigate = useNavigate();
@@ -262,6 +268,8 @@ function CreateProjectDialog({
         <ProjectForm
           types={types}
           taskTypes={taskTypes}
+          workspaceId={workspaceId}
+          people={people}
           submitLabel="Crear"
           isPending={createProject.isPending}
           error={createProject.error?.message}
