@@ -6,6 +6,7 @@ import type {
 } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
+import { displayNames, ensureMemberPerson } from '../people/people.service.js';
 import { seedCatalog } from '../project-types/project-types.service.js';
 
 /**
@@ -51,9 +52,15 @@ export async function listMembers(
     select: { role: true, user: { select: { id: true, name: true, email: true } } },
     orderBy: { user: { name: 'asc' } },
   });
+  // El nombre que se muestra es el de su persona del catálogo, si la tiene (alias, HU-34)
+  const names = await displayNames(
+    db,
+    workspaceId,
+    memberships.map(({ user }) => user.id),
+  );
   return memberships.map(({ role, user }) => ({
     userId: user.id,
-    name: user.name,
+    name: names.get(user.id) ?? user.name,
     email: withEmail ? user.email : null,
     role,
   }));
@@ -158,6 +165,11 @@ export async function createWorkspace(
       },
     });
     await seedCatalog(tx, workspace.id, actorId);
+    const creator = await tx.user.findUniqueOrThrow({
+      where: { id: actorId },
+      select: { id: true, name: true, email: true },
+    });
+    await ensureMemberPerson(tx, workspace.id, creator, actorId);
     return { id: workspace.id, name: workspace.name, role: membership.role };
   });
 }

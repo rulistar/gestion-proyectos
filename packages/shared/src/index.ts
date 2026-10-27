@@ -3,6 +3,7 @@ export * from './schemas/health.js';
 export * from './schemas/folios.js';
 export * from './schemas/invitations.js';
 export * from './schemas/my-work.js';
+export * from './schemas/people.js';
 export * from './schemas/permissions.js';
 export * from './schemas/progress.js';
 export * from './schemas/project-types.js';

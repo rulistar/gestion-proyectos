@@ -350,12 +350,12 @@ _Como responsable, quiero anotar en qué sprint va cada proyecto y mantenimiento
 
 _Como Admin, quiero dar de alta a las personas con las que trabajo, tengan o no cuenta, y mostrar a los usuarios con el nombre que usamos, para asignarles responsabilidades._
 
-- [ ] Página **Personas** (Administración): nombre, usuario vinculado (opcional) y uso. Se puede agregar, renombrar, vincular o desvincular un usuario del espacio, y archivar.
-- [ ] Nombre único en el espacio; un usuario se vincula a lo más a una persona por espacio.
-- [ ] El nombre que se muestra en tareas y proyectos es el de la persona: "adminrul" puede verse como "Rodrigo".
-- [ ] Cada miembro tiene su persona vinculada: se crea al crear el espacio o al aceptar una invitación, y la migración la crea para los miembros actuales.
-- [ ] Una persona en uso no se borra, se archiva; quitar a un miembro no borra su persona (queda "sin acceso").
-- [ ] Permisos: ver con `project.read`; administrar con `member.manage`. Pruebas.
+- [x] Página **Personas** (Administración): nombre, usuario vinculado (opcional) y uso. Se puede agregar, renombrar, vincular o desvincular un usuario del espacio, y archivar.
+- [x] Nombre único en el espacio; un usuario se vincula a lo más a una persona por espacio.
+- [x] El nombre que se muestra en tareas y proyectos es el de la persona: "adminrul" puede verse como "Rodrigo".
+- [x] Cada miembro tiene su persona vinculada: se crea al crear el espacio o al aceptar una invitación, y la migración la crea para los miembros actuales.
+- [x] Una persona en uso no se borra, se archiva; quitar a un miembro no borra su persona (queda "sin acceso").
+- [x] Permisos: ver con `project.read`; administrar con `member.manage`. Pruebas.
 
 #### HU-35 · Responsabilidades de la tarea (5 pts)
 

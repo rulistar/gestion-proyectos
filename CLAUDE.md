@@ -62,7 +62,7 @@ apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
                         (/, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo,
-                        .../miembros, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
+                        .../miembros, .../personas, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
     src/lib/<mod>.ts    queryOptions + mutaciones de cada módulo (p. ej. workspaces.ts); la ruta precarga con loader
@@ -87,6 +87,8 @@ apps/
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
       workspaces/         GET/POST/PATCH /workspaces[/:id], /:id/members (PATCH rol, DELETE quitar; HU-25)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
+      people/             catálogo de personas (HU-34, ADR-0005): GET (project.read), POST (task.create), PATCH (member.manage);
+                          ensureMemberPerson al entrar un miembro; displayNames = alias que se muestra
       project-types/      catálogo de tipos de contenedor (HU-21, ADR-0004): GET (project.read), POST/PATCH (catalog.manage);
                           seedCatalog carga tipos de contenedor, de tarea y permitidos al crear un espacio
       task-types/         catálogo de tipos de tarea (HU-22): GET (project.read), POST/PATCH (catalog.manage);
