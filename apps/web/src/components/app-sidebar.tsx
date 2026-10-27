@@ -2,6 +2,7 @@ import { roleHasPermission } from '@gestion/shared';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import {
   ChartGantt,
+  Contact,
   FolderKanban,
   Inbox,
   ListChecks,
@@ -190,6 +191,15 @@ export function AppSidebar() {
           >
             <Users aria-hidden />
             Miembros
+          </Link>
+          <Link
+            to="/w/$workspaceId/personas"
+            params={{ workspaceId: current.id }}
+            className={itemClass}
+            activeProps={{ className: 'bg-accent text-accent-foreground', 'aria-current': 'page' }}
+          >
+            <Contact aria-hidden />
+            Personas
           </Link>
           {roleHasPermission(current.role, 'trash.manage') && (
             <Link
