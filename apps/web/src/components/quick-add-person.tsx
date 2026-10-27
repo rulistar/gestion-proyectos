@@ -50,8 +50,10 @@ export function QuickAddPerson({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="grid gap-1">
-      <div className="flex gap-2">
+      {/* Si no cabe, los botones bajan de renglón en vez de encimarse */}
+      <div className="flex flex-wrap gap-2">
         <Input
+          className="min-w-48 flex-1"
           aria-label="Nombre de la persona nueva"
           placeholder="Nombre de la persona"
           value={name}

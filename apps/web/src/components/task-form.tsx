@@ -127,6 +127,9 @@ export function TaskForm({
             ))}
           </NativeSelect>
           <FieldError {...form.errorProps('responsiblePersonId')} />
+        </div>
+        {/* Alta rápida en su propia fila, debajo del Responsable: abierta no cabe a su lado */}
+        <div className="sm:col-span-2 lg:col-span-4">
           <QuickAddPerson workspaceId={workspaceId} />
         </div>
         <div className="grid gap-2">
