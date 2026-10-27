@@ -39,10 +39,8 @@ export const taskInputSchema = z
     status: taskStatusSchema.default('PENDING'),
     /** Hasta una semana de trabajo continuo (10 080 min) por tarea */
     estimatedMinutes: optionalInt(10_080),
-    /** Responsabilidades (HU-35, ADR-0005): una persona activa del catálogo en cada una, o nadie */
-    activityPersonId: optionalId,
-    managementPersonId: optionalId,
-    followUpPersonId: optionalId,
+    /** Responsable (HU-35): una persona activa del catálogo del espacio, o nadie */
+    responsiblePersonId: optionalId,
     startDate: optionalDate,
     endDate: optionalDate,
     /** Motivo de Pausada o Cancelada; en los demás estados se ignora */
@@ -65,12 +63,8 @@ export const taskSchema = z.object({
   type: taskTypeRefSchema,
   status: taskStatusSchema,
   estimatedMinutes: z.number().int().nullable(),
-  /** Actividad: quien la hace (reemplaza a Responsable) */
-  activity: personRefSchema.nullable(),
-  /** Gestión: quien la gestiona */
-  management: personRefSchema.nullable(),
-  /** Seguimiento: quien le da seguimiento */
-  followUp: personRefSchema.nullable(),
+  /** Responsable: una persona del catálogo (con alias), tenga o no cuenta */
+  responsible: personRefSchema.nullable(),
   startDate: z.iso.date().nullable(),
   endDate: z.iso.date().nullable(),
   /** Por qué está Pausada o Cancelada; null en los demás estados */

@@ -14,7 +14,7 @@ import { QuickAddPerson } from '@/components/quick-add-person';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
-import { selectablePeople, TASK_ROLES } from '@/lib/people';
+import { selectablePeople } from '@/lib/people';
 import { TASK_STATUSES } from '@/lib/tasks';
 import { useSchemaForm } from '@/lib/use-schema-form';
 
@@ -23,9 +23,7 @@ const FIELDS = [
   'typeId',
   'status',
   'estimatedMinutes',
-  'activityPersonId',
-  'managementPersonId',
-  'followUpPersonId',
+  'responsiblePersonId',
   'startDate',
   'endDate',
   'statusReason',
@@ -112,27 +110,23 @@ export function TaskForm({
             <FieldError {...form.errorProps('statusReason')} />
           </div>
         )}
-        {/* Responsabilidades (HU-35): una persona del catálogo en cada una, o nadie */}
-        {TASK_ROLES.map(({ field, key, label }) => {
-          const current = task?.[key] ?? null;
-          return (
-            <div key={field} className="grid gap-2">
-              <Label htmlFor={form.idOf(field)}>{label}</Label>
-              <NativeSelect {...form.field(field)} defaultValue={current?.id ?? ''}>
-                <option value="">Sin asignar</option>
-                {selectablePeople(people, current?.id).map((person) => (
-                  <option key={person.id} value={person.id}>
-                    {person.name}
-                    {person.archived ? ' (archivada)' : ''}
-                    {person.userId && !person.hasAccess ? ' (sin acceso)' : ''}
-                  </option>
-                ))}
-              </NativeSelect>
-              <FieldError {...form.errorProps(field)} />
-            </div>
-          );
-        })}
-        <div className="sm:col-span-2 lg:col-span-4">
+        {/* Responsable (HU-35): una persona del catálogo, tenga o no cuenta */}
+        <div className="grid gap-2">
+          <Label htmlFor={form.idOf('responsiblePersonId')}>Responsable</Label>
+          <NativeSelect
+            {...form.field('responsiblePersonId')}
+            defaultValue={task?.responsible?.id ?? ''}
+          >
+            <option value="">Sin asignar</option>
+            {selectablePeople(people, task?.responsible?.id).map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}
+                {person.archived ? ' (archivada)' : ''}
+                {person.userId && !person.hasAccess ? ' (sin acceso)' : ''}
+              </option>
+            ))}
+          </NativeSelect>
+          <FieldError {...form.errorProps('responsiblePersonId')} />
           <QuickAddPerson workspaceId={workspaceId} />
         </div>
         <div className="grid gap-2">

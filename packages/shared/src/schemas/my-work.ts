@@ -1,15 +1,8 @@
 import { z } from 'zod';
 import { taskSchema, type TaskStatus } from './tasks.js';
 
-/** Responsabilidad que me toca en una tarea (HU-35) */
-export const taskRoleSchema = z.enum(['ACTIVITY', 'MANAGEMENT', 'FOLLOW_UP']);
-export type TaskRole = z.infer<typeof taskRoleSchema>;
-
-/** Una tarea mía con el nombre de su proyecto (HU-28b) y en qué responsabilidades aparezco */
-export const myTaskSchema = taskSchema.extend({
-  projectName: z.string(),
-  myRoles: z.array(taskRoleSchema),
-});
+/** Una tarea mía (soy su Responsable) con el nombre de su proyecto (HU-28b) */
+export const myTaskSchema = taskSchema.extend({ projectName: z.string() });
 export type MyTask = z.infer<typeof myTaskSchema>;
 
 /** Respuesta de GET /workspaces/:workspaceId/my-tasks: abiertas y hechas desde `doneSince` */

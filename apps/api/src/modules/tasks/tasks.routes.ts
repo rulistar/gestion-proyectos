@@ -12,7 +12,7 @@ import { requirePermission } from '../workspaces/access.js';
 import { assignablePeople } from '../people/people.service.js';
 import {
   createTask,
-  currentPeople,
+  currentResponsible,
   InvalidTaskTypeError,
   listMyTasks,
   listTasks,
@@ -41,22 +41,22 @@ function invalidType(reply: FastifyReply, error: unknown) {
   throw error;
 }
 
-const INVALID_PEOPLE = 'Las personas responsables deben ser del catálogo de este espacio';
+const INVALID_PEOPLE = 'El responsable debe ser una persona del catálogo de este espacio';
 
 /**
- * Actividad, Gestión y Seguimiento (HU-35): personas activas del catálogo del espacio, o nadie.
- * Al editar se pueden conservar las que ya tenía aunque estén archivadas.
+ * Responsable (HU-35): una persona activa del catálogo del espacio, o nadie. Al editar se puede
+ * conservar la que ya tenía aunque esté archivada.
  */
 async function invalidPeople(
   request: FastifyRequest,
   input: TaskInput,
-  kept: (string | null)[] = [],
+  kept: string | null = null,
 ) {
   return !(await assignablePeople(
     request.server.db,
     request.membership!.workspaceId,
-    [input.activityPersonId, input.managementPersonId, input.followUpPersonId],
-    kept,
+    [input.responsiblePersonId],
+    [kept],
   ));
 }
 
@@ -135,9 +135,9 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
         return reply.code(400).send({ message: z.prettifyError(parsed.error) });
       }
       const where = { workspaceId: request.membership!.workspaceId, ...params.data };
-      const current = await currentPeople(app.db, where);
+      const current = await currentResponsible(app.db, where);
       if (current === undefined) return notFound(reply, 'Tarea no encontrada');
-      if (await invalidPeople(request, parsed.data, Object.values(current))) {
+      if (await invalidPeople(request, parsed.data, current)) {
         return reply.code(400).send({ message: INVALID_PEOPLE });
       }
       try {

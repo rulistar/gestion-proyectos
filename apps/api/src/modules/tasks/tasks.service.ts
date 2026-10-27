@@ -4,7 +4,6 @@ import {
   type PersonRef,
   type Task,
   type TaskInput,
-  type TaskRole,
   type TaskStatus,
 } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
@@ -63,38 +62,23 @@ const taskSelect = {
   startedAt: true,
   statusReason: true,
   workspaceId: true,
-  // Responsabilidades (HU-35): Actividad, Gestión y Seguimiento
-  activityPerson: personSelect,
-  managementPerson: personSelect,
-  followUpPerson: personSelect,
+  // Responsable (HU-35): persona del catálogo, con su acceso al espacio
+  responsiblePerson: personSelect,
 } as const;
 
-type TaskRow = Omit<
-  Task,
-  'startDate' | 'endDate' | 'completedAt' | 'startedAt' | 'activity' | 'management' | 'followUp'
-> & {
+type TaskRow = Omit<Task, 'startDate' | 'endDate' | 'completedAt' | 'startedAt' | 'responsible'> & {
   startDate: Date | null;
   endDate: Date | null;
   completedAt: Date | null;
   startedAt: Date | null;
   workspaceId: string;
-  activityPerson: PersonRow;
-  managementPerson: PersonRow;
-  followUpPerson: PersonRow;
+  responsiblePerson: PersonRow;
 };
 
-function toTask({
-  workspaceId,
-  activityPerson,
-  managementPerson,
-  followUpPerson,
-  ...row
-}: TaskRow): Task {
+function toTask({ workspaceId, responsiblePerson, ...row }: TaskRow): Task {
   return {
     ...row,
-    activity: toPersonRef(activityPerson, workspaceId),
-    management: toPersonRef(managementPerson, workspaceId),
-    followUp: toPersonRef(followUpPerson, workspaceId),
+    responsible: toPersonRef(responsiblePerson, workspaceId),
     startDate: toIsoDate(row.startDate),
     endDate: toIsoDate(row.endDate),
     completedAt: row.completedAt?.toISOString() ?? null,
@@ -102,16 +86,16 @@ function toTask({
   };
 }
 
-/** Personas responsables actuales de una tarea del proyecto (undefined si la tarea no existe) */
-export async function currentPeople(
+/** Responsable actual de una tarea del proyecto (undefined si la tarea no existe) */
+export async function currentResponsible(
   db: Db,
   where: { workspaceId: string; projectId: string; taskId: string },
-) {
+): Promise<string | null | undefined> {
   const task = await db.task.findFirst({
     where: { id: where.taskId, ...taskScope(where.workspaceId, where.projectId) },
-    select: { activityPersonId: true, managementPersonId: true, followUpPersonId: true },
+    select: { responsiblePersonId: true },
   });
-  return task ?? undefined;
+  return task === null ? undefined : task.responsiblePersonId;
 }
 
 /**
@@ -159,9 +143,9 @@ export async function listTasks(db: Db, workspaceId: string, projectId: string):
 }
 
 /**
- * Mis tareas en el workspace (HU-28b, HU-35): donde mi persona del espacio aparece en Actividad,
- * Gestión o Seguimiento, de proyectos que no están en la papelera. Las abiertas y las Hechas desde
- * `doneSince` (para "hechas esta semana"); las canceladas no se piden.
+ * Mis tareas en el workspace (HU-28b): donde mi persona del espacio es la Responsable, de proyectos
+ * que no están en la papelera. Las abiertas y las Hechas desde `doneSince` (para "hechas esta
+ * semana"); las canceladas no se piden.
  */
 export async function listMyTasks(
   db: Db,
@@ -174,34 +158,18 @@ export async function listMyTasks(
   const rows = await db.task.findMany({
     where: {
       workspaceId,
+      responsiblePersonId: me.id,
       ...notDeleted,
       project: notDeleted,
-      AND: [
-        {
-          OR: [
-            { activityPersonId: me.id },
-            { managementPersonId: me.id },
-            { followUpPersonId: me.id },
-          ],
-        },
-        {
-          OR: [
-            { status: { in: ['PENDING', 'IN_PROGRESS', 'PAUSED'] } },
-            { status: 'DONE', completedAt: { gte: doneSince } },
-          ],
-        },
+      OR: [
+        { status: { in: ['PENDING', 'IN_PROGRESS', 'PAUSED'] } },
+        { status: 'DONE', completedAt: { gte: doneSince } },
       ],
     },
     select: { ...taskSelect, project: { select: { name: true } } },
     orderBy: [{ endDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }],
   });
-  return rows.map(({ project, ...row }) => {
-    const myRoles: TaskRole[] = [];
-    if (row.activityPerson?.id === me.id) myRoles.push('ACTIVITY');
-    if (row.managementPerson?.id === me.id) myRoles.push('MANAGEMENT');
-    if (row.followUpPerson?.id === me.id) myRoles.push('FOLLOW_UP');
-    return { ...toTask(row), projectName: project.name, myRoles };
-  });
+  return rows.map(({ project, ...row }) => ({ ...toTask(row), projectName: project.name }));
 }
 
 /** El proyecto ya se comprobó (existe en el workspace y no está borrado) */

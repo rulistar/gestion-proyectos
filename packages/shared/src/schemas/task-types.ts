@@ -49,6 +49,10 @@ export const DEFAULT_TASK_TYPES: readonly { name: string; expedited: boolean; le
     { name: 'Tarea', expedited: false, legacy: 'TASK' },
     { name: 'Incidencia', expedited: false },
     { name: 'Fast track', expedited: true },
+    // Pedido del PO (2026-10-27): conceptos de trabajo, como tipos de tarea
+    { name: 'Actividad', expedited: false },
+    { name: 'Gestión', expedited: false },
+    { name: 'Seguimiento', expedited: false },
     { name: 'Reunión', expedited: false, legacy: 'MEETING' },
     { name: 'Entregable', expedited: false, legacy: 'DELIVERABLE' },
     { name: 'Revisión', expedited: false, legacy: 'REVIEW' },
