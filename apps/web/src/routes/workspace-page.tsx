@@ -134,7 +134,8 @@ function ContainersTable({
           <Th>Nombre</Th>
           {showType && <Th>Tipo</Th>}
           {behavior !== 'ON_DEMAND' && <Th>Sprint</Th>}
-          <Th>Solicitante</Th>
+          {/* Decisión del PO: Solicitante solo en Actividades; en el proyecto se sigue viendo */}
+          {behavior === 'ON_DEMAND' && <Th>Solicitante</Th>}
           <Th>Estado</Th>
           <Th>Prioridad</Th>
           {behavior === 'WITH_END' ? (
@@ -169,7 +170,7 @@ function ContainersTable({
             {behavior !== 'ON_DEMAND' && (
               <Td className="whitespace-nowrap">{project.sprint ?? '—'}</Td>
             )}
-            <Td>{project.requester ?? '—'}</Td>
+            {behavior === 'ON_DEMAND' && <Td>{project.requester ?? '—'}</Td>}
             <Td>
               <ProjectStatusBadge status={project.status} />
             </Td>
