@@ -9,6 +9,7 @@ import { Pencil, Trash2, Zap } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { MoveTaskDialog } from '@/components/move-dialogs';
 import { TaskForm } from '@/components/task-form';
 import { Button } from '@/components/ui/button';
 import {
@@ -399,6 +400,12 @@ function EditTaskPanel({
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
+          <MoveTaskDialog
+            workspaceId={workspaceId}
+            projectId={projectId}
+            task={task}
+            onMoved={onClose}
+          />
         </TaskForm>
       </DialogContent>
     </Dialog>

@@ -400,12 +400,12 @@ _Como responsable, quiero que cada proyecto, mantenimiento y actividad reciba un
 
 _Como Admin, quiero mover un proyecto, mantenimiento o tarea a otro espacio, para corregir dónde se dio de alta sin volver a capturarlo._
 
-- [ ] Opción **Mover a otro espacio** en el proyecto o mantenimiento (se lleva sus fases y tareas) y en cada tarea (elige el proyecto destino).
-- [ ] Solo quien es **Admin en ambos espacios** (o el Admin del sistema); la API lo verifica en el origen y en el destino.
-- [ ] Se conservan los IDs (las integraciones no se rompen), el historial y las fechas; queda registrado quién lo movió (RNF-01).
-- [ ] Los responsables que no son miembros del destino quedan marcados "ya no es miembro" (HU-25).
-- [ ] Si el tipo de contenedor o de tarea no existe en el destino, se pide elegir uno equivalente (ADR-0004).
-- [ ] Confirmación que dice qué se va a mover, y pruebas de permisos.
+- [x] Opción **Mover** en el proyecto o mantenimiento (se lleva sus tareas; las fases llegarán con HU-07) y **Mover a otro proyecto** al editar una tarea (del mismo espacio o de otro).
+- [x] Solo quien es **Admin en ambos espacios** (o el Admin del sistema); la API lo verifica en el origen y en el destino.
+- [x] Se conservan los IDs (las integraciones no se rompen), el historial y las fechas; queda registrado quién lo movió (RNF-01).
+- [x] Los responsables que no son miembros del destino quedan marcados "ya no es miembro" (HU-25).
+- [x] El tipo de contenedor se elige del catálogo del destino (se propone el del mismo nombre); los tipos de tarea y las personas se buscan por nombre en el destino y, si no existen, se crean. Si el destino no admite algún tipo de tarea, se rechaza (409) y no se mueve nada.
+- [x] Confirmación que dice qué se va a mover, y pruebas de permisos.
 
 #### HU-09 · Tabla de proyectos con filtros y orden (5 pts)
 

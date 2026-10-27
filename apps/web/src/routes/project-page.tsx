@@ -14,6 +14,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { MoveProjectDialog } from '@/components/move-dialogs';
 import { ProgressBar } from '@/components/progress-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
@@ -100,6 +101,9 @@ export function ProjectPage() {
             Prioridad {PROJECT_PRIORITIES[project.priority].toLowerCase()}
           </span>
           <div className="ml-auto flex flex-wrap gap-2">
+            {can('project.move') && (
+              <MoveProjectDialog workspaceId={workspaceId} project={project} />
+            )}
             {can('project.delete') && (
               <DeleteProjectButton workspaceId={workspaceId} project={project} />
             )}

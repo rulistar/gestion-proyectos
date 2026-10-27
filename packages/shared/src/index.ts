@@ -2,6 +2,7 @@ export * from './schemas/auth.js';
 export * from './schemas/health.js';
 export * from './schemas/folios.js';
 export * from './schemas/invitations.js';
+export * from './schemas/moves.js';
 export * from './schemas/my-work.js';
 export * from './schemas/people.js';
 export * from './schemas/permissions.js';

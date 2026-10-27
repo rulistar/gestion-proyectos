@@ -87,6 +87,8 @@ apps/
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
       workspaces/         GET/POST/PATCH /workspaces[/:id], /:id/members (PATCH rol, DELETE quitar; HU-25)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
+      moves/              mover entre espacios (HU-32): POST .../projects/:id/move y .../tasks/:id/move;
+                          Admin en origen y destino (permissionIn de access.ts); traduce catálogos al destino
       people/             catálogo de personas (HU-34, ADR-0005): GET (project.read), POST (task.create), PATCH (member.manage);
                           ensureMemberPerson al entrar un miembro; displayNames = alias que se muestra
       project-types/      catálogo de tipos de contenedor (HU-21, ADR-0004): GET (project.read), POST/PATCH (catalog.manage);
