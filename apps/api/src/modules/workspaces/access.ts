@@ -49,6 +49,21 @@ function workspaceGuard(permission?: Permission) {
   };
 }
 
+/**
+ * ¿El usuario tiene el permiso en otro workspace? Para operaciones que tocan dos espacios, como
+ * mover un proyecto (HU-32): la ruta revisa el origen con requirePermission y el destino con esto.
+ * null = no tiene acceso al espacio (→ 404); false = sin permiso (→ 403).
+ */
+export async function permissionIn(
+  db: Db,
+  workspaceId: string,
+  userId: string,
+  permission: Permission,
+): Promise<boolean | null> {
+  const access = await findAccess(db, workspaceId, userId);
+  return access && roleHasPermission(access.role, permission);
+}
+
 /** Solo exige ser miembro del workspace, con cualquier rol */
 export const requireMembership = workspaceGuard();
 

@@ -19,6 +19,8 @@ export const PERMISSIONS = [
   'trash.manage',
   /** Tipos de contenedor y de tarea, campos de detalle (ADR-0004) */
   'catalog.manage',
+  /** Mover contenedores y tareas a otro espacio (HU-32): solo Admin, en origen y destino */
+  'project.move',
   'integration.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
