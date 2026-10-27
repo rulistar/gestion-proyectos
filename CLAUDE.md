@@ -116,6 +116,7 @@ packages/
   shared/             esquemas Zod + tipos (z.infer) usados por web y api
     src/schemas/permissions.ts  catálogo de permisos por rol (roleHasPermission)
     src/schemas/progress.ts     reglas de avance (summarizeTasks, daysRemainingLabel; HU-06), con pruebas
+    src/schemas/project-filters.ts  filtros y orden de la lista de contenedores (HU-09), en la URL; con pruebas
     src/schemas/my-work.ts      groupMyWork: agrupa mis tareas por fecha de fin (HU-28b), con pruebas
     tsconfig.build.json         build sin los *.test.ts
 docs/                 acta, ADRs, backlog (no los reformatea Prettier)

@@ -7,6 +7,7 @@ export * from './schemas/my-work.js';
 export * from './schemas/people.js';
 export * from './schemas/permissions.js';
 export * from './schemas/progress.js';
+export * from './schemas/project-filters.js';
 export * from './schemas/project-types.js';
 export * from './schemas/projects.js';
 export * from './schemas/task-types.js';

@@ -411,12 +411,12 @@ _Como Admin, quiero mover un proyecto, mantenimiento o tarea a otro espacio, par
 
 _Como miembro, quiero filtrar y ordenar los proyectos, para encontrar rápido lo que busco aunque sean muchos._
 
-- [ ] Filtros: texto (nombre, folio o personas), área y clasificación (con los valores existentes), estado, prioridad y "fecha de fin hasta".
-- [ ] **Ordenar** por cualquier columna, ascendente o descendente.
-- [ ] Terminados y Cancelados **ocultos por defecto**, con la casilla "Mostrar terminados y cancelados".
-- [ ] Los filtros y el orden viven en la URL (ADR-0003): un enlace compartido abre la misma vista.
-- [ ] Mensaje "Ningún proyecto coincide con los filtros" y botón "Limpiar filtros".
-- [ ] El filtro por tipo se suma con HU-21.
+- [x] Filtros: texto (nombre, folio o personas), área y clasificación (con los valores existentes), estado, prioridad y "fecha de fin hasta".
+- [x] **Ordenar** por cualquier columna, ascendente o descendente.
+- [x] Terminados y Cancelados **ocultos por defecto**, con la casilla "Mostrar terminados y cancelados".
+- [x] Los filtros y el orden viven en la URL (ADR-0003): un enlace compartido abre la misma vista.
+- [x] Mensaje "Ningún proyecto coincide con los filtros" y botón "Limpiar filtros".
+- [x] Filtro por tipo (cuando la sección tiene más de uno, p. ej. Mtto correctivo y evolutivo). La lógica son funciones puras con pruebas (shared).
 
 #### HU-07 · Fases (8 pts)
 

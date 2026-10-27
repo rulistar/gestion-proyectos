@@ -7,6 +7,7 @@ import {
   redirect,
 } from '@tanstack/react-router';
 import { ApiError } from '@/lib/api';
+import { projectFiltersSchema } from '@gestion/shared';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
 import { peopleQueryOptions } from '@/lib/people';
 import { weekStartIso } from '@/lib/dates';
@@ -144,6 +145,7 @@ function loadContainers(queryClient: QueryClient, workspaceId: string) {
 const workspaceRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId',
+  validateSearch: projectFiltersSchema,
   loader: ({ context, params }) => loadContainers(context.queryClient, params.workspaceId),
   component: WorkspacePage,
 });
@@ -151,6 +153,7 @@ const workspaceRoute = createRoute({
 const maintenanceRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId/mantenimientos',
+  validateSearch: projectFiltersSchema,
   loader: ({ context, params }) => loadContainers(context.queryClient, params.workspaceId),
   component: MaintenancePage,
 });
@@ -158,6 +161,7 @@ const maintenanceRoute = createRoute({
 const activitiesRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId/actividades',
+  validateSearch: projectFiltersSchema,
   loader: ({ context, params }) => loadContainers(context.queryClient, params.workspaceId),
   component: ActivitiesPage,
 });
