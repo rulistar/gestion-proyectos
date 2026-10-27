@@ -1,7 +1,12 @@
 import {
   daysRemainingLabel,
+  filterProjects,
+  hasActiveFilters,
   roleHasPermission,
+  sortProjects,
   type Project,
+  type ProjectFilters,
+  type ProjectSortKey,
   type ProjectBehavior,
   type Person,
   type ProjectType,
@@ -9,10 +14,11 @@ import {
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { ProgressBar } from '@/components/progress-bar';
+import { ProjectFiltersBar } from '@/components/project-filters-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { Button } from '@/components/ui/button';
@@ -37,19 +43,47 @@ const projectsRoute = getRouteApi('/app/w/$workspaceId');
 const maintenanceRoute = getRouteApi('/app/w/$workspaceId/mantenimientos');
 const activitiesRoute = getRouteApi('/app/w/$workspaceId/actividades');
 
+// Los filtros y el orden viven en la URL (HU-09, ADR-0003); `replace` evita llenar el historial
 export function WorkspacePage() {
   const { workspaceId } = projectsRoute.useParams();
-  return <ContainersPage workspaceId={workspaceId} behavior="WITH_END" />;
+  const filters = projectsRoute.useSearch();
+  const navigate = projectsRoute.useNavigate();
+  return (
+    <ContainersPage
+      workspaceId={workspaceId}
+      behavior="WITH_END"
+      filters={filters}
+      onFilters={(search) => void navigate({ search, replace: true })}
+    />
+  );
 }
 
 export function MaintenancePage() {
   const { workspaceId } = maintenanceRoute.useParams();
-  return <ContainersPage workspaceId={workspaceId} behavior="ONGOING" />;
+  const filters = maintenanceRoute.useSearch();
+  const navigate = maintenanceRoute.useNavigate();
+  return (
+    <ContainersPage
+      workspaceId={workspaceId}
+      behavior="ONGOING"
+      filters={filters}
+      onFilters={(search) => void navigate({ search, replace: true })}
+    />
+  );
 }
 
 export function ActivitiesPage() {
   const { workspaceId } = activitiesRoute.useParams();
-  return <ContainersPage workspaceId={workspaceId} behavior="ON_DEMAND" />;
+  const filters = activitiesRoute.useSearch();
+  const navigate = activitiesRoute.useNavigate();
+  return (
+    <ContainersPage
+      workspaceId={workspaceId}
+      behavior="ON_DEMAND"
+      filters={filters}
+      onFilters={(search) => void navigate({ search, replace: true })}
+    />
+  );
 }
 
 /**
@@ -59,9 +93,13 @@ export function ActivitiesPage() {
 function ContainersPage({
   workspaceId,
   behavior,
+  filters,
+  onFilters,
 }: {
   workspaceId: string;
   behavior: ProjectBehavior;
+  filters: ProjectFilters;
+  onFilters: (next: ProjectFilters) => void;
 }) {
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
   const { data: allProjects } = useSuspenseQuery(projectsQueryOptions(workspaceId));
@@ -73,7 +111,16 @@ function ContainersPage({
   const types = allTypes.filter((t) => t.behavior === behavior && !t.archived);
   const canCreate = roleHasPermission(workspace.role, 'project.create') && types.length > 0;
   // Con varios tipos (Mtto correctivo y evolutivo) se muestra la columna Tipo
-  const showType = allTypes.filter((t) => t.behavior === behavior).length > 1;
+  const sectionTypes = allTypes.filter((t) => t.behavior === behavior);
+  const showType = sectionTypes.length > 1;
+  const visible = sortProjects(filterProjects(projects, filters), filters.sort, filters.dir);
+  const hidden = projects.length - visible.length;
+
+  /** Clic en un encabezado: la misma columna invierte el orden; otra columna empieza ascendente */
+  function sortBy(key: ProjectSortKey) {
+    const dir = filters.sort === key && filters.dir !== 'desc' ? 'desc' : 'asc';
+    onFilters({ ...filters, sort: key, dir });
+  }
 
   return (
     <div className="grid gap-4">
@@ -99,17 +146,43 @@ function ContainersPage({
         <CardHeader>
           <CardTitle>{section.title}</CardTitle>
           <CardDescription>
-            {projects.length === 0 ? section.empty : `${projects.length} en total`}
+            {projects.length === 0
+              ? section.empty
+              : `${visible.length} de ${projects.length}${hidden > 0 && !hasActiveFilters(filters) ? ' (terminados y cancelados ocultos)' : ''}`}
           </CardDescription>
         </CardHeader>
         {projects.length > 0 && (
-          <CardContent className="overflow-x-auto">
-            <ContainersTable
-              workspaceId={workspaceId}
+          <CardContent className="grid gap-4">
+            <ProjectFiltersBar
               projects={projects}
-              behavior={behavior}
-              showType={showType}
+              types={sectionTypes}
+              filters={filters}
+              onChange={onFilters}
             />
+            {visible.length === 0 ? (
+              <div className="grid justify-items-center gap-2 py-8 text-center">
+                <p className="font-medium">Ningún proyecto coincide con los filtros</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onFilters({ sort: filters.sort, dir: filters.dir })}
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <ContainersTable
+                  workspaceId={workspaceId}
+                  projects={visible}
+                  behavior={behavior}
+                  showType={showType}
+                  sort={filters.sort}
+                  dir={filters.dir ?? 'asc'}
+                  onSort={sortBy}
+                />
+              </div>
+            )}
           </CardContent>
         )}
       </Card>
@@ -117,8 +190,41 @@ function ContainersPage({
   );
 }
 
-function Th({ children }: { children: ReactNode }) {
-  return <th className="py-2 pr-4 font-medium">{children}</th>;
+/** Encabezado que ordena por su columna (HU-09); muestra la flecha del orden actual */
+function SortTh({
+  column,
+  sort,
+  dir,
+  onSort,
+  children,
+}: {
+  column: ProjectSortKey;
+  sort: ProjectSortKey | undefined;
+  dir: 'asc' | 'desc';
+  onSort: (column: ProjectSortKey) => void;
+  children: ReactNode;
+}) {
+  const active = sort === column;
+  return (
+    <th
+      className="py-2 pr-4 font-medium"
+      aria-sort={active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={`inline-flex items-center gap-1 hover:text-foreground ${active ? 'text-foreground' : ''}`}
+      >
+        {children}
+        {active &&
+          (dir === 'asc' ? (
+            <ArrowUp aria-hidden className="size-3" />
+          ) : (
+            <ArrowDown aria-hidden className="size-3" />
+          ))}
+      </button>
+    </th>
+  );
 }
 
 function Td({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -130,37 +236,49 @@ function ContainersTable({
   projects,
   behavior,
   showType,
+  sort,
+  dir,
+  onSort,
 }: {
   workspaceId: string;
   projects: Project[];
   behavior: ProjectBehavior;
   showType: boolean;
+  sort: ProjectSortKey | undefined;
+  dir: 'asc' | 'desc';
+  onSort: (column: ProjectSortKey) => void;
 }) {
   const today = todayIso();
+  /** Encabezado ordenable de una columna */
+  const th = (column: ProjectSortKey, label: string) => (
+    <SortTh column={column} sort={sort} dir={dir} onSort={onSort}>
+      {label}
+    </SortTh>
+  );
 
   return (
     <table className="w-full text-sm">
       <thead className="text-left text-muted-foreground">
         <tr className="border-b">
-          <Th>Folio</Th>
-          <Th>Nombre</Th>
-          {showType && <Th>Tipo</Th>}
-          {behavior !== 'ON_DEMAND' && <Th>Sprint</Th>}
+          {th('folio', 'Folio')}
+          {th('name', 'Nombre')}
+          {showType && th('type', 'Tipo')}
+          {behavior !== 'ON_DEMAND' && th('sprint', 'Sprint')}
           {/* Decisión del PO: Solicitante solo en Actividades; en el proyecto se sigue viendo */}
-          {behavior === 'ON_DEMAND' && <Th>Solicitante</Th>}
-          <Th>Estado</Th>
-          <Th>Prioridad</Th>
+          {behavior === 'ON_DEMAND' && th('requester', 'Solicitante')}
+          {th('status', 'Estado')}
+          {th('priority', 'Prioridad')}
           {behavior === 'WITH_END' ? (
             <>
-              <Th>Avance</Th>
-              <Th>Pendiente</Th>
-              <Th>Fin</Th>
+              {th('percent', 'Avance')}
+              {th('pending', 'Pendiente')}
+              {th('endDate', 'Fin')}
             </>
           ) : (
             <>
-              <Th>Abiertas</Th>
-              <Th>Vencidas</Th>
-              {behavior === 'ONGOING' && <Th>Hechas este mes</Th>}
+              {th('open', 'Abiertas')}
+              {th('overdue', 'Vencidas')}
+              {behavior === 'ONGOING' && th('doneThisMonth', 'Hechas este mes')}
             </>
           )}
         </tr>
