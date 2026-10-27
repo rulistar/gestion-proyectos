@@ -73,7 +73,12 @@ model Person {
   createdBy   User?    @relation("PersonCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy   User?    @relation("PersonUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
 
-  tasksResponsible Task[] @relation("TaskResponsible")
+  tasksResponsible  Task[]    @relation("TaskResponsible")
+  projectsRequested Project[] @relation("ProjectRequester")
+  projectsAssigned  Project[] @relation("ProjectAssignedTo")
+  projectsManaged   Project[] @relation("ProjectManager")
+  projectsConsulted Project[] @relation("ProjectConsultingManager")
+  projectsPartnered Project[] @relation("ProjectBusinessPartner")
 
   @@unique([workspaceId, name], where: { archivedAt: null })
   @@unique([workspaceId, userId])
@@ -339,39 +344,44 @@ model Membership {
 
 /// Proyecto (el "curso" del prototipo, ADR-0002 §1.1).
 model Project {
-  id                String            @id @default(uuid(7)) @db.Uuid
-  workspaceId       String            @map("workspace_id") @db.Uuid
-  workspace         Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                  String            @id @default(uuid(7)) @db.Uuid
+  workspaceId         String            @map("workspace_id") @db.Uuid
+  workspace           Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   /// Tipo de contenedor (HU-21); un tipo en uso no se borra, se archiva
-  typeId            String            @map("type_id") @db.Uuid
-  type              ProjectType       @relation(fields: [typeId], references: [id], onDelete: Restrict)
-  name              String
+  typeId              String            @map("type_id") @db.Uuid
+  type                ProjectType       @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  name                String
   /// Folio del sistema de origen (HU-31): opcional, editable, puede repetirse
-  folio             String?
-  description       String?
-  /// Personas del proyecto (HU-31): solo el nombre; pueden no tener cuenta en el sistema
-  requester         String?
-  assignedTo        String?           @map("assigned_to")
-  projectManager    String?           @map("project_manager")
-  consultingManager String?           @map("consulting_manager")
-  businessPartner   String?           @map("business_partner")
+  folio               String?
+  description         String?
+  /// Personas del proyecto (HU-36, ADR-0005 §3): del catálogo del espacio, con o sin cuenta
+  requesterId         String?           @map("requester_id") @db.Uuid
+  requester           Person?           @relation("ProjectRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  assignedToId        String?           @map("assigned_to_id") @db.Uuid
+  assignedTo          Person?           @relation("ProjectAssignedTo", fields: [assignedToId], references: [id], onDelete: Restrict)
+  projectManagerId    String?           @map("project_manager_id") @db.Uuid
+  projectManager      Person?           @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: Restrict)
+  consultingManagerId String?           @map("consulting_manager_id") @db.Uuid
+  consultingManager   Person?           @relation("ProjectConsultingManager", fields: [consultingManagerId], references: [id], onDelete: Restrict)
+  businessPartnerId   String?           @map("business_partner_id") @db.Uuid
+  businessPartner     Person?           @relation("ProjectBusinessPartner", fields: [businessPartnerId], references: [id], onDelete: Restrict)
   /// Texto libre (antes "Plataforma"): Personal, Trabajo, Estudio...
-  area              String?
-  classification    String?
-  status            ProjectStatus     @default(NOT_STARTED)
-  priority          ProjectPriority   @default(MEDIUM)
-  visibility        ProjectVisibility @default(WORKSPACE)
+  area                String?
+  classification      String?
+  status              ProjectStatus     @default(NOT_STARTED)
+  priority            ProjectPriority   @default(MEDIUM)
+  visibility          ProjectVisibility @default(WORKSPACE)
   /// Fechas sin hora: "termina el 15 de noviembre"
-  startDate         DateTime?         @map("start_date") @db.Date
-  endDate           DateTime?         @map("end_date") @db.Date
+  startDate           DateTime?         @map("start_date") @db.Date
+  endDate             DateTime?         @map("end_date") @db.Date
   /// Observaciones (en pantalla; antes "Notas")
-  notes             String?
+  notes               String?
   /// Sprint en curso y lo que se hace en él (HU-33): texto libre
-  sprint            String?
-  sprintActivities  String?           @map("sprint_activities")
+  sprint              String?
+  sprintActivities    String?           @map("sprint_activities")
   /// Fechas reales (ADR-0004 §2.1): las pone el sistema al cambiar el estado, no se editan
-  startedAt         DateTime?         @map("started_at") @db.Timestamptz(3)
-  finishedAt        DateTime?         @map("finished_at") @db.Timestamptz(3)
+  startedAt           DateTime?         @map("started_at") @db.Timestamptz(3)
+  finishedAt          DateTime?         @map("finished_at") @db.Timestamptz(3)
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)

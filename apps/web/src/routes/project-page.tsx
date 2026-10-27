@@ -189,6 +189,7 @@ export function ProjectPage() {
         project={project}
         types={selectableTypes(types, project.type.id)}
         taskTypes={taskTypes}
+        people={people}
         readOnly={!can('project.update')}
         open={dialog === 'edit'}
         onClose={() => setDialog(undefined)}
@@ -329,11 +330,11 @@ function ProjectDetails({ project }: { project: Project }) {
     {
       title: 'Personas',
       rows: [
-        ['Solicitante', project.requester],
-        ['Asignado a', project.assignedTo],
-        ['Project manager', project.projectManager],
-        ['Gte. Consultoría', project.consultingManager],
-        ['Business partner', project.businessPartner],
+        ['Solicitante', project.requester?.name],
+        ['Asignado a', project.assignedTo?.name],
+        ['Project manager', project.projectManager?.name],
+        ['Gte. Consultoría', project.consultingManager?.name],
+        ['Business partner', project.businessPartner?.name],
       ],
     },
     {
@@ -401,6 +402,7 @@ function EditProjectDialog({
   project,
   types,
   taskTypes,
+  people,
   readOnly,
   open,
   onClose,
@@ -409,6 +411,7 @@ function EditProjectDialog({
   project: Project;
   types: ProjectType[];
   taskTypes: TaskType[];
+  people: Person[];
   readOnly: boolean;
   open: boolean;
   onClose: () => void;
@@ -428,6 +431,8 @@ function EditProjectDialog({
           project={project}
           types={types}
           taskTypes={taskTypes}
+          workspaceId={workspaceId}
+          people={people}
           submitLabel="Guardar cambios"
           readOnly={readOnly}
           isPending={update.isPending}

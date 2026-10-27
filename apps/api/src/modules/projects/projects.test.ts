@@ -288,38 +288,93 @@ describe('PUT /workspaces/:workspaceId/projects/:projectId', () => {
   });
 });
 
-describe('datos del proyecto (HU-31)', () => {
-  const details = {
-    folio: '  SOL-2026-0042 ',
-    description: 'Portal para que los clientes consulten sus pedidos',
-    requester: 'Laura Méndez',
-    assignedTo: 'Equipo web',
-    projectManager: 'Carlos Ruiz',
-    consultingManager: 'Patricia Gómez',
-    businessPartner: 'Distribuidora del Norte',
-    notes: 'Arranca cuando se firme el contrato',
-  };
+describe('datos del proyecto (HU-31) con personas del catálogo (HU-36)', () => {
+  /** Personas del catálogo del espacio, sin cuenta; devuelve sus IDs por nombre */
+  async function catalog(workspaceId: string, names: string[]) {
+    const people = await Promise.all(
+      names.map((name) => db.person.create({ data: { workspaceId, name, ...auditCreate(null) } })),
+    );
+    return Object.fromEntries(people.map((person) => [person.name, person.id]));
+  }
 
-  it('guarda folio, descripción, personas y observaciones (recortados)', async () => {
+  it('guarda folio, descripción, personas y observaciones', async () => {
     const { ana, ws } = await setup();
+    const id = await catalog(ws.id, [
+      'Laura Méndez',
+      'Equipo web',
+      'Carlos Ruiz',
+      'Patricia Gómez',
+    ]);
 
-    const project = await createOk(ana.cookies, ws.id, { name: 'Portal', ...details });
+    const project = await createOk(ana.cookies, ws.id, {
+      name: 'Portal',
+      folio: '  SOL-2026-0042 ',
+      description: 'Portal para que los clientes consulten sus pedidos',
+      requesterId: id['Laura Méndez'],
+      assignedToId: id['Equipo web'],
+      projectManagerId: id['Carlos Ruiz'],
+      consultingManagerId: id['Patricia Gómez'],
+      businessPartnerId: id['Laura Méndez'],
+      notes: 'Arranca cuando se firme el contrato',
+    });
 
-    expect(project).toMatchObject({ ...details, folio: 'SOL-2026-0042' });
+    expect(project).toMatchObject({
+      folio: 'SOL-2026-0042',
+      requester: { name: 'Laura Méndez', userId: null },
+      assignedTo: { name: 'Equipo web' },
+      projectManager: { name: 'Carlos Ruiz' },
+      consultingManager: { name: 'Patricia Gómez' },
+      businessPartner: { name: 'Laura Méndez' },
+      notes: 'Arranca cuando se firme el contrato',
+    });
   });
 
   it('todo es opcional y se puede vaciar al editar', async () => {
     const { ana, ws } = await setup();
-    const project = await createOk(ana.cookies, ws.id, { name: 'Portal', ...details });
+    const id = await catalog(ws.id, ['Carlos Ruiz']);
+    const project = await createOk(ana.cookies, ws.id, {
+      name: 'Portal',
+      folio: 'SOL-1',
+      projectManagerId: id['Carlos Ruiz'],
+    });
 
     const response = await update(ana.cookies, ws.id, project.id, {
       name: 'Portal',
       folio: '',
-      projectManager: '',
+      projectManagerId: '',
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ folio: null, projectManager: null, requester: null });
+  });
+
+  it('una persona de otro espacio da 400; una archivada se conserva al editar', async () => {
+    const { ana, ws } = await setup();
+    const other = await createWorkspace(db, ana.user.id, { name: 'Otro' });
+    const foreign = await catalog(other.id, ['Ajena']);
+    const id = await catalog(ws.id, ['Carlos Ruiz']);
+    const project = await createOk(ana.cookies, ws.id, {
+      name: 'Portal',
+      projectManagerId: id['Carlos Ruiz'],
+    });
+    await db.person.update({ where: { id: id['Carlos Ruiz']! }, data: { archivedAt: new Date() } });
+
+    const fromOther = await create(ana.cookies, ws.id, {
+      name: 'X',
+      requesterId: foreign['Ajena'],
+    });
+    const kept = await update(ana.cookies, ws.id, project.id, {
+      name: 'Portal 2',
+      projectManagerId: id['Carlos Ruiz'],
+    });
+    const fresh = await create(ana.cookies, ws.id, {
+      name: 'Y',
+      projectManagerId: id['Carlos Ruiz'],
+    });
+
+    expect(fromOther.statusCode).toBe(400);
+    expect(kept.statusCode).toBe(200);
+    expect(fresh.statusCode).toBe(400);
   });
 
   it('rechaza un folio de más de 40 caracteres (400)', async () => {

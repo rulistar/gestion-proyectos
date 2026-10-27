@@ -5,6 +5,7 @@ import {
   projectInputSchema,
   type Project,
   type ProjectInput,
+  type Person,
   type ProjectType,
   type TaskType,
 } from '@gestion/shared';
@@ -12,11 +13,13 @@ import { Zap } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
+import { QuickAddPerson } from '@/components/quick-add-person';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { todayIso } from '@/lib/dates';
+import { selectablePeople } from '@/lib/people';
 import { PROJECT_PRIORITIES, PROJECT_STATUSES } from '@/lib/projects';
 import { useSchemaForm } from '@/lib/use-schema-form';
 
@@ -25,11 +28,11 @@ const FIELDS = [
   'folio',
   'name',
   'description',
-  'requester',
-  'assignedTo',
-  'projectManager',
-  'consultingManager',
-  'businessPartner',
+  'requesterId',
+  'assignedToId',
+  'projectManagerId',
+  'consultingManagerId',
+  'businessPartnerId',
   'area',
   'classification',
   'status',
@@ -42,13 +45,13 @@ const FIELDS = [
   'taskTypeIds',
 ] as const;
 
-/** Personas del proyecto (HU-31): solo se escribe el nombre; pueden no tener cuenta */
+/** Personas del proyecto (HU-36): se eligen del catálogo; pueden no tener cuenta */
 const PEOPLE = [
-  { name: 'requester', label: 'Solicitante' },
-  { name: 'assignedTo', label: 'Asignado a' },
-  { name: 'projectManager', label: 'Project manager' },
-  { name: 'consultingManager', label: 'Gte. Consultoría' },
-  { name: 'businessPartner', label: 'Business partner' },
+  { field: 'requesterId', key: 'requester', label: 'Solicitante' },
+  { field: 'assignedToId', key: 'assignedTo', label: 'Asignado a' },
+  { field: 'projectManagerId', key: 'projectManager', label: 'Project manager' },
+  { field: 'consultingManagerId', key: 'consultingManager', label: 'Gte. Consultoría' },
+  { field: 'businessPartnerId', key: 'businessPartner', label: 'Business partner' },
 ] as const;
 
 function SectionTitle({ children }: { children: ReactNode }) {
@@ -127,6 +130,9 @@ interface ProjectFormProps {
   types: ProjectType[];
   /** Catálogo de tipos de tarea: para elegir los propios del contenedor (HU-37) */
   taskTypes: TaskType[];
+  workspaceId: string;
+  /** Catálogo de personas del espacio (HU-34) para las personas del proyecto */
+  people: Person[];
   submitLabel: string;
   isPending: boolean;
   /** Error de la API, si la última petición falló */
@@ -143,6 +149,8 @@ export function ProjectForm({
   project,
   types,
   taskTypes,
+  workspaceId,
+  people,
   submitLabel,
   isPending,
   error,
@@ -210,13 +218,29 @@ export function ProjectForm({
         </div>
 
         <SectionTitle>Personas</SectionTitle>
-        {PEOPLE.map(({ name, label }) => (
-          <div key={name} className="grid gap-2">
-            <Label htmlFor={form.idOf(name)}>{label}</Label>
-            <Input {...form.field(name)} defaultValue={project?.[name] ?? ''} maxLength={120} />
-            <FieldError {...form.errorProps(name)} />
+        {PEOPLE.map(({ field, key, label }) => {
+          const current = project?.[key] ?? null;
+          return (
+            <div key={field} className="grid gap-2">
+              <Label htmlFor={form.idOf(field)}>{label}</Label>
+              <NativeSelect {...form.field(field)} defaultValue={current?.id ?? ''}>
+                <option value="">—</option>
+                {selectablePeople(people, current?.id).map((person) => (
+                  <option key={person.id} value={person.id}>
+                    {person.name}
+                    {person.archived ? ' (archivada)' : ''}
+                  </option>
+                ))}
+              </NativeSelect>
+              <FieldError {...form.errorProps(field)} />
+            </div>
+          );
+        })}
+        {!readOnly && (
+          <div className="sm:col-span-2">
+            <QuickAddPerson workspaceId={workspaceId} />
           </div>
-        ))}
+        )}
 
         <OwnTaskTypes
           key={typeId}

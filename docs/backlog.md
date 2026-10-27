@@ -372,9 +372,9 @@ _Como responsable, quiero clasificar las tareas como Actividad, Gestión o Segui
 
 _Como responsable, quiero elegir al solicitante, al PM y a los demás de la lista de personas, para no escribir el mismo nombre de formas distintas._
 
-- [ ] Solicitante, Asignado a, Project manager, Gte. Consultoría y Business partner se eligen del catálogo, con alta rápida.
-- [ ] Migración: cada texto distinto (sin mayúsculas ni espacios sobrantes) se convierte en persona del espacio; si coincide con la persona de un miembro, se usa esa.
-- [ ] La tabla de proyectos y los filtros (HU-09) usan el nombre de la persona. Pruebas.
+- [x] Solicitante, Asignado a, Project manager, Gte. Consultoría y Business partner se eligen del catálogo, con alta rápida.
+- [x] Migración: cada texto distinto (sin mayúsculas ni espacios sobrantes) se convierte en persona del espacio; si coincide con la persona de un miembro, se usa esa.
+- [x] La tabla de proyectos y los filtros (HU-09) usan el nombre de la persona. Pruebas.
 
 #### HU-37 · Tipos de tarea por contenedor (3 pts)
 

@@ -6,6 +6,7 @@ import {
   optionalId,
   optionalText,
 } from './common.js';
+import { personRefSchema } from './people.js';
 import { projectTypeRefSchema } from './project-types.js';
 import { projectProgressSchema } from './progress.js';
 
@@ -30,12 +31,12 @@ export const projectInputSchema = z
     /** Folio del sistema de origen (HU-31): opcional, editable y sin regla de unicidad */
     folio: optionalText(40),
     description: optionalText(2000),
-    /** Personas del proyecto (HU-31): solo el nombre, pueden no tener cuenta en el sistema */
-    requester: optionalText(120),
-    assignedTo: optionalText(120),
-    projectManager: optionalText(120),
-    consultingManager: optionalText(120),
-    businessPartner: optionalText(120),
+    /** Personas del proyecto (HU-36, ADR-0005 §3): del catálogo del espacio, o nadie */
+    requesterId: optionalId,
+    assignedToId: optionalId,
+    projectManagerId: optionalId,
+    consultingManagerId: optionalId,
+    businessPartnerId: optionalId,
     area: optionalText(80),
     classification: optionalText(80),
     status: projectStatusSchema.default('NOT_STARTED'),
@@ -69,11 +70,11 @@ export const projectSchema = z.object({
   name: z.string(),
   folio: z.string().nullable(),
   description: z.string().nullable(),
-  requester: z.string().nullable(),
-  assignedTo: z.string().nullable(),
-  projectManager: z.string().nullable(),
-  consultingManager: z.string().nullable(),
-  businessPartner: z.string().nullable(),
+  requester: personRefSchema.nullable(),
+  assignedTo: personRefSchema.nullable(),
+  projectManager: personRefSchema.nullable(),
+  consultingManager: personRefSchema.nullable(),
+  businessPartner: personRefSchema.nullable(),
   area: z.string().nullable(),
   classification: z.string().nullable(),
   status: projectStatusSchema,

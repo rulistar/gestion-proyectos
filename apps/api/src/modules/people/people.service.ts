@@ -1,4 +1,4 @@
-import type { CreatePersonInput, Person, UpdatePersonInput } from '@gestion/shared';
+import type { CreatePersonInput, Person, PersonRef, UpdatePersonInput } from '@gestion/shared';
 import type { Db, Tx } from '../../db/client.js';
 import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
 
@@ -10,6 +10,41 @@ export class UserAlreadyLinkedError extends Error {}
 export class NotAMemberError extends Error {}
 
 const activePerson = { archivedAt: null } as const;
+
+/** Lo que se lee de una persona asignada (tarea o proyecto): si su cuenta sigue con acceso */
+export const personSelect = {
+  select: {
+    id: true,
+    name: true,
+    userId: true,
+    archivedAt: true,
+    user: {
+      select: { status: true, memberships: { where: notDeleted, select: { workspaceId: true } } },
+    },
+  },
+} as const;
+
+export type PersonRow = {
+  id: string;
+  name: string;
+  userId: string | null;
+  archivedAt: Date | null;
+  user: { status: string; memberships: { workspaceId: string }[] } | null;
+} | null;
+
+export function toPersonRef(person: PersonRow, workspaceId: string): PersonRef | null {
+  if (!person) return null;
+  const { archivedAt, user, ...rest } = person;
+  return {
+    ...rest,
+    // Sin cuenta no hay acceso que perder; con cuenta, debe seguir siendo miembro (ADR-0005 §1)
+    hasAccess:
+      user !== null &&
+      user.status === 'ACTIVE' &&
+      user.memberships.some((m) => m.workspaceId === workspaceId),
+    archived: archivedAt !== null,
+  };
+}
 
 async function nameTaken(db: Db | Tx, workspaceId: string, name: string, exceptId?: string) {
   const found = await db.person.findFirst({
