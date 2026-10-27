@@ -60,7 +60,7 @@ export function PeoplePage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <CardTitle>Catálogo</CardTitle>
           <CardDescription>{active.length} activas</CardDescription>
         </CardHeader>

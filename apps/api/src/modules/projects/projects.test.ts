@@ -119,6 +119,7 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
         openTasks: 0,
         overdueTasks: 0,
         doneThisMonth: 0,
+        nextDueDate: null,
       },
     });
   });

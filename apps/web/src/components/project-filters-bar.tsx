@@ -135,11 +135,14 @@ export function ProjectFiltersBar({
             ))}
           </NativeSelect>
         )}
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          Fin hasta
+        <label
+          className="flex items-center gap-2 text-sm text-muted-foreground"
+          title="Los que terminan, o tienen una tarea abierta que vence, a más tardar ese día"
+        >
+          Vence hasta
           <Input
             type="date"
-            aria-label="Fecha de fin hasta"
+            aria-label="Vence hasta"
             className="h-9 w-40"
             value={filters.endBy ?? ''}
             onChange={(event) => set('endBy', event.target.value)}

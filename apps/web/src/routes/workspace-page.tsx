@@ -143,7 +143,8 @@ function ContainersPage({
       </div>
 
       <Card>
-        <CardHeader>
+        {/* El conteo a la derecha del título ahorra una línea */}
+        <CardHeader className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <CardTitle>{section.title}</CardTitle>
           <CardDescription>
             {projects.length === 0
