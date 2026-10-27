@@ -165,9 +165,6 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
   }
 
   const due = dueInfo(task.endDate, todayIso());
-  const roles = TASK_ROLES.map(({ key, label }) => `${label}: ${task[key]?.name ?? '—'}`).join(
-    '\n',
-  );
   // Actividad vinculada a una cuenta que ya no es miembro del espacio
   const lostAccess = Boolean(task.activity?.userId && !task.activity.hasAccess);
 
@@ -209,19 +206,15 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
         {task.title}
       </p>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {/* Avatar de quien hace la Actividad; al pasar el cursor, las tres responsabilidades */}
+        {/* Avatar de quien hace la Actividad */}
         <span
           aria-hidden
-          title={roles}
           className={cn(
             'flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold',
             task.activity ? 'bg-primary text-primary-foreground' : 'border border-dashed',
           )}
         >
           {task.activity ? initials(task.activity.name) : '?'}
-        </span>
-        <span className="min-w-0 truncate" title={roles}>
-          {task.activity?.name ?? 'Sin asignar'}
         </span>
         {task.estimatedMinutes !== null && (
           <span className="shrink-0">· {formatMinutes(task.estimatedMinutes)}</span>
@@ -234,13 +227,15 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
           </span>
         )}
       </div>
-      {(task.management || task.followUp) && (
-        <p className="text-xs text-muted-foreground">
-          {task.management && <>Gestión: {task.management.name}</>}
-          {task.management && task.followUp && ' · '}
-          {task.followUp && <>Seguimiento: {task.followUp.name}</>}
-        </p>
-      )}
+      {/* Las tres responsabilidades siempre a la vista (HU-35); "—" si no tienen persona */}
+      <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-xs">
+        {TASK_ROLES.map(({ key, label }) => (
+          <div key={key} className="contents">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className="truncate font-medium">{task[key]?.name ?? '—'}</dd>
+          </div>
+        ))}
+      </dl>
       {lostAccess && (
         // HU-25 con personas: la tarea conserva a la persona hasta que alguien la reasigne
         <p className="rounded bg-warning/25 px-2 py-1 text-xs text-warning-foreground">
