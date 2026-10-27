@@ -9,6 +9,7 @@ import {
   DisallowedTaskTypesError,
   getProject,
   InvalidProjectTypeError,
+  InvalidTaskTypeSelectionError,
   listProjects,
   softDeleteProject,
   updateProject,
@@ -34,6 +35,11 @@ function metricsOf(request: FastifyRequest) {
 function invalidType(reply: FastifyReply, error: unknown) {
   if (error instanceof InvalidProjectTypeError) {
     return reply.code(400).send({ message: 'El tipo no existe en este espacio o está archivado' });
+  }
+  if (error instanceof InvalidTaskTypeSelectionError) {
+    return reply.code(400).send({
+      message: 'Elige solo tipos de tarea activos que admita el tipo de este contenedor',
+    });
   }
   if (error instanceof DuplicateFolioError) {
     return reply.code(409).send({ message: `El folio ${error.folio} ya existe en este espacio` });

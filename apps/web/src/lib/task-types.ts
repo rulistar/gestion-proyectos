@@ -31,15 +31,17 @@ export const taskTypesQueryOptions = (workspaceId: string) =>
   });
 
 /**
- * Tipos de tarea que se pueden elegir en un contenedor (HU-22): los activos que admite su tipo
- * (todos, si no limita ninguno) y, al editar, el que la tarea ya tiene
+ * Tipos de tarea que se pueden elegir en un contenedor: los suyos propios (HU-37) o, sin ellos,
+ * los que admite su tipo (HU-22; todos, si no limita ninguno). Al editar, también el que la tarea
+ * ya tiene.
  */
 export function allowedTaskTypes(
   taskTypes: TaskType[],
   projectType: ProjectType | undefined,
+  projectOwn: string[],
   currentId?: string,
 ) {
-  const allowed = new Set(projectType?.allowedTaskTypeIds ?? []);
+  const allowed = new Set(projectOwn.length > 0 ? projectOwn : projectType?.allowedTaskTypeIds);
   return taskTypes.filter(
     (type) =>
       type.id === currentId || (!type.archived && (allowed.size === 0 || allowed.has(type.id))),

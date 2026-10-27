@@ -335,7 +335,7 @@ _Como Admin, quiero cambiar el rol de un miembro o quitarlo del espacio, para co
 
 ### Sprint 4
 
-Orden del PO (2026-10-26): HU-33 → HU-34 → HU-35 → HU-36 → HU-37 → HU-32 → HU-09. Diseño de personas y responsabilidades: [ADR-0005](adr/ADR-0005-personas-y-responsabilidades.md).
+Orden del PO (2026-10-26): HU-33 → HU-34 → HU-35 → HU-37 (adelantada por el PO) → HU-36 → HU-32 → HU-09. Diseño de personas y responsabilidades: [ADR-0005](adr/ADR-0005-personas-y-responsabilidades.md).
 
 #### HU-33 · Sprint en proyectos y mantenimientos (2 pts)
 
@@ -379,10 +379,10 @@ _Como responsable, quiero elegir al solicitante, al PM y a los demás de la list
 
 _Como responsable, quiero limitar los tipos de tarea de cada mantenimiento, para que el Mtto A use 3 tipos y el Mtto B, 2._
 
-- [ ] En los datos del contenedor se eligen sus tipos de tarea; sin elegir, admite los de su tipo (HU-22).
-- [ ] Solo se puede elegir un subconjunto de los que admite su tipo; la API lo valida (400).
-- [ ] No se quita un tipo que ya usan sus tareas (409); al cambiar el tipo del contenedor, la lista propia se descarta si ya no es subconjunto.
-- [ ] El selector de tipo de la tarea ofrece solo los del contenedor. Pruebas.
+- [x] En los datos del contenedor se eligen sus tipos de tarea; sin elegir, admite los de su tipo (HU-22).
+- [x] Solo se puede elegir un subconjunto de los que admite su tipo; la API lo valida (400).
+- [x] No se quita un tipo que ya usan sus tareas (409); al cambiar el tipo del contenedor, la lista propia se descarta si ya no es subconjunto.
+- [x] El selector de tipo de la tarea ofrece solo los del contenedor. Pruebas.
 
 #### HU-38 · Folios automáticos (3 pts)
 

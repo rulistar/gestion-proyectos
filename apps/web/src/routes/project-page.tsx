@@ -5,6 +5,7 @@ import {
   type Project,
   type ProjectType,
   type Task,
+  type TaskType,
   type TaskTypeRef,
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -67,7 +68,7 @@ export function ProjectPage() {
   const { data: taskTypes } = useSuspenseQuery(taskTypesQueryOptions(workspaceId));
   const projectType = types.find((type) => type.id === project.type.id);
   const taskTypeOptions = (currentId?: string) =>
-    allowedTaskTypes(taskTypes, projectType, currentId);
+    allowedTaskTypes(taskTypes, projectType, project.allowedTaskTypeIds, currentId);
   const section = SECTIONS[project.type.behavior];
   const [tab, setTab] = useState<TabId>('board');
   const [dialog, setDialog] = useState<'edit' | 'task'>();
@@ -187,6 +188,7 @@ export function ProjectPage() {
         workspaceId={workspaceId}
         project={project}
         types={selectableTypes(types, project.type.id)}
+        taskTypes={taskTypes}
         readOnly={!can('project.update')}
         open={dialog === 'edit'}
         onClose={() => setDialog(undefined)}
@@ -398,6 +400,7 @@ function EditProjectDialog({
   workspaceId,
   project,
   types,
+  taskTypes,
   readOnly,
   open,
   onClose,
@@ -405,6 +408,7 @@ function EditProjectDialog({
   workspaceId: string;
   project: Project;
   types: ProjectType[];
+  taskTypes: TaskType[];
   readOnly: boolean;
   open: boolean;
   onClose: () => void;
@@ -423,6 +427,7 @@ function EditProjectDialog({
           key={JSON.stringify(project)}
           project={project}
           types={types}
+          taskTypes={taskTypes}
           submitLabel="Guardar cambios"
           readOnly={readOnly}
           isPending={update.isPending}

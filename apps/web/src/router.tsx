@@ -136,6 +136,7 @@ function loadContainers(queryClient: QueryClient, workspaceId: string) {
     queryClient.ensureQueryData(workspaceQueryOptions(workspaceId)),
     queryClient.ensureQueryData(projectsQueryOptions(workspaceId)),
     queryClient.ensureQueryData(projectTypesQueryOptions(workspaceId)),
+    queryClient.ensureQueryData(taskTypesQueryOptions(workspaceId)),
   ]);
 }
 

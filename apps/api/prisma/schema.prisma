@@ -37,6 +37,23 @@ enum MembershipRole {
   @@map("membership_role")
 }
 
+/// Tipos de tarea propios de un contenedor (HU-37, ADR-0005 §4): un subconjunto de los que admite
+/// su tipo. Sin filas = admite los de su tipo (HU-22).
+model ProjectTaskType {
+  projectId  String   @map("project_id") @db.Uuid
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskTypeId String   @map("task_type_id") @db.Uuid
+  taskType   TaskType @relation(fields: [taskTypeId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdBy   User?    @relation("ProjectTaskTypeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@id([projectId, taskTypeId])
+  @@index([taskTypeId])
+  @@map("project_task_types")
+}
+
 /// Persona del catálogo del espacio (HU-34, ADR-0005), con o sin cuenta. Vinculada a un usuario,
 /// su nombre es el que se muestra en lugar del de la cuenta. No va a la papelera: se archiva.
 model Person {
@@ -164,6 +181,7 @@ model TaskType {
 
   tasks        Task[]
   projectTypes ProjectTypeTaskType[]
+  projects     ProjectTaskType[]
 
   @@unique([workspaceId, name], where: { archivedAt: null })
   @@index([workspaceId])
@@ -239,6 +257,7 @@ model User {
   invitationsUpdated      Invitation[]          @relation("InvitationUpdatedBy")
   invitationsRevoked      Invitation[]          @relation("InvitationRevokedBy")
   invitationsAccepted     Invitation[]          @relation("InvitationAcceptedBy")
+  projectTaskTypesCreated ProjectTaskType[]     @relation("ProjectTaskTypeCreatedBy")
   people                  Person[]              @relation("PersonUser")
   peopleCreated           Person[]              @relation("PersonCreatedBy")
   peopleUpdated           Person[]              @relation("PersonUpdatedBy")
@@ -366,7 +385,8 @@ model Project {
   updatedBy   User?     @relation("ProjectUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
   deletedBy   User?     @relation("ProjectDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
 
-  tasks Task[]
+  tasks            Task[]
+  allowedTaskTypes ProjectTaskType[]
 
   @@index([workspaceId])
   @@index([typeId])

@@ -6,8 +6,10 @@ import {
   type Project,
   type ProjectInput,
   type ProjectType,
+  type TaskType,
 } from '@gestion/shared';
-import type { ReactNode } from 'react';
+import { Zap } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { Input } from '@/components/ui/input';
@@ -37,6 +39,7 @@ const FIELDS = [
   'notes',
   'sprint',
   'sprintActivities',
+  'taskTypeIds',
 ] as const;
 
 /** Personas del proyecto (HU-31): solo se escribe el nombre; pueden no tener cuenta */
@@ -56,11 +59,74 @@ function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Tipos de tarea propios del contenedor (HU-37): casillas con los que admite su tipo. Sin marcar
+ * ninguna, admite todos los de su tipo. Viajan en un campo oculto, separados por comas.
+ */
+function OwnTaskTypes({
+  projectType,
+  taskTypes,
+  initial,
+  error,
+}: {
+  projectType: ProjectType | undefined;
+  taskTypes: TaskType[];
+  initial: string[];
+  error: { id: string; message: string | undefined };
+}) {
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set(initial));
+  const typeAllowed = new Set(projectType?.allowedTaskTypeIds ?? []);
+  const choices = taskTypes.filter(
+    (taskType) =>
+      selected.has(taskType.id) ||
+      (!taskType.archived && (typeAllowed.size === 0 || typeAllowed.has(taskType.id))),
+  );
+
+  function toggle(id: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <fieldset className="grid gap-2 sm:col-span-2">
+      <legend className="text-sm font-medium">Tipos de tarea</legend>
+      <p className="text-xs text-muted-foreground">
+        Sin marcar ninguno, admite todos los de su tipo ({projectType?.name ?? '—'}). Marca solo los
+        que use este contenedor.
+      </p>
+      <input type="hidden" name="taskTypeIds" value={[...selected].join(',')} />
+      <div className="flex flex-wrap gap-x-4 gap-y-2">
+        {choices.map((taskType) => (
+          <label key={taskType.id} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={selected.has(taskType.id)}
+              onChange={() => toggle(taskType.id)}
+              className="size-4 accent-primary"
+            />
+            {taskType.name}
+            {taskType.expedited && (
+              <Zap aria-label="Atención inmediata" className="size-3 text-warning-foreground" />
+            )}
+          </label>
+        ))}
+      </div>
+      <FieldError {...error} />
+    </fieldset>
+  );
+}
+
 interface ProjectFormProps {
   /** Valores iniciales al editar; sin ellos el formulario está vacío (crear) */
   project?: Project;
   /** Tipos que se pueden elegir (HU-21); el primero es el de por omisión al crear */
   types: ProjectType[];
+  /** Catálogo de tipos de tarea: para elegir los propios del contenedor (HU-37) */
+  taskTypes: TaskType[];
   submitLabel: string;
   isPending: boolean;
   /** Error de la API, si la última petición falló */
@@ -76,6 +142,7 @@ interface ProjectFormProps {
 export function ProjectForm({
   project,
   types,
+  taskTypes,
   submitLabel,
   isPending,
   error,
@@ -84,6 +151,8 @@ export function ProjectForm({
   onSubmit,
 }: ProjectFormProps) {
   const form = useSchemaForm(projectInputSchema, FIELDS, onSubmit);
+  // El tipo elegido decide qué tipos de tarea se pueden marcar (HU-37)
+  const [typeId, setTypeId] = useState(project?.type.id ?? types[0]?.id);
   // Ejemplo del folio que recibirá si se deja vacío (HU-38): prefijo de la sección y mes actual
   const behavior = types[0]?.behavior ?? 'WITH_END';
   const folioExample = formatFolio(FOLIO_PREFIXES[behavior], folioPeriod(todayIso()), 1);
@@ -93,7 +162,11 @@ export function ProjectForm({
       <fieldset disabled={readOnly || isPending} className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor={form.idOf('typeId')}>Tipo</Label>
-          <NativeSelect {...form.field('typeId')} defaultValue={project?.type.id ?? types[0]?.id}>
+          <NativeSelect
+            {...form.field('typeId')}
+            value={typeId}
+            onChange={(event) => setTypeId(event.target.value)}
+          >
             {types.map((type) => (
               <option key={type.id} value={type.id}>
                 {type.name}
@@ -144,6 +217,14 @@ export function ProjectForm({
             <FieldError {...form.errorProps(name)} />
           </div>
         ))}
+
+        <OwnTaskTypes
+          key={typeId}
+          projectType={types.find((type) => type.id === typeId)}
+          taskTypes={taskTypes}
+          initial={project && typeId === project.type.id ? project.allowedTaskTypeIds : []}
+          error={form.errorProps('taskTypeIds')}
+        />
 
         <SectionTitle>Sprint</SectionTitle>
         <div className="grid gap-2">

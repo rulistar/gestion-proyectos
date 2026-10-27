@@ -22,19 +22,49 @@ export class DisallowedTaskTypesError extends Error {
   }
 }
 
-/** Nombres de los tipos de tarea del proyecto que el tipo de contenedor `typeId` no admite */
-async function disallowedTaskTypes(db: Db, projectId: string, typeId: string) {
-  const allowed = await db.projectTypeTaskType.findMany({
+/** Algún tipo de tarea elegido no existe, está archivado o no lo admite el tipo (→ 400, HU-37) */
+export class InvalidTaskTypeSelectionError extends Error {}
+
+/** Tipos de tarea que admite un tipo de contenedor (HU-22); vacío = todos */
+async function typeAllowedTaskTypes(db: Db, typeId: string) {
+  const rows = await db.projectTypeTaskType.findMany({
     where: { projectTypeId: typeId },
     select: { taskTypeId: true },
   });
+  return rows.map((row) => row.taskTypeId);
+}
+
+/**
+ * Tipos de tarea propios del contenedor (HU-37, ADR-0005 §4), siempre un subconjunto de los que
+ * admite su tipo. Sin pedirlos: al crear, ninguno; al editar, los que tenía, salvo que el tipo
+ * nuevo ya no los admita (entonces se descartan). Al editar se conservan los archivados que tenía.
+ */
+async function resolveOwnTaskTypes(
+  db: Db,
+  workspaceId: string,
+  typeAllowed: string[],
+  requested: string[] | undefined,
+  current: string[] = [],
+): Promise<string[]> {
+  const fits = (ids: string[]) =>
+    typeAllowed.length === 0 || ids.every((id) => typeAllowed.includes(id));
+  if (requested === undefined) return fits(current) ? current : [];
+
+  const ids = [...new Set(requested)];
+  if (!fits(ids)) throw new InvalidTaskTypeSelectionError();
+  const fresh = ids.filter((id) => !current.includes(id));
+  const valid = await db.taskType.count({
+    where: { id: { in: fresh }, workspaceId, archivedAt: null },
+  });
+  if (valid !== fresh.length) throw new InvalidTaskTypeSelectionError();
+  return ids;
+}
+
+/** Nombres de los tipos de tarea del proyecto que quedan fuera de `allowed` (vacío = todos) */
+async function disallowedTaskTypes(db: Db, projectId: string, allowed: string[]) {
   if (allowed.length === 0) return [];
   const tasks = await db.task.findMany({
-    where: {
-      projectId,
-      ...notDeleted,
-      typeId: { notIn: allowed.map((row) => row.taskTypeId) },
-    },
+    where: { projectId, ...notDeleted, typeId: { notIn: allowed } },
     select: { type: { select: { name: true } } },
     distinct: ['typeId'],
   });
@@ -74,6 +104,7 @@ const projectSelect = {
   notes: true,
   sprint: true,
   sprintActivities: true,
+  allowedTaskTypes: { select: { taskTypeId: true } },
   startedAt: true,
   finishedAt: true,
   // Para medir el avance (HU-06, ADR-0004 §2); las tareas en la papelera no cuentan (RNF-05)
@@ -85,8 +116,9 @@ const projectSelect = {
 
 type ProjectRow = Omit<
   Project,
-  'startDate' | 'endDate' | 'startedAt' | 'finishedAt' | 'progress'
+  'startDate' | 'endDate' | 'startedAt' | 'finishedAt' | 'progress' | 'allowedTaskTypeIds'
 > & {
+  allowedTaskTypes: { taskTypeId: string }[];
   startDate: Date | null;
   endDate: Date | null;
   startedAt: Date | null;
@@ -99,7 +131,7 @@ type ProjectRow = Omit<
   }[];
 };
 
-function toProject({ tasks, ...row }: ProjectRow, metrics: Metrics): Project {
+function toProject({ tasks, allowedTaskTypes, ...row }: ProjectRow, metrics: Metrics): Project {
   const activity = tasks.map((task) => ({
     status: task.status,
     endDate: toIsoDate(task.endDate),
@@ -111,6 +143,7 @@ function toProject({ tasks, ...row }: ProjectRow, metrics: Metrics): Project {
     endDate: toIsoDate(row.endDate),
     startedAt: row.startedAt?.toISOString() ?? null,
     finishedAt: row.finishedAt?.toISOString() ?? null,
+    allowedTaskTypeIds: allowedTaskTypes.map((allowed) => allowed.taskTypeId),
     progress: { ...summarizeTasks(tasks), ...countTaskActivity(activity, metrics) },
   };
 }
@@ -143,7 +176,8 @@ async function behaviorOf(tx: Tx, typeId: string) {
   return type.behavior;
 }
 
-function toData(input: ProjectInput, typeId: string) {
+/** Los tipos de tarea propios van en su propia tabla: no son columnas del proyecto */
+function toData({ taskTypeIds: _ownTypes, ...input }: ProjectInput, typeId: string) {
   return {
     ...input,
     typeId,
@@ -189,6 +223,12 @@ export async function createProject(
 ): Promise<Project> {
   const typeId = await resolveProjectType(db, workspaceId, input.typeId);
   if (!typeId) throw new InvalidProjectTypeError();
+  const ownTypes = await resolveOwnTaskTypes(
+    db,
+    workspaceId,
+    await typeAllowedTaskTypes(db, typeId),
+    input.taskTypeIds,
+  );
   const row = await db.$transaction(async (tx) => {
     // Vacío o solo el formato → automático; uno de otro sistema se respeta si no está repetido (HU-38)
     const folio = await resolveFolio(tx, workspaceId, input.folio, {
@@ -201,6 +241,9 @@ export async function createProject(
         ...toData({ ...input, folio }, typeId),
         ...realDatesFor(input.status, null),
         ...auditCreate(actorId),
+        allowedTaskTypes: {
+          create: ownTypes.map((taskTypeId) => ({ taskTypeId, createdById: actorId })),
+        },
       },
       select: projectSelect,
     });
@@ -219,15 +262,34 @@ export async function updateProject(
 ): Promise<Project | null> {
   const previous = await db.project.findFirst({
     where: { id: projectId, workspaceId, ...notDeleted },
-    select: { typeId: true, folio: true, status: true, startedAt: true, finishedAt: true },
+    select: {
+      typeId: true,
+      folio: true,
+      status: true,
+      startedAt: true,
+      finishedAt: true,
+      allowedTaskTypes: { select: { taskTypeId: true } },
+    },
   });
   if (!previous) return null;
   const typeId = await resolveProjectType(db, workspaceId, input.typeId, previous.typeId);
   if (!typeId) throw new InvalidProjectTypeError();
-  if (typeId !== previous.typeId) {
-    const conflicts = await disallowedTaskTypes(db, projectId, typeId);
-    if (conflicts.length > 0) throw new DisallowedTaskTypesError(conflicts);
-  }
+  const typeAllowed = await typeAllowedTaskTypes(db, typeId);
+  const currentOwn = previous.allowedTaskTypes.map((row) => row.taskTypeId);
+  const ownTypes = await resolveOwnTaskTypes(
+    db,
+    workspaceId,
+    typeAllowed,
+    input.taskTypeIds,
+    currentOwn,
+  );
+  // Sus tareas deben caber en lo que admitirá: su lista propia o, sin ella, la de su tipo (ADR-0004 §4)
+  const conflicts = await disallowedTaskTypes(
+    db,
+    projectId,
+    ownTypes.length > 0 ? ownTypes : typeAllowed,
+  );
+  if (conflicts.length > 0) throw new DisallowedTaskTypesError(conflicts);
 
   await db.$transaction(async (tx) => {
     const folio = await resolveFolio(tx, workspaceId, input.folio, {
@@ -243,6 +305,13 @@ export async function updateProject(
         ...auditUpdate(actorId),
       },
     });
+    // La lista propia se reemplaza completa solo si cambió
+    if (ownTypes.join() !== currentOwn.join()) {
+      await tx.projectTaskType.deleteMany({ where: { projectId } });
+      await tx.projectTaskType.createMany({
+        data: ownTypes.map((taskTypeId) => ({ projectId, taskTypeId, createdById: actorId })),
+      });
+    }
   });
   return getProject(db, workspaceId, projectId, metrics);
 }
