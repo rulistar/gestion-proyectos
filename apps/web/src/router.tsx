@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-router';
 import { ApiError } from '@/lib/api';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
+import { peopleQueryOptions } from '@/lib/people';
 import { weekStartIso } from '@/lib/dates';
 import { myTasksQueryOptions } from '@/lib/my-work';
 import { projectTypesQueryOptions } from '@/lib/project-types';
@@ -22,6 +23,7 @@ import { InvitationPage } from '@/routes/invitation-page';
 import { LoginPage } from '@/routes/login-page';
 import { MembersPage } from '@/routes/members-page';
 import { MyWorkPage } from '@/routes/my-work-page';
+import { PeoplePage } from '@/routes/people-page';
 import { ProjectPage } from '@/routes/project-page';
 import { TrashPage } from '@/routes/trash-page';
 import { CatalogPage } from '@/routes/catalog-page';
@@ -37,6 +39,7 @@ import { ActivitiesPage, MaintenancePage, WorkspacePage } from '@/routes/workspa
  *   /w/$workspaceId/mi-trabajo    mis tareas en ese workspace (HU-28b)
  *   /w/$workspaceId/configuracion tipos de contenedor (HU-21, solo Admin)
  *   /w/$workspaceId/miembros      y sus miembros e invitaciones
+ *   /w/$workspaceId/personas      catálogo de personas (HU-34, solo Admin)
  *   /w/$workspaceId/papelera      y su papelera (solo Admin)
  *   /login                     pública; si ya hay sesión, redirige a /
  *   /invitacion#<token>        pública: aceptar una invitación (HU-01)
@@ -198,6 +201,18 @@ const myWorkRoute = createRoute({
   component: MyWorkPage,
 });
 
+const peopleRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/personas',
+  loader: ({ context, params }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(peopleQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(membersQueryOptions(params.workspaceId)),
+    ]),
+  component: PeoplePage,
+});
+
 const membersRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId/miembros',
@@ -230,6 +245,7 @@ const routeTree = rootRoute.addChildren([
     projectRoute,
     myWorkRoute,
     membersRoute,
+    peopleRoute,
     trashRoute,
   ]),
 ]);

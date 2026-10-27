@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Db } from '../../db/client.js';
 import { auditCreate } from '../../db/audit.js';
 import { hashPassword } from '../auth/password.js';
+import { ensureMemberPerson } from '../people/people.service.js';
 import { seedCatalog } from '../project-types/project-types.service.js';
 
 /** Nombre del workspace que se crea junto con el primer Admin (decisión del PO) */
@@ -56,6 +57,7 @@ export async function createFirstAdmin(db: Db, input: FirstAdminInput) {
       data: { workspaceId: workspace.id, userId: user.id, role: 'ADMIN', ...auditCreate(user.id) },
     });
     await seedCatalog(tx, workspace.id, user.id);
+    await ensureMemberPerson(tx, workspace.id, user, user.id);
 
     return { user, workspace };
   });

@@ -33,6 +33,7 @@ const taskSelect = {
       name: true,
       status: true,
       memberships: { where: notDeleted, select: { workspaceId: true } },
+      people: { select: { workspaceId: true, name: true } },
     },
   },
 } as const;
@@ -46,13 +47,20 @@ type TaskRow = Omit<
   completedAt: Date | null;
   startedAt: Date | null;
   workspaceId: string;
-  assignee: { name: string; status: string; memberships: { workspaceId: string }[] } | null;
+  assignee: {
+    name: string;
+    status: string;
+    memberships: { workspaceId: string }[];
+    people: { workspaceId: string; name: string }[];
+  } | null;
 };
 
 function toTask({ workspaceId, assignee, ...row }: TaskRow): Task {
   return {
     ...row,
-    assigneeName: assignee?.name ?? null,
+    // Alias del catálogo del espacio (HU-34) o, si no tiene persona, el nombre de la cuenta
+    assigneeName:
+      assignee?.people.find((p) => p.workspaceId === workspaceId)?.name ?? assignee?.name ?? null,
     // Sin responsable no hay nada que marcar; con responsable, debe ser miembro activo del espacio
     assigneeIsMember:
       !assignee ||

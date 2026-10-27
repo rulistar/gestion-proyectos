@@ -5,7 +5,7 @@ import {
   type MyTask,
   type Project,
 } from '@gestion/shared';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { Check, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,6 +15,7 @@ import { useCurrentUser } from '@/lib/auth';
 import { todayIso, weekStartIso } from '@/lib/dates';
 import { dueInfo } from '@/lib/due';
 import { myTasksQueryOptions } from '@/lib/my-work';
+import { peopleQueryOptions } from '@/lib/people';
 import { projectsQueryOptions } from '@/lib/projects';
 import { TASK_STATUSES, useMoveTask } from '@/lib/tasks';
 import { workspaceQueryOptions } from '@/lib/workspaces';
@@ -33,7 +34,10 @@ export function MyWorkPage() {
   const { data: projects } = useSuspenseQuery(projectsQueryOptions(workspaceId));
   const canUpdate = roleHasPermission(workspace.role, 'task.update');
   const work = groupMyWork(tasks, today, weekStart);
-  const firstName = me.name.split(' ')[0];
+  // El saludo usa el nombre de mi persona en este espacio (alias, HU-34), si lo tiene
+  const { data: people = [] } = useQuery(peopleQueryOptions(workspaceId));
+  const myName = people.find((person) => person.userId === me.id)?.name ?? me.name;
+  const firstName = myName.split(' ')[0];
 
   const kpis = [
     { label: 'Vencen hoy', value: work.kpis.dueToday, color: '#E8C468' },

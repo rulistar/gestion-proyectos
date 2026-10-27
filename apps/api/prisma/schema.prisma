@@ -37,6 +37,31 @@ enum MembershipRole {
   @@map("membership_role")
 }
 
+/// Persona del catálogo del espacio (HU-34, ADR-0005), con o sin cuenta. Vinculada a un usuario,
+/// su nombre es el que se muestra en lugar del de la cuenta. No va a la papelera: se archiva.
+model Person {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  /// Usuario vinculado (opcional): a lo más una persona por usuario en cada espacio
+  userId      String?   @map("user_id") @db.Uuid
+  user        User?     @relation("PersonUser", fields: [userId], references: [id], onDelete: Restrict)
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz(3)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  createdBy   User?    @relation("PersonCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User?    @relation("PersonUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@unique([workspaceId, name], where: { archivedAt: null })
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@map("people")
+}
+
 /// Contador de folios automáticos (HU-38): uno por espacio, prefijo (PY, MT, ACT) y periodo AAMM.
 /// Registro técnico: solo lo cambia el sistema al crear un contenedor sin folio.
 model FolioCounter {
@@ -211,6 +236,9 @@ model User {
   invitationsUpdated      Invitation[]          @relation("InvitationUpdatedBy")
   invitationsRevoked      Invitation[]          @relation("InvitationRevokedBy")
   invitationsAccepted     Invitation[]          @relation("InvitationAcceptedBy")
+  people                  Person[]              @relation("PersonUser")
+  peopleCreated           Person[]              @relation("PersonCreatedBy")
+  peopleUpdated           Person[]              @relation("PersonUpdatedBy")
   projectTypesCreated     ProjectType[]         @relation("ProjectTypeCreatedBy")
   projectTypesUpdated     ProjectType[]         @relation("ProjectTypeUpdatedBy")
   taskTypesCreated        TaskType[]            @relation("TaskTypeCreatedBy")
@@ -257,6 +285,7 @@ model Workspace {
   projectTypes  ProjectType[]
   taskTypes     TaskType[]
   folioCounters FolioCounter[]
+  people        Person[]
   tasks         Task[]
   invitations   Invitation[]
 

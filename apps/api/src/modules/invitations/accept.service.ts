@@ -3,6 +3,7 @@ import type { Db } from '../../db/client.js';
 import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
 import { hashPassword } from '../auth/password.js';
 import { hashToken } from '../auth/tokens.js';
+import { ensureMemberPerson } from '../people/people.service.js';
 import { pending } from './invitations.service.js';
 
 type Tx = Parameters<Parameters<Db['$transaction']>[0]>[0];
@@ -77,6 +78,12 @@ async function joinWorkspace(
       },
     });
   }
+  // Su persona en el catálogo del espacio, para asignarle responsabilidades (HU-34)
+  const user = await tx.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { id: true, name: true, email: true },
+  });
+  await ensureMemberPerson(tx, invitation.workspaceId, user, userId);
   await tx.invitation.update({
     where: { id: invitation.id },
     data: { acceptedById: userId, ...auditUpdate(userId) },

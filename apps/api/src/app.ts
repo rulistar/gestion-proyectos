@@ -6,6 +6,7 @@ import { authRoutes } from './modules/auth/auth.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { acceptInvitationRoutes } from './modules/invitations/accept.routes.js';
 import { invitationsRoutes } from './modules/invitations/invitations.routes.js';
+import { peopleRoutes } from './modules/people/people.routes.js';
 import { projectTypesRoutes } from './modules/project-types/project-types.routes.js';
 import { projectsRoutes } from './modules/projects/projects.routes.js';
 import { taskTypesRoutes } from './modules/task-types/task-types.routes.js';
@@ -63,6 +64,7 @@ export function buildApp({
   void app.register(healthRoutes, { prefix: '/api/v1' });
   void app.register(authRoutes, { prefix: '/api/v1' });
   void app.register(workspacesRoutes, { prefix: '/api/v1' });
+  void app.register(peopleRoutes, { prefix: '/api/v1' });
   void app.register(projectTypesRoutes, { prefix: '/api/v1' });
   void app.register(projectsRoutes, { prefix: '/api/v1' });
   void app.register(taskTypesRoutes, { prefix: '/api/v1' });
