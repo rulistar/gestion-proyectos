@@ -140,12 +140,6 @@ export async function renameWorkspace(
   });
 }
 
-/** ¿Es un miembro activo del workspace? (p. ej. para poder ser responsable de una tarea) */
-export async function isActiveMember(db: Db, workspaceId: string, userId: string) {
-  const count = await db.membership.count({ where: { ...activeMembers(workspaceId), userId } });
-  return count > 0;
-}
-
 /** Crea un workspace y deja a quien lo crea como su Admin, en una sola transacción (HU-03) */
 export async function createWorkspace(
   db: Db,

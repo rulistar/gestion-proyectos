@@ -96,6 +96,7 @@ apps/
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05); DELETE = a la papelera.
                           GET acepta ?today=&monthStart= (fecha local) para las métricas por comportamiento
       tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status, DELETE (HU-08);
+                          Actividad / Gestión / Seguimiento = personas del catálogo (HU-35, ADR-0005);
                           GET /workspaces/:id/my-tasks = mis tareas (HU-28b)
       trash/              papelera, solo Admin (HU-15): GET /trash, POST /trash/:kind/:id/restore, DELETE /trash/:kind/:id
       invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez

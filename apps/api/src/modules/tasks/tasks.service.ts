@@ -1,8 +1,10 @@
 import {
   statusNeedsReason,
   type MyTask,
+  type PersonRef,
   type Task,
   type TaskInput,
+  type TaskRole,
   type TaskStatus,
 } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
@@ -13,6 +15,41 @@ import { resolveTaskType } from '../task-types/task-types.service.js';
 /** El tipo pedido no existe, está archivado o no lo admite el tipo del proyecto (→ 400) */
 export class InvalidTaskTypeError extends Error {}
 
+/** Lo que se lee de cada persona responsable: si su cuenta sigue teniendo acceso al espacio */
+const personSelect = {
+  select: {
+    id: true,
+    name: true,
+    userId: true,
+    archivedAt: true,
+    user: {
+      select: { status: true, memberships: { where: notDeleted, select: { workspaceId: true } } },
+    },
+  },
+} as const;
+
+type PersonRow = {
+  id: string;
+  name: string;
+  userId: string | null;
+  archivedAt: Date | null;
+  user: { status: string; memberships: { workspaceId: string }[] } | null;
+} | null;
+
+function toPersonRef(person: PersonRow, workspaceId: string): PersonRef | null {
+  if (!person) return null;
+  const { archivedAt, user, ...rest } = person;
+  return {
+    ...rest,
+    // Sin cuenta no hay acceso que perder; con cuenta, debe seguir siendo miembro (ADR-0005 §1)
+    hasAccess:
+      user !== null &&
+      user.status === 'ACTIVE' &&
+      user.memberships.some((m) => m.workspaceId === workspaceId),
+    archived: archivedAt !== null,
+  };
+}
+
 const taskSelect = {
   id: true,
   projectId: true,
@@ -20,52 +57,44 @@ const taskSelect = {
   type: { select: { id: true, name: true, expedited: true } },
   status: true,
   estimatedMinutes: true,
-  assigneeId: true,
   startDate: true,
   endDate: true,
   completedAt: true,
   startedAt: true,
   statusReason: true,
   workspaceId: true,
-  // Nombre del responsable y sus membresías vigentes: para saber si sigue en el espacio (HU-25)
-  assignee: {
-    select: {
-      name: true,
-      status: true,
-      memberships: { where: notDeleted, select: { workspaceId: true } },
-      people: { select: { workspaceId: true, name: true } },
-    },
-  },
+  // Responsabilidades (HU-35): Actividad, Gestión y Seguimiento
+  activityPerson: personSelect,
+  managementPerson: personSelect,
+  followUpPerson: personSelect,
 } as const;
 
 type TaskRow = Omit<
   Task,
-  'startDate' | 'endDate' | 'completedAt' | 'startedAt' | 'assigneeName' | 'assigneeIsMember'
+  'startDate' | 'endDate' | 'completedAt' | 'startedAt' | 'activity' | 'management' | 'followUp'
 > & {
   startDate: Date | null;
   endDate: Date | null;
   completedAt: Date | null;
   startedAt: Date | null;
   workspaceId: string;
-  assignee: {
-    name: string;
-    status: string;
-    memberships: { workspaceId: string }[];
-    people: { workspaceId: string; name: string }[];
-  } | null;
+  activityPerson: PersonRow;
+  managementPerson: PersonRow;
+  followUpPerson: PersonRow;
 };
 
-function toTask({ workspaceId, assignee, ...row }: TaskRow): Task {
+function toTask({
+  workspaceId,
+  activityPerson,
+  managementPerson,
+  followUpPerson,
+  ...row
+}: TaskRow): Task {
   return {
     ...row,
-    // Alias del catálogo del espacio (HU-34) o, si no tiene persona, el nombre de la cuenta
-    assigneeName:
-      assignee?.people.find((p) => p.workspaceId === workspaceId)?.name ?? assignee?.name ?? null,
-    // Sin responsable no hay nada que marcar; con responsable, debe ser miembro activo del espacio
-    assigneeIsMember:
-      !assignee ||
-      (assignee.status === 'ACTIVE' &&
-        assignee.memberships.some((m) => m.workspaceId === workspaceId)),
+    activity: toPersonRef(activityPerson, workspaceId),
+    management: toPersonRef(managementPerson, workspaceId),
+    followUp: toPersonRef(followUpPerson, workspaceId),
     startDate: toIsoDate(row.startDate),
     endDate: toIsoDate(row.endDate),
     completedAt: row.completedAt?.toISOString() ?? null,
@@ -73,16 +102,16 @@ function toTask({ workspaceId, assignee, ...row }: TaskRow): Task {
   };
 }
 
-/** Responsable actual de una tarea del proyecto (undefined si la tarea no existe) */
-export async function currentAssignee(
+/** Personas responsables actuales de una tarea del proyecto (undefined si la tarea no existe) */
+export async function currentPeople(
   db: Db,
   where: { workspaceId: string; projectId: string; taskId: string },
-): Promise<string | null | undefined> {
+) {
   const task = await db.task.findFirst({
     where: { id: where.taskId, ...taskScope(where.workspaceId, where.projectId) },
-    select: { assigneeId: true },
+    select: { activityPersonId: true, managementPersonId: true, followUpPersonId: true },
   });
-  return task === null ? undefined : task.assigneeId;
+  return task ?? undefined;
 }
 
 /**
@@ -130,8 +159,9 @@ export async function listTasks(db: Db, workspaceId: string, projectId: string):
 }
 
 /**
- * Mis tareas en el workspace (HU-28b), de proyectos que no están en la papelera: las abiertas
- * y las Hechas desde `doneSince` (para "hechas esta semana"). Las canceladas no se piden.
+ * Mis tareas en el workspace (HU-28b, HU-35): donde mi persona del espacio aparece en Actividad,
+ * Gestión o Seguimiento, de proyectos que no están en la papelera. Las abiertas y las Hechas desde
+ * `doneSince` (para "hechas esta semana"); las canceladas no se piden.
  */
 export async function listMyTasks(
   db: Db,
@@ -139,21 +169,39 @@ export async function listMyTasks(
   userId: string,
   doneSince: Date,
 ): Promise<MyTask[]> {
+  const me = await db.person.findFirst({ where: { workspaceId, userId }, select: { id: true } });
+  if (!me) return [];
   const rows = await db.task.findMany({
     where: {
       workspaceId,
-      assigneeId: userId,
       ...notDeleted,
       project: notDeleted,
-      OR: [
-        { status: { in: ['PENDING', 'IN_PROGRESS', 'PAUSED'] } },
-        { status: 'DONE', completedAt: { gte: doneSince } },
+      AND: [
+        {
+          OR: [
+            { activityPersonId: me.id },
+            { managementPersonId: me.id },
+            { followUpPersonId: me.id },
+          ],
+        },
+        {
+          OR: [
+            { status: { in: ['PENDING', 'IN_PROGRESS', 'PAUSED'] } },
+            { status: 'DONE', completedAt: { gte: doneSince } },
+          ],
+        },
       ],
     },
     select: { ...taskSelect, project: { select: { name: true } } },
     orderBy: [{ endDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }],
   });
-  return rows.map(({ project, ...row }) => ({ ...toTask(row), projectName: project.name }));
+  return rows.map(({ project, ...row }) => {
+    const myRoles: TaskRole[] = [];
+    if (row.activityPerson?.id === me.id) myRoles.push('ACTIVITY');
+    if (row.managementPerson?.id === me.id) myRoles.push('MANAGEMENT');
+    if (row.followUpPerson?.id === me.id) myRoles.push('FOLLOW_UP');
+    return { ...toTask(row), projectName: project.name, myRoles };
+  });
 }
 
 /** El proyecto ya se comprobó (existe en el workspace y no está borrado) */

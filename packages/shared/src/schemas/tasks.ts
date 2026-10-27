@@ -7,6 +7,7 @@ import {
   optionalInt,
   optionalText,
 } from './common.js';
+import { personRefSchema } from './people.js';
 import { taskTypeRefSchema } from './task-types.js';
 
 export const taskStatusSchema = z.enum(['PENDING', 'IN_PROGRESS', 'PAUSED', 'DONE', 'CANCELLED']);
@@ -38,8 +39,10 @@ export const taskInputSchema = z
     status: taskStatusSchema.default('PENDING'),
     /** Hasta una semana de trabajo continuo (10 080 min) por tarea */
     estimatedMinutes: optionalInt(10_080),
-    /** Responsable: un miembro activo del workspace, o null (sin asignar) */
-    assigneeId: optionalId,
+    /** Responsabilidades (HU-35, ADR-0005): una persona activa del catálogo en cada una, o nadie */
+    activityPersonId: optionalId,
+    managementPersonId: optionalId,
+    followUpPersonId: optionalId,
     startDate: optionalDate,
     endDate: optionalDate,
     /** Motivo de Pausada o Cancelada; en los demás estados se ignora */
@@ -62,11 +65,12 @@ export const taskSchema = z.object({
   type: taskTypeRefSchema,
   status: taskStatusSchema,
   estimatedMinutes: z.number().int().nullable(),
-  assigneeId: z.uuid().nullable(),
-  /** Nombre del responsable; se conserva aunque ya no sea miembro (decisión del PO, HU-25) */
-  assigneeName: z.string().nullable(),
-  /** false si el responsable fue quitado del espacio: la tarjeta lo marca para reasignarla */
-  assigneeIsMember: z.boolean(),
+  /** Actividad: quien la hace (reemplaza a Responsable) */
+  activity: personRefSchema.nullable(),
+  /** Gestión: quien la gestiona */
+  management: personRefSchema.nullable(),
+  /** Seguimiento: quien le da seguimiento */
+  followUp: personRefSchema.nullable(),
   startDate: z.iso.date().nullable(),
   endDate: z.iso.date().nullable(),
   /** Por qué está Pausada o Cancelada; null en los demás estados */

@@ -19,6 +19,16 @@ export type Person = z.infer<typeof personSchema>;
 
 export const personListSchema = z.array(personSchema);
 
+/** Lo que una tarea dice de cada persona responsable (HU-35) */
+export const personRefSchema = personSchema.pick({
+  id: true,
+  name: true,
+  userId: true,
+  hasAccess: true,
+  archived: true,
+});
+export type PersonRef = z.infer<typeof personRefSchema>;
+
 const personName = z
   .string()
   .trim()
