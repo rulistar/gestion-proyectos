@@ -47,6 +47,17 @@ export const projectInputSchema = z
     /** Sprint en curso y lo que se hace en él (HU-33): texto libre */
     sprint: optionalText(60),
     sprintActivities: optionalText(4000),
+    /**
+     * Tipos de tarea propios del contenedor (HU-37): subconjunto de los que admite su tipo. Vacío =
+     * los de su tipo; sin enviar = no cambia. El formulario los manda separados por comas.
+     */
+    taskTypeIds: z
+      .preprocess(
+        (value) =>
+          typeof value === 'string' ? value.split(',').filter(Boolean) : (value ?? undefined),
+        z.array(z.uuid('Tipo de tarea no válido')).max(100),
+      )
+      .optional(),
   })
   .refine(endAfterStart, endAfterStartError);
 export type ProjectInput = z.infer<typeof projectInputSchema>;
@@ -72,6 +83,8 @@ export const projectSchema = z.object({
   notes: z.string().nullable(),
   sprint: z.string().nullable(),
   sprintActivities: z.string().nullable(),
+  /** Tipos de tarea propios (HU-37); vacío = admite los de su tipo */
+  allowedTaskTypeIds: z.array(z.uuid()),
   /** Fechas reales (ADR-0004 §2.1): las pone el sistema al cambiar el estado */
   startedAt: z.iso.datetime().nullable(),
   finishedAt: z.iso.datetime().nullable(),

@@ -252,3 +252,91 @@ describe('inicio real de la tarea (ADR-0004 §2.1)', () => {
     expect(taskSchema.parse(moved.json()).startedAt).not.toBeNull();
   });
 });
+
+describe('tipos de tarea por contenedor (HU-37)', () => {
+  async function mttoCorrectivo(cookies: Cookies, ws: string, payload: object = {}) {
+    const typeId = (await projectTypes(cookies, ws)).find((t) => t.name === 'Mtto correctivo')!.id;
+    const response = await app.inject({
+      method: 'POST',
+      url: `${base(ws)}/projects`,
+      cookies,
+      payload: { name: 'Mtto', typeId, ...payload },
+    });
+    return response;
+  }
+
+  function editProject(cookies: Cookies, ws: string, projectId: string, payload: object) {
+    return app.inject({
+      method: 'PUT',
+      url: `${base(ws)}/projects/${projectId}`,
+      cookies,
+      payload: { name: 'Mtto', ...payload },
+    });
+  }
+
+  it('dos mantenimientos del mismo tipo limitan sus tipos de forma distinta', async () => {
+    const { ana, ws } = await setup();
+    const incidencia = await idOf(ana.cookies, ws.id, 'Incidencia');
+    const fast = await idOf(ana.cookies, ws.id, 'Fast track');
+    const tarea = await idOf(ana.cookies, ws.id, 'Tarea');
+
+    const a = projectSchema.parse(
+      (await mttoCorrectivo(ana.cookies, ws.id, { taskTypeIds: [incidencia, fast, tarea] })).json(),
+    );
+    const b = projectSchema.parse(
+      (await mttoCorrectivo(ana.cookies, ws.id, { taskTypeIds: `${incidencia},${fast}` })).json(),
+    );
+    const taskInB = await createTask(ana.cookies, ws.id, b.id, { title: 'X', typeId: tarea });
+    const fallbackB = await createTask(ana.cookies, ws.id, b.id, { title: 'Sin tipo' });
+
+    expect(a.allowedTaskTypeIds).toHaveLength(3);
+    expect(b.allowedTaskTypeIds.sort()).toEqual([incidencia, fast].sort());
+    expect(taskInB.statusCode).toBe(400);
+    expect(taskSchema.parse(fallbackB.json()).type.name).toBe('Incidencia');
+  });
+
+  it('solo se eligen tipos que admite su tipo de contenedor (400)', async () => {
+    const { ana, ws } = await setup();
+    const reunion = await idOf(ana.cookies, ws.id, 'Reunión');
+
+    const response = await mttoCorrectivo(ana.cookies, ws.id, { taskTypeIds: [reunion] });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('no se quita un tipo que ya usan sus tareas (409); sin enviar la lista, no cambia', async () => {
+    const { ana, ws } = await setup();
+    const incidencia = await idOf(ana.cookies, ws.id, 'Incidencia');
+    const fast = await idOf(ana.cookies, ws.id, 'Fast track');
+    const mtto = projectSchema.parse(
+      (await mttoCorrectivo(ana.cookies, ws.id, { taskTypeIds: [incidencia, fast] })).json(),
+    );
+    await createTask(ana.cookies, ws.id, mtto.id, { title: 'Falla', typeId: incidencia });
+
+    const removeUsed = await editProject(ana.cookies, ws.id, mtto.id, { taskTypeIds: [fast] });
+    const untouched = await editProject(ana.cookies, ws.id, mtto.id, {
+      notes: 'Sin cambiar tipos',
+    });
+    const cleared = await editProject(ana.cookies, ws.id, mtto.id, { taskTypeIds: '' });
+
+    expect(removeUsed.statusCode).toBe(409);
+    expect(projectSchema.parse(untouched.json()).allowedTaskTypeIds).toHaveLength(2);
+    expect(projectSchema.parse(cleared.json()).allowedTaskTypeIds).toEqual([]);
+  });
+
+  it('al cambiar a un tipo que no admite la lista propia, la lista se descarta', async () => {
+    const { ana, ws } = await setup();
+    const incidencia = await idOf(ana.cookies, ws.id, 'Incidencia');
+    const mtto = projectSchema.parse(
+      (await mttoCorrectivo(ana.cookies, ws.id, { taskTypeIds: [incidencia] })).json(),
+    );
+    const evolutivo = (await projectTypes(ana.cookies, ws.id)).find(
+      (t) => t.name === 'Mtto evolutivo',
+    )!;
+
+    const moved = await editProject(ana.cookies, ws.id, mtto.id, { typeId: evolutivo.id });
+
+    expect(moved.statusCode).toBe(200);
+    expect(projectSchema.parse(moved.json()).allowedTaskTypeIds).toEqual([]);
+  });
+});

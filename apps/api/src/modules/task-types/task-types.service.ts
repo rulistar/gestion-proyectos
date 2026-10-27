@@ -116,11 +116,15 @@ export async function resolveTaskType(
 
   const project = await db.project.findFirst({
     where: { id: projectId, workspaceId },
-    select: { type: { select: { allowedTaskTypes: { select: { taskTypeId: true } } } } },
+    select: {
+      allowedTaskTypes: { select: { taskTypeId: true } },
+      type: { select: { allowedTaskTypes: { select: { taskTypeId: true } } } },
+    },
   });
   if (!project) return null;
-  // Sin filas, el tipo de contenedor admite todos (HU-22)
-  const allowed = project.type.allowedTaskTypes.map((row) => row.taskTypeId);
+  // Los propios del contenedor (HU-37) o, sin ellos, los de su tipo (HU-22); vacío = todos
+  const own = project.allowedTaskTypes.map((row) => row.taskTypeId);
+  const allowed = own.length > 0 ? own : project.type.allowedTaskTypes.map((row) => row.taskTypeId);
   if (requested !== null && allowed.length > 0 && !allowed.includes(requested)) return null;
 
   const type = await db.taskType.findFirst({

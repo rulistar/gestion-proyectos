@@ -4,6 +4,7 @@ import {
   type Project,
   type ProjectBehavior,
   type ProjectType,
+  type TaskType,
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
@@ -26,6 +27,7 @@ import {
 import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
 import { projectTypesQueryOptions, SECTIONS } from '@/lib/project-types';
 import { PROJECT_PRIORITIES, projectsQueryOptions, useCreateProject } from '@/lib/projects';
+import { taskTypesQueryOptions } from '@/lib/task-types';
 import { ROLE_LABELS, workspaceQueryOptions } from '@/lib/workspaces';
 
 // Son los id de las rutas (no la URL): cuelgan de la ruta sin URL "app", de ahí el /app
@@ -62,6 +64,7 @@ function ContainersPage({
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
   const { data: allProjects } = useSuspenseQuery(projectsQueryOptions(workspaceId));
   const { data: allTypes } = useSuspenseQuery(projectTypesQueryOptions(workspaceId));
+  const { data: taskTypes } = useSuspenseQuery(taskTypesQueryOptions(workspaceId));
   const section = SECTIONS[behavior];
   const projects = allProjects.filter((p) => p.type.behavior === behavior);
   const types = allTypes.filter((t) => t.behavior === behavior && !t.archived);
@@ -79,7 +82,12 @@ function ContainersPage({
           </p>
         </div>
         {canCreate && (
-          <CreateProjectDialog workspaceId={workspaceId} label={section.newLabel} types={types} />
+          <CreateProjectDialog
+            workspaceId={workspaceId}
+            label={section.newLabel}
+            types={types}
+            taskTypes={taskTypes}
+          />
         )}
       </div>
 
@@ -225,10 +233,12 @@ function CreateProjectDialog({
   workspaceId,
   label,
   types,
+  taskTypes,
 }: {
   workspaceId: string;
   label: string;
   types: ProjectType[];
+  taskTypes: TaskType[];
 }) {
   const createProject = useCreateProject(workspaceId);
   const navigate = useNavigate();
@@ -251,6 +261,7 @@ function CreateProjectDialog({
         </DialogHeader>
         <ProjectForm
           types={types}
+          taskTypes={taskTypes}
           submitLabel="Crear"
           isPending={createProject.isPending}
           error={createProject.error?.message}
