@@ -33,6 +33,7 @@
 | Rediseño (2026-10-25) | Antes de seguir, **rediseñar la interfaz** según la [maqueta](https://claude.ai/artifact/QkTijPe4GF7EtTePxQHYFR): menú lateral (Proyectos, Mantenimientos, Mi trabajo, Actividades, Gantt), combo **Espacio de trabajo**, color **turquesa matizado** y login con el formulario a la izquierda. El **Admin del sistema ve y entra a todos los espacios**. Nombre provisional: "Gestor de Proyectos". Después, los tipos de trabajo (HU-21, HU-22). |
 | Fases (2026-10-25) | Las tareas de un proyecto se agrupan en **fases**, como las tareas resumen de Project: una fase puede contener tareas y otras fases, hasta **4 niveles**. Su avance y sus fechas **se calculan** a partir de lo que contiene. HU-07 se adelanta al Sprint 4, antes de la vista Lista (HU-26) y el Gantt (HU-27), que dependen de ella. |
 | Cambiar correos (2026-10-25) | Una persona puede estar en varios espacios, así que el **Admin de un espacio no cambia correos**. Cada usuario cambia su nombre, correo y contraseña en **Mi perfil**, confirmando con su contraseña (HU-29); el **Admin del sistema** puede cambiar el correo de cualquiera y desactivar cuentas (HU-30). Sprint 5. |
+| Corrección de HU-35 (2026-10-27) | **Actividad, Gestión y Seguimiento son tipos de tarea** (no responsabilidades). La tarea tiene **un solo Responsable**, elegido del catálogo de personas. |
 | Revisión del Sprint 3 (2026-10-26) | Se hizo lo pedido. Nuevos: **Sprint** y **Actividades del sprint** en proyectos y mantenimientos; en cada tarea **Actividad, Gestión y Seguimiento** (una persona cada una; Actividad reemplaza a Responsable); **catálogo de personas por espacio**, con o sin cuenta, vinculables a un usuario para mostrarlo con otro nombre; personas del proyecto desde el catálogo; **tipos de tarea limitados por contenedor**. Diseño en [ADR-0005](adr/ADR-0005-personas-y-responsabilidades.md). Sprint 4: estas historias + HU-32 + HU-09 (28 pts); HU-23 pasa al Sprint 5. |
 | Datos del proyecto (2026-10-25) | Los proyectos llevan **Folio** (viene de otro sistema: opcional, editable, puede repetirse), **Descripción**, **Observaciones** (antes "Notas") y personas como **texto libre** (solo el nombre): Solicitante, Asignado a, Project manager, Gte. Consultoría y Business partner. Se hace ya (HU-31). **Mover** proyectos, mantenimientos y tareas **entre espacios**, solo Admin (HU-32, Sprint 4). |
 
@@ -72,7 +73,7 @@
 | 18 | HU-25 | Gestionar miembros: cambiar el rol y quitar del espacio | Workspaces | 3 | 🔴 | 3 |
 | 19 | HU-33 | Sprint en proyectos y mantenimientos: "Sprint" y "Actividades del sprint" (texto) | Proyectos | 2 | 🔴 | 4 |
 | 20 | HU-34 | Catálogo de personas por espacio, con o sin cuenta, vinculables a un usuario (alias) | Personas | 5 | 🔴 | 4 |
-| 21 | HU-35 | Responsabilidades de la tarea: Actividad, Gestión y Seguimiento | Tareas | 5 | 🔴 | 4 |
+| 21 | HU-35 | Responsable (persona del catálogo) y tipos de tarea Actividad, Gestión y Seguimiento | Tareas | 5 | 🔴 | 4 |
 | 22 | HU-36 | Personas del proyecto desde el catálogo | Personas | 3 | 🔴 | 4 |
 | 23 | HU-37 | Tipos de tarea por contenedor (subconjunto de los de su tipo) | Tipos | 3 | 🔴 | 4 |
 | 24 | HU-38 | Folios automáticos: PY, MT y ACT + AAMM + "-" + contador mensual por espacio | Proyectos | 3 | 🔴 | 4 |
@@ -357,15 +358,15 @@ _Como Admin, quiero dar de alta a las personas con las que trabajo, tengan o no 
 - [x] Una persona en uso no se borra, se archiva; quitar a un miembro no borra su persona (queda "sin acceso").
 - [x] Permisos: ver con `project.read`; administrar con `member.manage`. Pruebas.
 
-#### HU-35 · Responsabilidades de la tarea (5 pts)
+#### HU-35 · Responsable y tipos Actividad, Gestión y Seguimiento (5 pts)
 
-_Como responsable, quiero indicar en cada tarea quién la hace, quién la gestiona y quién le da seguimiento, para que cada uno sepa qué le toca._
+_Como responsable, quiero clasificar las tareas como Actividad, Gestión o Seguimiento y asignarles una persona del catálogo, para saber qué tipo de trabajo es y quién lo atiende._ **Corregida por el PO el 2026-10-27:** son tipos de tarea, no tres responsables.
 
-- [x] Tres campos opcionales, una persona del catálogo cada uno: **Actividad**, **Gestión** y **Seguimiento**. **Actividad reemplaza a Responsable**; la migración pasa cada responsable a Actividad.
-- [x] En el formulario se elige de la lista de personas y se puede dar de alta una nueva desde ahí.
-- [x] La tarjeta muestra el avatar de Actividad y, al pasar el cursor, las tres responsabilidades.
-- [x] **Mi trabajo** muestra las tareas donde aparezco en cualquiera de las tres, con la etiqueta de cuál me toca.
-- [x] Solo personas activas del espacio (400 si no); al editar se conserva una archivada que ya estaba. Pruebas.
+- [x] Tipos de tarea **Actividad**, **Gestión** y **Seguimiento** en el catálogo de cada espacio (después de Fast track) y en los espacios nuevos.
+- [x] La tarea tiene **un solo Responsable**, una persona del catálogo con o sin cuenta (con alias). La migración conserva al responsable de cada tarea.
+- [x] En el formulario se elige el Responsable y se puede dar de alta una persona nueva desde ahí.
+- [x] **Mi trabajo** muestra las tareas donde soy el Responsable.
+- [x] Solo personas activas del espacio (400 si no); al editar se conserva una archivada que ya estaba. Si el Responsable pierde el acceso, la tarjeta avisa para reasignarla. Pruebas.
 
 #### HU-36 · Personas del proyecto desde el catálogo (3 pts)
 

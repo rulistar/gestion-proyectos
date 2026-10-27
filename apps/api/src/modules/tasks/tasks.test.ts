@@ -175,7 +175,7 @@ describe('POST .../tasks (HU-08)', () => {
     const task = await createOk(ana.cookies, ws.id, project.id, {
       title: '  Ver la unidad 1 ',
       estimatedMinutes: '45',
-      activityPersonId: '',
+      responsiblePersonId: '',
       endDate: '2026-11-20',
     });
 
@@ -187,9 +187,7 @@ describe('POST .../tasks (HU-08)', () => {
       type: { id: task.type.id, name: 'Tarea', expedited: false },
       status: 'PENDING',
       estimatedMinutes: 45,
-      activity: null,
-      management: null,
-      followUp: null,
+      responsible: null,
       startDate: null,
       endDate: '2026-11-20',
       completedAt: null,
@@ -200,26 +198,31 @@ describe('POST .../tasks (HU-08)', () => {
     expect(row).toMatchObject({ workspaceId: ws.id, createdById: ana.user.id });
   });
 
-  it('asigna Actividad, Gestión y Seguimiento a personas del catálogo (HU-35)', async () => {
+  it('el responsable es una persona del catálogo, con o sin cuenta (HU-35)', async () => {
     const { ana, ws, project, withRole } = await setup();
     const miembro = await withRole('miembro@example.com', 'MEMBER');
     const laura = await db.person.create({
       data: { workspaceId: ws.id, name: 'Laura (sin cuenta)', ...auditCreate(null) },
     });
 
-    const task = await createOk(ana.cookies, ws.id, project.id, {
+    const withMember = await createOk(ana.cookies, ws.id, project.id, {
       title: 'Revisar',
-      typeId: await typeIdOf(ws.id, 'Revisión'),
-      activityPersonId: await personOf(ws.id, miembro.user.id),
-      managementPersonId: await personOf(ws.id, ana.user.id),
-      followUpPersonId: laura.id,
+      typeId: await typeIdOf(ws.id, 'Seguimiento'),
+      responsiblePersonId: await personOf(ws.id, miembro.user.id),
+    });
+    const withoutAccount = await createOk(ana.cookies, ws.id, project.id, {
+      title: 'Gestionar',
+      typeId: await typeIdOf(ws.id, 'Gestión'),
+      responsiblePersonId: laura.id,
     });
 
-    expect(task).toMatchObject({
-      type: { name: 'Revisión' },
-      activity: { name: 'miembro@example.com', hasAccess: true },
-      management: { name: 'ana@example.com' },
-      followUp: { name: 'Laura (sin cuenta)', userId: null, hasAccess: false },
+    expect(withMember).toMatchObject({
+      type: { name: 'Seguimiento' },
+      responsible: { name: 'miembro@example.com', hasAccess: true },
+    });
+    expect(withoutAccount).toMatchObject({
+      type: { name: 'Gestión' },
+      responsible: { name: 'Laura (sin cuenta)', userId: null, hasAccess: false },
     });
   });
 
@@ -229,7 +232,7 @@ describe('POST .../tasks (HU-08)', () => {
 
     const response = await create(ana.cookies, ws.id, project.id, {
       title: 'X',
-      followUpPersonId: await personOf(other.id, ana.user.id),
+      responsiblePersonId: await personOf(other.id, ana.user.id),
     });
 
     expect(response.statusCode).toBe(400);
@@ -320,7 +323,7 @@ describe('mover y editar tareas', () => {
         title: 'Editada',
         typeId: await typeIdOf(ws.id, 'Reunión'),
         estimatedMinutes: 30,
-        activityPersonId: await personOf(ws.id, miembro.user.id),
+        responsiblePersonId: await personOf(ws.id, miembro.user.id),
       },
     });
 
@@ -329,7 +332,7 @@ describe('mover y editar tareas', () => {
       title: 'Editada',
       type: { name: 'Reunión' },
       estimatedMinutes: 30,
-      activity: { name: 'miembro@example.com' },
+      responsible: { name: 'miembro@example.com' },
     });
     const row = await db.task.findUniqueOrThrow({ where: { id: task.id } });
     expect(row).toMatchObject({ createdById: ana.user.id, updatedById: miembro.user.id });
@@ -455,7 +458,7 @@ describe('persona que ya no es miembro (HU-25 con personas, HU-35)', () => {
     const luisPerson = await personOf(ws.id, luis.user.id);
     const task = await createOk(ana.cookies, ws.id, project.id, {
       title: 'De Luis',
-      activityPersonId: luisPerson,
+      responsiblePersonId: luisPerson,
     });
 
     await app.inject({
@@ -470,10 +473,10 @@ describe('persona que ya no es miembro (HU-25 con personas, HU-35)', () => {
       method: 'PUT',
       url: `${tasksUrl(ws.id, project.id)}/${task.id}`,
       cookies: ana.cookies,
-      payload: { title: 'Renombrada', activityPersonId: luisPerson },
+      payload: { title: 'Renombrada', responsiblePersonId: luisPerson },
     });
 
-    expect(list[0]?.activity).toMatchObject({
+    expect(list[0]?.responsible).toMatchObject({
       id: luisPerson,
       name: 'luis@example.com',
       hasAccess: false,
@@ -488,19 +491,19 @@ describe('persona que ya no es miembro (HU-25 con personas, HU-35)', () => {
     });
     const task = await createOk(ana.cookies, ws.id, project.id, {
       title: 'Con Laura',
-      managementPersonId: laura.id,
+      responsiblePersonId: laura.id,
     });
     await db.person.update({ where: { id: laura.id }, data: { archivedAt: new Date() } });
 
     const fresh = await create(ana.cookies, ws.id, project.id, {
       title: 'Nueva',
-      managementPersonId: laura.id,
+      responsiblePersonId: laura.id,
     });
     const kept = await app.inject({
       method: 'PUT',
       url: `${tasksUrl(ws.id, project.id)}/${task.id}`,
       cookies: ana.cookies,
-      payload: { title: 'Sigue con Laura', managementPersonId: laura.id },
+      payload: { title: 'Sigue con Laura', responsiblePersonId: laura.id },
     });
 
     expect(fresh.statusCode).toBe(400);
@@ -515,7 +518,7 @@ describe('mi trabajo (HU-28b)', () => {
     const { ana, ws, project, withRole } = await setup();
     const luis = await withRole('luis@example.com', 'MEMBER');
     const url = tasksUrl(ws.id, project.id);
-    const mine = { activityPersonId: await personOf(ws.id, ana.user.id) };
+    const mine = { responsiblePersonId: await personOf(ws.id, ana.user.id) };
     await createOk(ana.cookies, ws.id, project.id, { title: 'Pendiente', ...mine });
     await createOk(ana.cookies, ws.id, project.id, { title: 'Hecha', status: 'DONE', ...mine });
     await createOk(ana.cookies, ws.id, project.id, {
@@ -526,7 +529,7 @@ describe('mi trabajo (HU-28b)', () => {
     });
     await createOk(ana.cookies, ws.id, project.id, {
       title: 'De Luis',
-      activityPersonId: await personOf(ws.id, luis.user.id),
+      responsiblePersonId: await personOf(ws.id, luis.user.id),
     });
     await createOk(ana.cookies, ws.id, project.id, { title: 'Sin asignar' });
     const trashed = await createOk(ana.cookies, ws.id, project.id, { title: 'Borrada', ...mine });
@@ -538,34 +541,6 @@ describe('mi trabajo (HU-28b)', () => {
     const tasks = myTaskListSchema.parse(response.json());
     expect(tasks.map((t) => t.title).sort()).toEqual(['Hecha', 'Pendiente']);
     expect(tasks[0]!.projectName).toBe('Curso');
-    expect(tasks[0]!.myRoles).toEqual(['ACTIVITY']);
-  });
-
-  it('incluye las tareas donde estoy en Gestión o Seguimiento, con la etiqueta de cada una', async () => {
-    const { ana, ws, project, withRole } = await setup();
-    const luis = await withRole('luis@example.com', 'MEMBER');
-    const me = await personOf(ws.id, ana.user.id);
-    const other = await personOf(ws.id, luis.user.id);
-    await createOk(ana.cookies, ws.id, project.id, {
-      title: 'Gestiono',
-      activityPersonId: other,
-      managementPersonId: me,
-    });
-    await createOk(ana.cookies, ws.id, project.id, {
-      title: 'Todo',
-      activityPersonId: me,
-      managementPersonId: me,
-      followUpPersonId: me,
-    });
-
-    const tasks = myTaskListSchema.parse(
-      (await app.inject({ url: myTasksUrl(ws.id), cookies: ana.cookies })).json(),
-    );
-
-    expect(Object.fromEntries(tasks.map((t) => [t.title, t.myRoles]))).toEqual({
-      Gestiono: ['MANAGEMENT'],
-      Todo: ['ACTIVITY', 'MANAGEMENT', 'FOLLOW_UP'],
-    });
   });
 
   it('las hechas antes de doneSince no se incluyen; un doneSince inválido da 400', async () => {
@@ -573,7 +548,7 @@ describe('mi trabajo (HU-28b)', () => {
     await createOk(ana.cookies, ws.id, project.id, {
       title: 'Hecha',
       status: 'DONE',
-      activityPersonId: await personOf(ws.id, ana.user.id),
+      responsiblePersonId: await personOf(ws.id, ana.user.id),
     });
 
     const future = new Date(Date.now() + 60_000).toISOString();
@@ -594,7 +569,7 @@ describe('mi trabajo (HU-28b)', () => {
     const { ana, ws, project } = await setup();
     await createOk(ana.cookies, ws.id, project.id, {
       title: 'X',
-      activityPersonId: await personOf(ws.id, ana.user.id),
+      responsiblePersonId: await personOf(ws.id, ana.user.id),
     });
     await db.project.update({ where: { id: project.id }, data: auditSoftDelete(ana.user.id) });
     const outsider = await userWithSession(db, 'otro@example.com');

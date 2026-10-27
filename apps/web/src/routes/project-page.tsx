@@ -213,7 +213,7 @@ function ProjectKpis({ project, tasks }: { project: Project; tasks: Task[] }) {
   const paused = open.filter((t) => t.status === 'PAUSED').length;
   const overdue = open.filter((t) => t.endDate !== null && t.endDate < today).length;
   // Actividad de alguien que ya no tiene acceso al espacio (HU-25 con personas)
-  const orphan = open.filter((t) => t.activity?.userId && !t.activity.hasAccess).length;
+  const orphan = open.filter((t) => t.responsible?.userId && !t.responsible.hasAccess).length;
   const late = project.endDate !== null && project.endDate < today && project.status !== 'DONE';
 
   const attentionHint =

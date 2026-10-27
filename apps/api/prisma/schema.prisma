@@ -73,9 +73,7 @@ model Person {
   createdBy   User?    @relation("PersonCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy   User?    @relation("PersonUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
 
-  tasksActivity   Task[] @relation("TaskActivity")
-  tasksManagement Task[] @relation("TaskManagement")
-  tasksFollowUp   Task[] @relation("TaskFollowUp")
+  tasksResponsible Task[] @relation("TaskResponsible")
 
   @@unique([workspaceId, name], where: { archivedAt: null })
   @@unique([workspaceId, userId])
@@ -396,34 +394,29 @@ model Project {
 /// Tarea de un proyecto (la "actividad" del prototipo, ADR-0002 §1.1).
 /// Las fases (phaseId) llegan con HU-07.
 model Task {
-  id                 String     @id @default(uuid(7)) @db.Uuid
+  id                  String     @id @default(uuid(7)) @db.Uuid
   /// Redundante con el proyecto a propósito: la frontera de seguridad es el workspace (ADR-0002 §2)
-  workspaceId        String     @map("workspace_id") @db.Uuid
-  workspace          Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  projectId          String     @map("project_id") @db.Uuid
-  project            Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  /// Responsabilidades (HU-35, ADR-0005): una persona del catálogo en cada una, o nadie.
-  /// Actividad (quien la hace) reemplaza al antiguo responsable.
-  activityPersonId   String?    @map("activity_person_id") @db.Uuid
-  activityPerson     Person?    @relation("TaskActivity", fields: [activityPersonId], references: [id], onDelete: Restrict)
-  managementPersonId String?    @map("management_person_id") @db.Uuid
-  managementPerson   Person?    @relation("TaskManagement", fields: [managementPersonId], references: [id], onDelete: Restrict)
-  followUpPersonId   String?    @map("follow_up_person_id") @db.Uuid
-  followUpPerson     Person?    @relation("TaskFollowUp", fields: [followUpPersonId], references: [id], onDelete: Restrict)
-  title              String
+  workspaceId         String     @map("workspace_id") @db.Uuid
+  workspace           Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projectId           String     @map("project_id") @db.Uuid
+  project             Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Responsable (HU-35, corregido por el PO): una persona del catálogo del espacio, o nadie
+  responsiblePersonId String?    @map("responsible_person_id") @db.Uuid
+  responsiblePerson   Person?    @relation("TaskResponsible", fields: [responsiblePersonId], references: [id], onDelete: Restrict)
+  title               String
   /// Tipo del catálogo (HU-22); un tipo en uso no se borra, se archiva
-  typeId             String     @map("type_id") @db.Uuid
-  type               TaskType   @relation(fields: [typeId], references: [id], onDelete: Restrict)
-  status             TaskStatus @default(PENDING)
-  estimatedMinutes   Int?       @map("estimated_minutes")
-  startDate          DateTime?  @map("start_date") @db.Date
-  endDate            DateTime?  @map("end_date") @db.Date
+  typeId              String     @map("type_id") @db.Uuid
+  type                TaskType   @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  status              TaskStatus @default(PENDING)
+  estimatedMinutes    Int?       @map("estimated_minutes")
+  startDate           DateTime?  @map("start_date") @db.Date
+  endDate             DateTime?  @map("end_date") @db.Date
   /// Se rellena al pasar a DONE y se vacía al salir de DONE
-  completedAt        DateTime?  @map("completed_at") @db.Timestamptz(3)
+  completedAt         DateTime?  @map("completed_at") @db.Timestamptz(3)
   /// Inicio real (ADR-0004 §2.1): la primera vez que pasa a En curso o a Hecha; no se borra
-  startedAt          DateTime?  @map("started_at") @db.Timestamptz(3)
+  startedAt           DateTime?  @map("started_at") @db.Timestamptz(3)
   /// Motivo de PAUSED o CANCELLED (obligatorio en esos estados); null en los demás
-  statusReason       String?    @map("status_reason")
+  statusReason        String?    @map("status_reason")
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -437,9 +430,7 @@ model Task {
 
   @@index([projectId])
   @@index([workspaceId])
-  @@index([activityPersonId])
-  @@index([managementPersonId])
-  @@index([followUpPersonId])
+  @@index([responsiblePersonId])
   @@index([typeId])
   @@map("tasks")
 }

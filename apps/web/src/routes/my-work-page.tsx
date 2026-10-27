@@ -15,7 +15,7 @@ import { useCurrentUser } from '@/lib/auth';
 import { todayIso, weekStartIso } from '@/lib/dates';
 import { dueInfo } from '@/lib/due';
 import { myTasksQueryOptions } from '@/lib/my-work';
-import { peopleQueryOptions, TASK_ROLES } from '@/lib/people';
+import { peopleQueryOptions } from '@/lib/people';
 import { projectsQueryOptions } from '@/lib/projects';
 import { TASK_STATUSES, useMoveTask } from '@/lib/tasks';
 import { workspaceQueryOptions } from '@/lib/workspaces';
@@ -172,16 +172,6 @@ function MyTaskRow({
           </Link>
           {task.status !== 'PENDING' && ` · ${TASK_STATUSES[task.status]}`}
         </p>
-        <div className="mt-1 flex flex-wrap gap-1">
-          {TASK_ROLES.filter(({ role }) => task.myRoles.includes(role)).map(({ role, label }) => (
-            <span
-              key={role}
-              className="rounded bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-accent-foreground"
-            >
-              {label}
-            </span>
-          ))}
-        </div>
       </div>
       <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${due.className}`}>
         {due.text}

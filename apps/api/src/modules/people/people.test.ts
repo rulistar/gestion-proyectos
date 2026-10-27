@@ -101,7 +101,7 @@ describe('catálogo de personas (HU-34)', () => {
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/projects/${projectId}/tasks`,
       cookies: ana.cookies,
-      payload: { title: 'T', activityPersonId: anaPerson!.id },
+      payload: { title: 'T', responsiblePersonId: anaPerson!.id },
     });
 
     await patchPerson(ana.cookies, ws.id, anaPerson!.id, { name: 'Rodrigo' });
@@ -116,7 +116,7 @@ describe('catálogo de personas (HU-34)', () => {
       cookies: ana.cookies,
     });
     expect(members.find((m) => m.userId === ana.user.id)?.name).toBe('Rodrigo');
-    expect(taskSchema.array().parse(tasks.json())[0]?.activity?.name).toBe('Rodrigo');
+    expect(taskSchema.array().parse(tasks.json())[0]?.responsible?.name).toBe('Rodrigo');
   });
 
   it('vincular: solo a miembros, y un usuario a una sola persona', async () => {

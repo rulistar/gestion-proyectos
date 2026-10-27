@@ -1,6 +1,6 @@
 # ADR-0005: Catálogo de personas y responsabilidades de la tarea
 
-- **Estado:** Aceptado (2026-10-26)
+- **Estado:** Aceptado (2026-10-26); §2 corregido por el PO el 2026-10-27
 - **Decide:** Product Owner, a propuesta del equipo técnico
 - **Contexto:** En la revisión del Sprint 3 el PO pidió tres cosas:
   - Asignar en cada tarea **tres responsabilidades**: Actividad, Gestión y Seguimiento.
@@ -18,6 +18,14 @@
 | Catálogo | **Por espacio de trabajo.** Lo gestiona el Admin. Una persona puede **vincularse a un usuario del sistema**: así "Rodrigo" es adminrul y sus tareas le aparecen en "Mi trabajo". |
 | Personas del proyecto | Solicitante, Asignado a, PM, Gte. Consultoría y Business partner **se eligen del catálogo**. Lo ya capturado se convierte en personas del catálogo. |
 | Tipos de tarea por contenedor | Además de lo que admite su tipo (HU-22), **cada contenedor puede limitarse más**. Ejemplo: Mtto A usa 3 de los 5 tipos y Mtto B, 2. |
+
+> **Corrección del PO (2026-10-27):** Actividad, Gestión y Seguimiento **son tipos de tarea**, no responsabilidades. La tarea tiene **un solo Responsable**, una persona del catálogo. La sección 2 queda así:
+>
+> - `Task.responsiblePersonId` → `Person`. La migración renombró `activity_person_id` y quitó las columnas de Gestión y Seguimiento.
+> - Los tipos de tarea **Actividad**, **Gestión** y **Seguimiento** se agregan al catálogo de cada espacio, después de Fast track.
+> - "Mi trabajo" muestra las tareas donde soy el Responsable.
+>
+> El catálogo de personas (§1), las personas del proyecto (§3) y los tipos por contenedor (§4) no cambian.
 
 ## Decisión
 

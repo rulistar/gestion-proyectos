@@ -23,7 +23,6 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { initials } from '@/lib/brand';
 import { formatMinutes, todayIso } from '@/lib/dates';
 import { dueInfo } from '@/lib/due';
-import { TASK_ROLES } from '@/lib/people';
 import { taskTypeClass } from '@/lib/task-types';
 import { TASK_STATUSES, useDeleteTask, useMoveTask, useUpdateTask } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
@@ -166,7 +165,7 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
 
   const due = dueInfo(task.endDate, todayIso());
   // Actividad vinculada a una cuenta que ya no es miembro del espacio
-  const lostAccess = Boolean(task.activity?.userId && !task.activity.hasAccess);
+  const lostAccess = Boolean(task.responsible?.userId && !task.responsible.hasAccess);
 
   return (
     <article
@@ -206,16 +205,16 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
         {task.title}
       </p>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {/* Avatar de quien hace la Actividad */}
         <span
           aria-hidden
           className={cn(
             'flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold',
-            task.activity ? 'bg-primary text-primary-foreground' : 'border border-dashed',
+            task.responsible ? 'bg-primary text-primary-foreground' : 'border border-dashed',
           )}
         >
-          {task.activity ? initials(task.activity.name) : '?'}
+          {task.responsible ? initials(task.responsible.name) : '?'}
         </span>
+        <span className="min-w-0 truncate">{task.responsible?.name ?? 'Sin asignar'}</span>
         {task.estimatedMinutes !== null && (
           <span className="shrink-0">· {formatMinutes(task.estimatedMinutes)}</span>
         )}
@@ -227,19 +226,10 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
           </span>
         )}
       </div>
-      {/* Las tres responsabilidades siempre a la vista (HU-35); "—" si no tienen persona */}
-      <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-xs">
-        {TASK_ROLES.map(({ key, label }) => (
-          <div key={key} className="contents">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className="truncate font-medium">{task[key]?.name ?? '—'}</dd>
-          </div>
-        ))}
-      </dl>
       {lostAccess && (
         // HU-25 con personas: la tarea conserva a la persona hasta que alguien la reasigne
         <p className="rounded bg-warning/25 px-2 py-1 text-xs text-warning-foreground">
-          {task.activity!.name} ya no tiene acceso al espacio: reasigna esta tarea
+          {task.responsible!.name} ya no tiene acceso al espacio: reasigna esta tarea
         </p>
       )}
       {task.statusReason && (
