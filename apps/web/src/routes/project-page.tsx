@@ -1,7 +1,7 @@
 import {
   daysRemainingLabel,
   roleHasPermission,
-  type Member,
+  type Person,
   type Project,
   type ProjectType,
   type Task,
@@ -38,7 +38,8 @@ import { projectTypesQueryOptions, SECTIONS, selectableTypes } from '@/lib/proje
 import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
-import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
+import { peopleQueryOptions } from '@/lib/people';
+import { workspaceQueryOptions } from '@/lib/workspaces';
 
 // Es el id de la ruta (no la URL): cuelga de la ruta sin URL "app", de ahí el /app
 const route = getRouteApi('/app/w/$workspaceId/p/$projectId');
@@ -61,7 +62,7 @@ export function ProjectPage() {
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
   const { data: project } = useSuspenseQuery(projectQueryOptions(workspaceId, projectId));
   const { data: tasks } = useSuspenseQuery(tasksQueryOptions(workspaceId, projectId));
-  const { data: members } = useSuspenseQuery(membersQueryOptions(workspaceId));
+  const { data: people } = useSuspenseQuery(peopleQueryOptions(workspaceId));
   const { data: types } = useSuspenseQuery(projectTypesQueryOptions(workspaceId));
   const { data: taskTypes } = useSuspenseQuery(taskTypesQueryOptions(workspaceId));
   const projectType = types.find((type) => type.id === project.type.id);
@@ -171,7 +172,7 @@ export function ProjectPage() {
               workspaceId={workspaceId}
               projectId={projectId}
               tasks={tasks}
-              members={members}
+              people={people}
               canEdit={can('task.update')}
               canDelete={can('task.delete')}
               taskTypeOptions={taskTypeOptions}
@@ -193,7 +194,7 @@ export function ProjectPage() {
       <CreateTaskDialog
         workspaceId={workspaceId}
         projectId={projectId}
-        members={members}
+        people={people}
         types={taskTypeOptions()}
         open={dialog === 'task'}
         onClose={() => setDialog(undefined)}
@@ -209,7 +210,8 @@ function ProjectKpis({ project, tasks }: { project: Project; tasks: Task[] }) {
   const open = tasks.filter((t) => ['PENDING', 'IN_PROGRESS', 'PAUSED'].includes(t.status));
   const paused = open.filter((t) => t.status === 'PAUSED').length;
   const overdue = open.filter((t) => t.endDate !== null && t.endDate < today).length;
-  const orphan = open.filter((t) => !t.assigneeIsMember).length;
+  // Actividad de alguien que ya no tiene acceso al espacio (HU-25 con personas)
+  const orphan = open.filter((t) => t.activity?.userId && !t.activity.hasAccess).length;
   const late = project.endDate !== null && project.endDate < today && project.status !== 'DONE';
 
   const attentionHint =
@@ -442,14 +444,14 @@ function EditProjectDialog({
 function CreateTaskDialog({
   workspaceId,
   projectId,
-  members,
+  people,
   types,
   open,
   onClose,
 }: {
   workspaceId: string;
   projectId: string;
-  members: Member[];
+  people: Person[];
   types: TaskTypeRef[];
   open: boolean;
   onClose: () => void;
@@ -464,7 +466,8 @@ function CreateTaskDialog({
           <DialogDescription>Se agrega al tablero en la columna de su estado.</DialogDescription>
         </DialogHeader>
         <TaskForm
-          members={members}
+          workspaceId={workspaceId}
+          people={people}
           types={types}
           submitLabel="Crear tarea"
           isPending={createTask.isPending}

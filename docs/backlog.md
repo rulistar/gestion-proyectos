@@ -361,11 +361,11 @@ _Como Admin, quiero dar de alta a las personas con las que trabajo, tengan o no 
 
 _Como responsable, quiero indicar en cada tarea quién la hace, quién la gestiona y quién le da seguimiento, para que cada uno sepa qué le toca._
 
-- [ ] Tres campos opcionales, una persona del catálogo cada uno: **Actividad**, **Gestión** y **Seguimiento**. **Actividad reemplaza a Responsable**; la migración pasa cada responsable a Actividad.
-- [ ] En el formulario se elige de la lista de personas y se puede dar de alta una nueva desde ahí.
-- [ ] La tarjeta muestra el avatar de Actividad y, al pasar el cursor, las tres responsabilidades.
-- [ ] **Mi trabajo** muestra las tareas donde aparezco en cualquiera de las tres, con la etiqueta de cuál me toca.
-- [ ] Solo personas activas del espacio (400 si no); al editar se conserva una archivada que ya estaba. Pruebas.
+- [x] Tres campos opcionales, una persona del catálogo cada uno: **Actividad**, **Gestión** y **Seguimiento**. **Actividad reemplaza a Responsable**; la migración pasa cada responsable a Actividad.
+- [x] En el formulario se elige de la lista de personas y se puede dar de alta una nueva desde ahí.
+- [x] La tarjeta muestra el avatar de Actividad y, al pasar el cursor, las tres responsabilidades.
+- [x] **Mi trabajo** muestra las tareas donde aparezco en cualquiera de las tres, con la etiqueta de cuál me toca.
+- [x] Solo personas activas del espacio (400 si no); al editar se conserva una archivada que ya estaba. Pruebas.
 
 #### HU-36 · Personas del proyecto desde el catálogo (3 pts)
 

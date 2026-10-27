@@ -182,7 +182,7 @@ const projectRoute = createRoute({
         projectQueryOptions(params.workspaceId, params.projectId),
       ),
       context.queryClient.ensureQueryData(tasksQueryOptions(params.workspaceId, params.projectId)),
-      context.queryClient.ensureQueryData(membersQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(peopleQueryOptions(params.workspaceId)),
       context.queryClient.ensureQueryData(projectTypesQueryOptions(params.workspaceId)),
       context.queryClient.ensureQueryData(taskTypesQueryOptions(params.workspaceId)),
     ]),

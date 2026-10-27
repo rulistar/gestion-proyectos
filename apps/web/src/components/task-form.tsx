@@ -1,7 +1,7 @@
 import {
   statusNeedsReason,
   taskInputSchema,
-  type Member,
+  type Person,
   type Task,
   type TaskInput,
   type TaskStatus,
@@ -10,9 +10,11 @@ import {
 import { useState, type ReactNode } from 'react';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
+import { QuickAddPerson } from '@/components/quick-add-person';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
+import { selectablePeople, TASK_ROLES } from '@/lib/people';
 import { TASK_STATUSES } from '@/lib/tasks';
 import { useSchemaForm } from '@/lib/use-schema-form';
 
@@ -21,7 +23,9 @@ const FIELDS = [
   'typeId',
   'status',
   'estimatedMinutes',
-  'assigneeId',
+  'activityPersonId',
+  'managementPersonId',
+  'followUpPersonId',
   'startDate',
   'endDate',
   'statusReason',
@@ -30,7 +34,9 @@ const FIELDS = [
 interface TaskFormProps {
   /** Valores iniciales al editar; sin ellos el formulario está vacío (crear) */
   task?: Task;
-  members: Member[];
+  workspaceId: string;
+  /** Catálogo de personas del espacio (HU-34) para Actividad, Gestión y Seguimiento */
+  people: Person[];
   /** Tipos que admite el contenedor (HU-22); el primero es el de por omisión al crear */
   types: TaskTypeRef[];
   submitLabel: string;
@@ -44,7 +50,8 @@ interface TaskFormProps {
 /** Formulario de tarea (HU-08): se valida con el mismo esquema que la API */
 export function TaskForm({
   task,
-  members,
+  workspaceId,
+  people,
   types,
   submitLabel,
   isPending,
@@ -105,21 +112,28 @@ export function TaskForm({
             <FieldError {...form.errorProps('statusReason')} />
           </div>
         )}
-        <div className="grid gap-2">
-          <Label htmlFor={form.idOf('assigneeId')}>Responsable</Label>
-          <NativeSelect {...form.field('assigneeId')} defaultValue={task?.assigneeId ?? ''}>
-            <option value="">Sin asignar</option>
-            {/* Se puede conservar al responsable que ya no es miembro, o reasignar (HU-25) */}
-            {task?.assigneeId && !task.assigneeIsMember && (
-              <option value={task.assigneeId}>{task.assigneeName} (ya no es miembro)</option>
-            )}
-            {members.map((member) => (
-              <option key={member.userId} value={member.userId}>
-                {member.name}
-              </option>
-            ))}
-          </NativeSelect>
-          <FieldError {...form.errorProps('assigneeId')} />
+        {/* Responsabilidades (HU-35): una persona del catálogo en cada una, o nadie */}
+        {TASK_ROLES.map(({ field, key, label }) => {
+          const current = task?.[key] ?? null;
+          return (
+            <div key={field} className="grid gap-2">
+              <Label htmlFor={form.idOf(field)}>{label}</Label>
+              <NativeSelect {...form.field(field)} defaultValue={current?.id ?? ''}>
+                <option value="">Sin asignar</option>
+                {selectablePeople(people, current?.id).map((person) => (
+                  <option key={person.id} value={person.id}>
+                    {person.name}
+                    {person.archived ? ' (archivada)' : ''}
+                    {person.userId && !person.hasAccess ? ' (sin acceso)' : ''}
+                  </option>
+                ))}
+              </NativeSelect>
+              <FieldError {...form.errorProps(field)} />
+            </div>
+          );
+        })}
+        <div className="sm:col-span-2 lg:col-span-4">
+          <QuickAddPerson workspaceId={workspaceId} />
         </div>
         <div className="grid gap-2">
           <Label htmlFor={form.idOf('estimatedMinutes')}>Minutos estimados</Label>

@@ -1,7 +1,7 @@
 import { myTaskListSchema, taskListSchema, taskSchema, type MembershipRole } from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
-import { auditSoftDelete } from '../../db/audit.js';
+import { auditCreate, auditSoftDelete } from '../../db/audit.js';
 import { createTestDb, resetDb } from '../../test/test-db.js';
 import { addMember, userWithSession } from '../../test/users.js';
 import { createProject } from '../projects/projects.service.js';
@@ -54,6 +54,17 @@ async function setup() {
     return user;
   }
   return { ana, ws, project, withRole };
+}
+
+/** Persona del catálogo vinculada a un usuario (HU-34); se crea si el miembro no la tiene */
+async function personOf(workspaceId: string, userId: string) {
+  const found = await db.person.findFirst({ where: { workspaceId, userId } });
+  if (found) return found.id;
+  const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
+  const person = await db.person.create({
+    data: { workspaceId, userId, name: user.name, ...auditCreate(null) },
+  });
+  return person.id;
 }
 
 /** ID de un tipo de tarea del catálogo del espacio, por nombre (HU-22) */
@@ -164,7 +175,7 @@ describe('POST .../tasks (HU-08)', () => {
     const task = await createOk(ana.cookies, ws.id, project.id, {
       title: '  Ver la unidad 1 ',
       estimatedMinutes: '45',
-      assigneeId: '',
+      activityPersonId: '',
       endDate: '2026-11-20',
     });
 
@@ -176,9 +187,9 @@ describe('POST .../tasks (HU-08)', () => {
       type: { id: task.type.id, name: 'Tarea', expedited: false },
       status: 'PENDING',
       estimatedMinutes: 45,
-      assigneeId: null,
-      assigneeName: null,
-      assigneeIsMember: true,
+      activity: null,
+      management: null,
+      followUp: null,
       startDate: null,
       endDate: '2026-11-20',
       completedAt: null,
@@ -189,26 +200,36 @@ describe('POST .../tasks (HU-08)', () => {
     expect(row).toMatchObject({ workspaceId: ws.id, createdById: ana.user.id });
   });
 
-  it('asigna la tarea a un miembro del workspace', async () => {
+  it('asigna Actividad, Gestión y Seguimiento a personas del catálogo (HU-35)', async () => {
     const { ana, ws, project, withRole } = await setup();
     const miembro = await withRole('miembro@example.com', 'MEMBER');
+    const laura = await db.person.create({
+      data: { workspaceId: ws.id, name: 'Laura (sin cuenta)', ...auditCreate(null) },
+    });
 
     const task = await createOk(ana.cookies, ws.id, project.id, {
       title: 'Revisar',
       typeId: await typeIdOf(ws.id, 'Revisión'),
-      assigneeId: miembro.user.id,
+      activityPersonId: await personOf(ws.id, miembro.user.id),
+      managementPersonId: await personOf(ws.id, ana.user.id),
+      followUpPersonId: laura.id,
     });
 
-    expect(task).toMatchObject({ type: { name: 'Revisión' }, assigneeId: miembro.user.id });
+    expect(task).toMatchObject({
+      type: { name: 'Revisión' },
+      activity: { name: 'miembro@example.com', hasAccess: true },
+      management: { name: 'ana@example.com' },
+      followUp: { name: 'Laura (sin cuenta)', userId: null, hasAccess: false },
+    });
   });
 
-  it('rechaza un responsable que no es miembro del workspace (400)', async () => {
+  it('rechaza una persona de otro espacio (400)', async () => {
     const { ana, ws, project } = await setup();
-    const extraño = await userWithSession(db, 'extrano@example.com');
+    const other = await createWorkspace(db, ana.user.id, { name: 'Otro' });
 
     const response = await create(ana.cookies, ws.id, project.id, {
       title: 'X',
-      assigneeId: extraño.user.id,
+      followUpPersonId: await personOf(other.id, ana.user.id),
     });
 
     expect(response.statusCode).toBe(400);
@@ -299,7 +320,7 @@ describe('mover y editar tareas', () => {
         title: 'Editada',
         typeId: await typeIdOf(ws.id, 'Reunión'),
         estimatedMinutes: 30,
-        assigneeId: miembro.user.id,
+        activityPersonId: await personOf(ws.id, miembro.user.id),
       },
     });
 
@@ -308,7 +329,7 @@ describe('mover y editar tareas', () => {
       title: 'Editada',
       type: { name: 'Reunión' },
       estimatedMinutes: 30,
-      assigneeId: miembro.user.id,
+      activity: { name: 'miembro@example.com' },
     });
     const row = await db.task.findUniqueOrThrow({ where: { id: task.id } });
     expect(row).toMatchObject({ createdById: ana.user.id, updatedById: miembro.user.id });
@@ -427,13 +448,14 @@ describe('pausar y cancelar con motivo (HU-24)', () => {
   });
 });
 
-describe('responsable que ya no es miembro (HU-25)', () => {
-  it('la tarea conserva su nombre marcado como ex miembro; se puede editar sin reasignar', async () => {
+describe('persona que ya no es miembro (HU-25 con personas, HU-35)', () => {
+  it('la tarea conserva a la persona, marcada sin acceso; se puede editar sin reasignar', async () => {
     const { ana, ws, project, withRole } = await setup();
     const luis = await withRole('luis@example.com', 'MEMBER');
+    const luisPerson = await personOf(ws.id, luis.user.id);
     const task = await createOk(ana.cookies, ws.id, project.id, {
       title: 'De Luis',
-      assigneeId: luis.user.id,
+      activityPersonId: luisPerson,
     });
 
     await app.inject({
@@ -448,32 +470,41 @@ describe('responsable que ya no es miembro (HU-25)', () => {
       method: 'PUT',
       url: `${tasksUrl(ws.id, project.id)}/${task.id}`,
       cookies: ana.cookies,
-      payload: { title: 'Renombrada', assigneeId: luis.user.id },
+      payload: { title: 'Renombrada', activityPersonId: luisPerson },
     });
 
-    expect(list[0]).toMatchObject({
-      assigneeId: luis.user.id,
-      assigneeName: 'luis@example.com',
-      assigneeIsMember: false,
+    expect(list[0]?.activity).toMatchObject({
+      id: luisPerson,
+      name: 'luis@example.com',
+      hasAccess: false,
     });
     expect(edited.statusCode).toBe(200);
   });
 
-  it('no se le pueden asignar tareas nuevas (400)', async () => {
-    const { ana, ws, project, withRole } = await setup();
-    const luis = await withRole('luis@example.com', 'MEMBER');
-    await app.inject({
-      method: 'DELETE',
-      url: `/api/v1/workspaces/${ws.id}/members/${luis.user.id}`,
-      cookies: ana.cookies,
+  it('una persona archivada no se asigna a tareas nuevas (400), pero se conserva al editar', async () => {
+    const { ana, ws, project } = await setup();
+    const laura = await db.person.create({
+      data: { workspaceId: ws.id, name: 'Laura', ...auditCreate(null) },
     });
+    const task = await createOk(ana.cookies, ws.id, project.id, {
+      title: 'Con Laura',
+      managementPersonId: laura.id,
+    });
+    await db.person.update({ where: { id: laura.id }, data: { archivedAt: new Date() } });
 
-    const response = await create(ana.cookies, ws.id, project.id, {
+    const fresh = await create(ana.cookies, ws.id, project.id, {
       title: 'Nueva',
-      assigneeId: luis.user.id,
+      managementPersonId: laura.id,
+    });
+    const kept = await app.inject({
+      method: 'PUT',
+      url: `${tasksUrl(ws.id, project.id)}/${task.id}`,
+      cookies: ana.cookies,
+      payload: { title: 'Sigue con Laura', managementPersonId: laura.id },
     });
 
-    expect(response.statusCode).toBe(400);
+    expect(fresh.statusCode).toBe(400);
+    expect(kept.statusCode).toBe(200);
   });
 });
 
@@ -484,7 +515,7 @@ describe('mi trabajo (HU-28b)', () => {
     const { ana, ws, project, withRole } = await setup();
     const luis = await withRole('luis@example.com', 'MEMBER');
     const url = tasksUrl(ws.id, project.id);
-    const mine = { assigneeId: ana.user.id };
+    const mine = { activityPersonId: await personOf(ws.id, ana.user.id) };
     await createOk(ana.cookies, ws.id, project.id, { title: 'Pendiente', ...mine });
     await createOk(ana.cookies, ws.id, project.id, { title: 'Hecha', status: 'DONE', ...mine });
     await createOk(ana.cookies, ws.id, project.id, {
@@ -493,7 +524,10 @@ describe('mi trabajo (HU-28b)', () => {
       statusReason: 'Ya no aplica',
       ...mine,
     });
-    await createOk(ana.cookies, ws.id, project.id, { title: 'De Luis', assigneeId: luis.user.id });
+    await createOk(ana.cookies, ws.id, project.id, {
+      title: 'De Luis',
+      activityPersonId: await personOf(ws.id, luis.user.id),
+    });
     await createOk(ana.cookies, ws.id, project.id, { title: 'Sin asignar' });
     const trashed = await createOk(ana.cookies, ws.id, project.id, { title: 'Borrada', ...mine });
     await app.inject({ method: 'DELETE', url: `${url}/${trashed.id}`, cookies: ana.cookies });
@@ -504,6 +538,34 @@ describe('mi trabajo (HU-28b)', () => {
     const tasks = myTaskListSchema.parse(response.json());
     expect(tasks.map((t) => t.title).sort()).toEqual(['Hecha', 'Pendiente']);
     expect(tasks[0]!.projectName).toBe('Curso');
+    expect(tasks[0]!.myRoles).toEqual(['ACTIVITY']);
+  });
+
+  it('incluye las tareas donde estoy en Gestión o Seguimiento, con la etiqueta de cada una', async () => {
+    const { ana, ws, project, withRole } = await setup();
+    const luis = await withRole('luis@example.com', 'MEMBER');
+    const me = await personOf(ws.id, ana.user.id);
+    const other = await personOf(ws.id, luis.user.id);
+    await createOk(ana.cookies, ws.id, project.id, {
+      title: 'Gestiono',
+      activityPersonId: other,
+      managementPersonId: me,
+    });
+    await createOk(ana.cookies, ws.id, project.id, {
+      title: 'Todo',
+      activityPersonId: me,
+      managementPersonId: me,
+      followUpPersonId: me,
+    });
+
+    const tasks = myTaskListSchema.parse(
+      (await app.inject({ url: myTasksUrl(ws.id), cookies: ana.cookies })).json(),
+    );
+
+    expect(Object.fromEntries(tasks.map((t) => [t.title, t.myRoles]))).toEqual({
+      Gestiono: ['MANAGEMENT'],
+      Todo: ['ACTIVITY', 'MANAGEMENT', 'FOLLOW_UP'],
+    });
   });
 
   it('las hechas antes de doneSince no se incluyen; un doneSince inválido da 400', async () => {
@@ -511,7 +573,7 @@ describe('mi trabajo (HU-28b)', () => {
     await createOk(ana.cookies, ws.id, project.id, {
       title: 'Hecha',
       status: 'DONE',
-      assigneeId: ana.user.id,
+      activityPersonId: await personOf(ws.id, ana.user.id),
     });
 
     const future = new Date(Date.now() + 60_000).toISOString();
@@ -530,7 +592,10 @@ describe('mi trabajo (HU-28b)', () => {
 
   it('las tareas de un proyecto en la papelera no aparecen; quien no es miembro recibe 404', async () => {
     const { ana, ws, project } = await setup();
-    await createOk(ana.cookies, ws.id, project.id, { title: 'X', assigneeId: ana.user.id });
+    await createOk(ana.cookies, ws.id, project.id, {
+      title: 'X',
+      activityPersonId: await personOf(ws.id, ana.user.id),
+    });
     await db.project.update({ where: { id: project.id }, data: auditSoftDelete(ana.user.id) });
     const outsider = await userWithSession(db, 'otro@example.com');
 

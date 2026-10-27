@@ -141,6 +141,24 @@ export async function updatePerson(
 }
 
 /**
+ * ¿Todas las personas pedidas pueden asignarse en el espacio? Deben ser activas del catálogo; las
+ * que la tarea ya tenía (`kept`) valen aunque estén archivadas (HU-35)
+ */
+export async function assignablePeople(
+  db: Db,
+  workspaceId: string,
+  requested: (string | null)[],
+  kept: (string | null)[] = [],
+): Promise<boolean> {
+  const ids = [
+    ...new Set(requested.filter((id): id is string => id !== null && !kept.includes(id))),
+  ];
+  if (ids.length === 0) return true;
+  const found = await db.person.count({ where: { id: { in: ids }, workspaceId, ...activePerson } });
+  return found === ids.length;
+}
+
+/**
  * Nombre que se muestra de cada usuario en el espacio (ADR-0005 §1): el de su persona vinculada
  * ("Rodrigo") o, si no tiene, el de su cuenta
  */

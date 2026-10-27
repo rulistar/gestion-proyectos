@@ -1,6 +1,6 @@
 import {
   statusNeedsReason,
-  type Member,
+  type Person,
   type Task,
   type TaskStatus,
   type TaskTypeRef,
@@ -23,6 +23,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { initials } from '@/lib/brand';
 import { formatMinutes, todayIso } from '@/lib/dates';
 import { dueInfo } from '@/lib/due';
+import { TASK_ROLES } from '@/lib/people';
 import { taskTypeClass } from '@/lib/task-types';
 import { TASK_STATUSES, useDeleteTask, useMoveTask, useUpdateTask } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
@@ -31,7 +32,7 @@ interface TaskBoardProps {
   workspaceId: string;
   projectId: string;
   tasks: Task[];
-  members: Member[];
+  people: Person[];
   /** Tipos de tarea que se pueden elegir al editar (HU-22), con el actual de la tarea */
   taskTypeOptions: (currentId: string) => TaskTypeRef[];
   /** Si el rol permite crear y editar tareas (la API lo vuelve a comprobar) */
@@ -48,7 +49,7 @@ export function TaskBoard({
   workspaceId,
   projectId,
   tasks,
-  members,
+  people,
   taskTypeOptions,
   canEdit,
   canDelete,
@@ -75,7 +76,7 @@ export function TaskBoard({
           task={editing}
           workspaceId={workspaceId}
           projectId={projectId}
-          members={members}
+          people={people}
           types={taskTypeOptions(editing.type.id)}
           onClose={() => setEditingId(undefined)}
         />
@@ -164,6 +165,11 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
   }
 
   const due = dueInfo(task.endDate, todayIso());
+  const roles = TASK_ROLES.map(({ key, label }) => `${label}: ${task[key]?.name ?? '—'}`).join(
+    '\n',
+  );
+  // Actividad vinculada a una cuenta que ya no es miembro del espacio
+  const lostAccess = Boolean(task.activity?.userId && !task.activity.hasAccess);
 
   return (
     <article
@@ -203,16 +209,20 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
         {task.title}
       </p>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {/* Avatar de quien hace la Actividad; al pasar el cursor, las tres responsabilidades */}
         <span
           aria-hidden
+          title={roles}
           className={cn(
             'flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold',
-            task.assigneeName ? 'bg-primary text-primary-foreground' : 'border border-dashed',
+            task.activity ? 'bg-primary text-primary-foreground' : 'border border-dashed',
           )}
         >
-          {task.assigneeName ? initials(task.assigneeName) : '?'}
+          {task.activity ? initials(task.activity.name) : '?'}
         </span>
-        <span className="min-w-0 truncate">{task.assigneeName ?? 'Sin asignar'}</span>
+        <span className="min-w-0 truncate" title={roles}>
+          {task.activity?.name ?? 'Sin asignar'}
+        </span>
         {task.estimatedMinutes !== null && (
           <span className="shrink-0">· {formatMinutes(task.estimatedMinutes)}</span>
         )}
@@ -224,10 +234,17 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
           </span>
         )}
       </div>
-      {!task.assigneeIsMember && (
-        // Decisión del PO (HU-25): la tarea conserva el nombre hasta que alguien la reasigne
+      {(task.management || task.followUp) && (
+        <p className="text-xs text-muted-foreground">
+          {task.management && <>Gestión: {task.management.name}</>}
+          {task.management && task.followUp && ' · '}
+          {task.followUp && <>Seguimiento: {task.followUp.name}</>}
+        </p>
+      )}
+      {lostAccess && (
+        // HU-25 con personas: la tarea conserva a la persona hasta que alguien la reasigne
         <p className="rounded bg-warning/25 px-2 py-1 text-xs text-warning-foreground">
-          {task.assigneeName} ya no es miembro: reasigna esta tarea
+          {task.activity!.name} ya no tiene acceso al espacio: reasigna esta tarea
         </p>
       )}
       {task.statusReason && (
@@ -351,7 +368,7 @@ interface EditTaskPanelProps {
   task: Task;
   workspaceId: string;
   projectId: string;
-  members: Member[];
+  people: Person[];
   types: TaskTypeRef[];
   onClose: () => void;
 }
@@ -364,7 +381,7 @@ function EditTaskPanel({
   task,
   workspaceId,
   projectId,
-  members,
+  people,
   types,
   onClose,
 }: EditTaskPanelProps) {
@@ -379,7 +396,8 @@ function EditTaskPanel({
         </DialogHeader>
         <TaskForm
           task={task}
-          members={members}
+          workspaceId={workspaceId}
+          people={people}
           types={types}
           submitLabel="Guardar"
           isPending={update.isPending}
