@@ -104,6 +104,8 @@ describe('countTaskActivity (contenedores Continuos y Por demanda, HU-21)', () =
       openTasks: 3,
       overdueTasks: 1,
       doneThisMonth: 1,
+      // Las Hechas y Canceladas no cuentan, aunque su fecha sea anterior
+      nextDueDate: '2026-10-27',
     });
   });
 });

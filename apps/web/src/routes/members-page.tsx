@@ -85,7 +85,7 @@ export function MembersPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <CardTitle>Miembros</CardTitle>
           <CardDescription>{members.length} en este espacio de trabajo</CardDescription>
         </CardHeader>
