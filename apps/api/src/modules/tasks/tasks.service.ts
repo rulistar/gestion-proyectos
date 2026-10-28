@@ -4,6 +4,7 @@ import {
   type Task,
   type TaskInput,
   type TaskStatus,
+  type WorkspaceTask,
 } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
@@ -135,6 +136,29 @@ export async function listMyTasks(
     orderBy: [{ endDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }],
   });
   return rows.map(({ project, ...row }) => ({ ...toTask(row), projectName: project.name }));
+}
+
+/**
+ * Todas las tareas del espacio con su contenedor (HU-39, vista "Tareas"), de contenedores que no
+ * están en la papelera; por fecha de fin (sin fecha al final). Los filtros se aplican en la web.
+ */
+export async function listWorkspaceTasks(db: Db, workspaceId: string): Promise<WorkspaceTask[]> {
+  const rows = await db.task.findMany({
+    where: { workspaceId, ...notDeleted, project: notDeleted },
+    select: {
+      ...taskSelect,
+      project: {
+        select: {
+          id: true,
+          name: true,
+          folio: true,
+          type: { select: { id: true, name: true, behavior: true } },
+        },
+      },
+    },
+    orderBy: [{ endDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }],
+  });
+  return rows.map(({ project, ...row }) => ({ ...toTask(row), project }));
 }
 
 /** El proyecto ya se comprobó (existe en el workspace y no está borrado) */

@@ -79,28 +79,29 @@
 | 24 | HU-38 | Folios automáticos: PY, MT y ACT + AAMM + "-" + contador mensual por espacio | Proyectos | 3 | 🔴 | 4 |
 | 25 | HU-32 | Mover un proyecto, mantenimiento o tarea a otro espacio de trabajo (solo Admin) | Workspaces | 5 | 🔴 | 4 |
 | 26 | HU-09 | Tabla de proyectos con filtros y orden por columna | Vistas | 5 | 🔴 | 4 |
-| 27 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
-| 28 | HU-26 | Muchas tareas: vista Lista, filtros y columnas plegables | Vistas | 5 | 🔴 | 5 |
-| 29 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 5 |
-| 30 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
-| 31 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
-| 32 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 5 |
-| 33 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
-| 34 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
-| 35 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 36 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 37 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 38 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 39 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
-| 40 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
-| 41 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 42 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 43 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 44 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 45 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 46 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 47 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 48 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 27 | HU-39 | Vista "Tareas": todas las tareas del espacio con filtros y orden | Vistas | 5 | 🔴 | 4 |
+| 28 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
+| 29 | HU-26 | Muchas tareas: vista Lista, filtros y columnas plegables | Vistas | 5 | 🔴 | 5 |
+| 30 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 5 |
+| 31 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
+| 32 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
+| 33 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 5 |
+| 34 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
+| 35 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 36 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
+| 37 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 38 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 39 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 40 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
+| 41 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 42 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 43 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 44 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 45 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 46 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 47 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 48 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 49 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -417,6 +418,17 @@ _Como miembro, quiero filtrar y ordenar los proyectos, para encontrar rápido lo
 - [x] Los filtros y el orden viven en la URL (ADR-0003): un enlace compartido abre la misma vista.
 - [x] Mensaje "Ningún proyecto coincide con los filtros" y botón "Limpiar filtros".
 - [x] Filtro por tipo (cuando la sección tiene más de uno, p. ej. Mtto correctivo y evolutivo). La lógica son funciones puras con pruebas (shared).
+
+#### HU-39 · Vista "Tareas" con filtros (5 pts)
+
+_Como miembro, quiero ver todas las tareas del espacio y filtrarlas como los proyectos, para saber qué vence y quién lo tiene sin entrar proyecto por proyecto._ Pedido del PO al revisar HU-09 (2026-10-27): "Fin hasta" de la lista de proyectos sigue siendo la fecha de fin del contenedor, y la consulta de tareas va en su propia vista.
+
+- [x] Opción **Tareas** en el menú lateral (entre Actividades y Gantt): las tareas de proyectos, mantenimientos y actividades, con su contenedor (folio y nombre, enlace al proyecto).
+- [x] Filtros: texto (título, tipo, responsable, folio o nombre del contenedor), sección, contenedor, tipo de tarea, responsable (o "Sin asignar"), estado, "fin hasta" (fecha de fin **de la tarea**) y "Solo vencidas".
+- [x] Hechas y Canceladas **ocultas por defecto**, con la casilla "Mostrar hechas y canceladas". Las Fast track (⚡) primero si no se eligió orden.
+- [x] Orden por cualquier columna; filtros y orden en la URL, como HU-09.
+- [x] Clic en la tarea abre su edición (quien tiene permiso), la misma ventana del tablero.
+- [x] API `GET /workspaces/:id/tasks` con permiso de lectura; sin lo que está en la papelera. Pruebas en shared y en la API.
 
 #### HU-07 · Fases (8 pts)
 

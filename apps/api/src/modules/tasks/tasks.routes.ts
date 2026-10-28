@@ -16,6 +16,7 @@ import {
   InvalidTaskTypeError,
   listMyTasks,
   listTasks,
+  listWorkspaceTasks,
   softDeleteTask,
   updateTask,
   updateTaskStatus,
@@ -90,6 +91,13 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
         : new Date(Date.now() - WEEK_MS);
       return listMyTasks(app.db, request.membership!.workspaceId, request.auth!.userId, doneSince);
     },
+  );
+
+  // Vista "Tareas" (HU-39): todas las del espacio, con su contenedor
+  app.get(
+    '/workspaces/:workspaceId/tasks',
+    { preHandler: requirePermission('project.read') },
+    async (request) => listWorkspaceTasks(app.db, request.membership!.workspaceId),
   );
 
   app.get(BASE, { preHandler: requirePermission('project.read') }, async (request, reply) => {

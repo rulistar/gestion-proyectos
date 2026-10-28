@@ -1,4 +1,10 @@
-import { myTaskListSchema, taskListSchema, taskSchema, type MembershipRole } from '@gestion/shared';
+import {
+  myTaskListSchema,
+  taskListSchema,
+  taskSchema,
+  workspaceTaskListSchema,
+  type MembershipRole,
+} from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { auditCreate, auditSoftDelete } from '../../db/audit.js';
@@ -576,6 +582,61 @@ describe('mi trabajo (HU-28b)', () => {
 
     const mine = await app.inject({ url: myTasksUrl(ws.id), cookies: ana.cookies });
     const theirs = await app.inject({ url: myTasksUrl(ws.id), cookies: outsider.cookies });
+
+    expect(mine.json()).toEqual([]);
+    expect(theirs.statusCode).toBe(404);
+  });
+});
+
+describe('vista Tareas (HU-39)', () => {
+  const allTasksUrl = (workspaceId: string) => `/api/v1/workspaces/${workspaceId}/tasks`;
+
+  it('devuelve las tareas de todos los contenedores con su proyecto, por fecha de fin', async () => {
+    const { ana, ws, project, withRole } = await setup();
+    const lector = await withRole('lector@example.com', 'VIEWER');
+    const other = await createProject(db, ana.user.id, ws.id, {
+      name: 'ERP',
+      ...emptyProject,
+      folio: 'PY2610-009',
+    });
+    await createOk(ana.cookies, ws.id, project.id, { title: 'Sin fecha' });
+    await createOk(ana.cookies, ws.id, other.id, { title: 'Tarde', endDate: '2026-11-20' });
+    await createOk(ana.cookies, ws.id, project.id, {
+      title: 'Hecha',
+      status: 'DONE',
+      endDate: '2026-11-01',
+    });
+    const trashed = await createOk(ana.cookies, ws.id, other.id, { title: 'Borrada' });
+    await app.inject({
+      method: 'DELETE',
+      url: `${tasksUrl(ws.id, other.id)}/${trashed.id}`,
+      cookies: ana.cookies,
+    });
+
+    // También un Lector la puede consultar
+    const response = await app.inject({ url: allTasksUrl(ws.id), cookies: lector.cookies });
+
+    expect(response.statusCode).toBe(200);
+    const tasks = workspaceTaskListSchema.parse(response.json());
+    expect(tasks.map((t) => t.title)).toEqual(['Hecha', 'Tarde', 'Sin fecha']);
+    expect(tasks[1]!.project).toMatchObject({ name: 'ERP', folio: 'PY2610-009' });
+    expect(tasks[1]!.project.type.behavior).toBe('WITH_END');
+  });
+
+  it('no incluye contenedores en la papelera ni de otro espacio; quien no es miembro recibe 404', async () => {
+    const { ana, ws, project } = await setup();
+    await createOk(ana.cookies, ws.id, project.id, { title: 'X' });
+    await db.project.update({ where: { id: project.id }, data: auditSoftDelete(ana.user.id) });
+    const otherWs = await createWorkspace(db, ana.user.id, { name: 'Otro' });
+    const foreign = await createProject(db, ana.user.id, otherWs.id, {
+      name: 'Ajeno',
+      ...emptyProject,
+    });
+    await createOk(ana.cookies, otherWs.id, foreign.id, { title: 'De otro espacio' });
+    const outsider = await userWithSession(db, 'otro@example.com');
+
+    const mine = await app.inject({ url: allTasksUrl(ws.id), cookies: ana.cookies });
+    const theirs = await app.inject({ url: allTasksUrl(ws.id), cookies: outsider.cookies });
 
     expect(mine.json()).toEqual([]);
     expect(theirs.statusCode).toBe(404);

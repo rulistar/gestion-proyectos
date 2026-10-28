@@ -61,7 +61,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
-                        (/, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo,
+                        (/, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas,
                         .../miembros, .../personas, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
@@ -99,7 +99,7 @@ apps/
                           GET acepta ?today=&monthStart= (fecha local) para las métricas por comportamiento
       tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status, DELETE (HU-08);
                           Responsable = persona del catálogo (HU-35, ADR-0005);
-                          GET /workspaces/:id/my-tasks = mis tareas (HU-28b)
+                          GET /workspaces/:id/my-tasks = mis tareas (HU-28b); GET /workspaces/:id/tasks = todas (HU-39)
       trash/              papelera, solo Admin (HU-15): GET /trash, POST /trash/:kind/:id/restore, DELETE /trash/:kind/:id
       invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez
       invitations/accept.* públicas: POST /invitations/preview|register|accept (HU-01); token en el cuerpo
@@ -117,6 +117,7 @@ packages/
     src/schemas/permissions.ts  catálogo de permisos por rol (roleHasPermission)
     src/schemas/progress.ts     reglas de avance (summarizeTasks, daysRemainingLabel; HU-06), con pruebas
     src/schemas/project-filters.ts  filtros y orden de la lista de contenedores (HU-09), en la URL; con pruebas
+    src/schemas/task-filters.ts     vista "Tareas": tareas del espacio, filtros y orden (HU-39); con pruebas
     src/schemas/my-work.ts      groupMyWork: agrupa mis tareas por fecha de fin (HU-28b), con pruebas
     tsconfig.build.json         build sin los *.test.ts
 docs/                 acta, ADRs, backlog (no los reformatea Prettier)

@@ -2,6 +2,7 @@ import { roleHasPermission } from '@gestion/shared';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import {
   ChartGantt,
+  ClipboardList,
   Contact,
   FolderKanban,
   Inbox,
@@ -174,6 +175,17 @@ export function AppSidebar() {
           >
             <Inbox aria-hidden />
             Actividades
+          </Link>
+        )}
+        {current && (
+          <Link
+            to="/w/$workspaceId/tareas"
+            params={{ workspaceId: current.id }}
+            className={itemClass}
+            activeProps={{ className: 'bg-accent text-accent-foreground', 'aria-current': 'page' }}
+          >
+            <ClipboardList aria-hidden />
+            Tareas
           </Link>
         )}
         <SoonItem icon={ChartGantt} label="Gantt" story="HU-27" />
