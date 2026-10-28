@@ -1,4 +1,10 @@
-import { memberListSchema, workspaceListSchema, workspaceSummarySchema } from '@gestion/shared';
+import {
+  memberListSchema,
+  PERMISSION_TEMPLATES,
+  workspaceDetailSchema,
+  workspaceListSchema,
+  workspaceSummarySchema,
+} from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 import { auditSoftDelete } from '../../db/audit.js';
@@ -153,12 +159,12 @@ describe('GET /workspaces/:workspaceId/members', () => {
 
     // Luis es Lector: ve los nombres (para asignar tareas), pero no los correos
     expect(memberListSchema.parse(response.json())).toEqual([
-      { userId: ana.user.id, name: 'ana@example.com', email: null, role: 'ADMIN' },
-      { userId: luis.user.id, name: 'luis@example.com', email: null, role: 'VIEWER' },
+      { userId: ana.user.id, name: 'ana@example.com', email: null, role: 'ADMIN', matrix: null },
+      { userId: luis.user.id, name: 'luis@example.com', email: null, role: 'VIEWER', matrix: null },
     ]);
   });
 
-  it('el Admin del espacio sí ve los correos', async () => {
+  it('el Admin del espacio sí ve los correos y la matriz (HU-17b)', async () => {
     const ana = await userWithSession('ana@example.com');
     const ws = await setupWs(ana, 'Equipo');
 
@@ -168,7 +174,13 @@ describe('GET /workspaces/:workspaceId/members', () => {
     });
 
     expect(memberListSchema.parse(response.json())).toEqual([
-      { userId: ana.user.id, name: 'ana@example.com', email: 'ana@example.com', role: 'ADMIN' },
+      {
+        userId: ana.user.id,
+        name: 'ana@example.com',
+        email: 'ana@example.com',
+        role: 'ADMIN',
+        matrix: { permissions: PERMISSION_TEMPLATES.ADMIN, selectedProjectIds: [] },
+      },
     ]);
   });
 });
@@ -216,7 +228,7 @@ describe('PATCH /workspaces/:workspaceId (renombrar)', () => {
 });
 
 describe('GET /workspaces/:workspaceId', () => {
-  it('devuelve el workspace con mi rol en él', async () => {
+  it('devuelve el workspace con mi rol y mi matriz (ADR-0006)', async () => {
     const ana = await userWithSession('ana@example.com');
     const luis = await userWithSession('luis@example.com');
     const ws = await setupWs(ana, 'Equipo');
@@ -225,8 +237,21 @@ describe('GET /workspaces/:workspaceId', () => {
     const asAna = await app.inject({ url: `/api/v1/workspaces/${ws.id}`, cookies: ana.cookies });
     const asLuis = await app.inject({ url: `/api/v1/workspaces/${ws.id}`, cookies: luis.cookies });
 
-    expect(asAna.json()).toEqual({ id: ws.id, name: 'Equipo', role: 'ADMIN' });
-    expect(asLuis.json()).toEqual({ id: ws.id, name: 'Equipo', role: 'VIEWER' });
+    expect(workspaceDetailSchema.parse(asAna.json())).toMatchObject({
+      id: ws.id,
+      name: 'Equipo',
+      role: 'ADMIN',
+      access: { userId: ana.user.id, permissions: PERMISSION_TEMPLATES.ADMIN },
+    });
+    expect(workspaceDetailSchema.parse(asLuis.json())).toMatchObject({
+      role: 'VIEWER',
+      access: {
+        userId: luis.user.id,
+        personId: null,
+        permissions: PERMISSION_TEMPLATES.VIEWER,
+        selectedProjectIds: [],
+      },
+    });
   });
 
   it('responde 404 a quien no es miembro y a un ID no válido (no revela si existe)', async () => {
@@ -281,7 +306,7 @@ describe('Admin del sistema (ve y entra a todos los espacios)', () => {
       payload: { email: 'nuevo@example.com', role: 'MEMBER' },
     });
 
-    expect(detail.json()).toEqual({ id: deAna.id, name: 'De Ana', role: 'ADMIN' });
+    expect(detail.json()).toMatchObject({ id: deAna.id, name: 'De Ana', role: 'ADMIN' });
     expect(invite.statusCode).toBe(201);
   });
 

@@ -7,12 +7,14 @@ const linux = {
   id: 'p1',
   name: 'Certificación Linux',
   folio: 'PY2610-001',
+  createdById: null,
   type: { id: 't-proyecto', name: 'Proyecto', behavior: 'WITH_END' as const },
 };
 const erp = {
   id: 'p2',
   name: 'ERP',
   folio: 'MT2610-001',
+  createdById: null,
   type: { id: 't-mtto', name: 'Mtto correctivo', behavior: 'ONGOING' as const },
 };
 
@@ -33,6 +35,7 @@ function task(overrides: Partial<WorkspaceTask>): WorkspaceTask {
     status: 'PENDING',
     estimatedMinutes: null,
     responsible: null,
+    createdById: null,
     startDate: null,
     endDate: null,
     statusReason: null,

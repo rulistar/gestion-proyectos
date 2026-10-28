@@ -93,6 +93,7 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
       name: 'Curso de TypeScript',
       // Sin folio, el primero automático del mes en UTC (HU-38; sin ?today= de la web)
       folio: formatFolio('PY', folioPeriod(new Date().toISOString().slice(0, 10)), 1),
+      createdById: ana.user.id,
       description: null,
       requester: null,
       assignedTo: null,

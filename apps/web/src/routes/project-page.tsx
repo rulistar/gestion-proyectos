@@ -1,5 +1,11 @@
 import {
+  canCreateTaskIn,
+  canRemoveContainer,
+  canRemoveTask,
+  canUpdateContainer,
+  canUpdateTask,
   daysRemainingLabel,
+  isMyTask,
   roleHasPermission,
   type Person,
   type Project,
@@ -29,6 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { containerFacts, taskFacts, useAccess } from '@/lib/access';
 import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
 import {
   PROJECT_PRIORITIES,
@@ -73,8 +80,12 @@ export function ProjectPage() {
   const section = SECTIONS[project.type.behavior];
   const [tab, setTab] = useState<TabId>('board');
   const [dialog, setDialog] = useState<'edit' | 'task'>();
-  const can = (permission: Parameters<typeof roleHasPermission>[1]) =>
-    roleHasPermission(workspace.role, permission);
+  // Qué puedo hacer aquí, según mi matriz (ADR-0006); la API lo vuelve a decidir
+  const access = useAccess(workspaceId);
+  const facts = containerFacts(project);
+  const canUpdate = canUpdateContainer(access, facts);
+  // Si lo veo solo por tener una tarea en él, también puedo agregarle tareas
+  const hasMyTask = tasks.some((task) => isMyTask(access, taskFacts(task, facts)));
 
   return (
     <div className="grid gap-3">
@@ -101,17 +112,17 @@ export function ProjectPage() {
             Prioridad {PROJECT_PRIORITIES[project.priority].toLowerCase()}
           </span>
           <div className="ml-auto flex flex-wrap gap-2">
-            {can('project.move') && (
+            {roleHasPermission(workspace.role, 'project.move') && (
               <MoveProjectDialog workspaceId={workspaceId} project={project} />
             )}
-            {can('project.delete') && (
+            {canRemoveContainer(access, facts) && (
               <DeleteProjectButton workspaceId={workspaceId} project={project} />
             )}
             <Button variant="outline" size="sm" onClick={() => setDialog('edit')}>
               <Pencil aria-hidden />
-              {can('project.update') ? 'Editar datos' : 'Ver datos'}
+              {canUpdate ? 'Editar datos' : 'Ver datos'}
             </Button>
-            {can('task.create') && (
+            {canCreateTaskIn(access, facts, hasMyTask) && (
               <Button size="sm" onClick={() => setDialog('task')}>
                 <Plus aria-hidden />
                 Nueva tarea
@@ -183,8 +194,8 @@ export function ProjectPage() {
               projectId={projectId}
               tasks={tasks}
               people={people}
-              canEdit={can('task.update')}
-              canDelete={can('task.delete')}
+              canEdit={(task) => canUpdateTask(access, taskFacts(task, facts))}
+              canDelete={(task) => canRemoveTask(access, taskFacts(task, facts))}
               taskTypeOptions={taskTypeOptions}
             />
           ) : (
@@ -199,7 +210,7 @@ export function ProjectPage() {
         types={selectableTypes(types, project.type.id)}
         taskTypes={taskTypes}
         people={people}
-        readOnly={!can('project.update')}
+        readOnly={!canUpdate}
         open={dialog === 'edit'}
         onClose={() => setDialog(undefined)}
       />

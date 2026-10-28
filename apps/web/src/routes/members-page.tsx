@@ -36,9 +36,11 @@ import {
 import { useCurrentUser } from '@/lib/auth';
 import { initials } from '@/lib/brand';
 import { useSchemaForm } from '@/lib/use-schema-form';
+import { PermissionsDialog } from '@/components/permissions-dialog';
 import {
   membersQueryOptions,
   ROLE_LABELS,
+  roleLabel,
   useChangeMemberRole,
   useRemoveMember,
   workspaceQueryOptions,
@@ -114,7 +116,9 @@ function MemberRow({ workspaceId, member }: { workspaceId: string; member: Membe
     changeRole.mutate(
       { userId: member.userId, role },
       {
-        onSuccess: () => toast.success(`${member.name} ahora es ${ROLE_LABELS[role]}`),
+        // Cambiar la plantilla descarta los ajustes de la matriz (ADR-0006 §2)
+        onSuccess: () =>
+          toast.success(`${member.name} ahora es ${ROLE_LABELS[role]}, con permisos de plantilla`),
         onError: (error) => toast.error(error.message),
       },
     );
@@ -145,7 +149,12 @@ function MemberRow({ workspaceId, member }: { workspaceId: string; member: Membe
             {member.name}
             {isMe && <span className="ml-1.5 text-sm font-normal text-muted-foreground">(tú)</span>}
           </p>
-          <p className="truncate text-sm text-muted-foreground">{member.email}</p>
+          <p className="truncate text-sm text-muted-foreground">
+            {member.email}
+            {member.matrix && member.role !== 'ADMIN' && (
+              <span className="ml-1.5">· {roleLabel(member.role, member.matrix.permissions)}</span>
+            )}
+          </p>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -162,6 +171,12 @@ function MemberRow({ workspaceId, member }: { workspaceId: string; member: Membe
             </option>
           ))}
         </NativeSelect>
+        {member.matrix && (
+          <PermissionsDialog
+            workspaceId={workspaceId}
+            member={{ ...member, matrix: member.matrix }}
+          />
+        )}
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" aria-label={`Quitar a ${member.name}`}>

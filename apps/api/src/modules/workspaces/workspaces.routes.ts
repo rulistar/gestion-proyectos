@@ -1,6 +1,7 @@
 import {
   createWorkspaceRequestSchema,
   roleHasPermission,
+  updateMemberPermissionsSchema,
   updateMemberRoleRequestSchema,
 } from '@gestion/shared';
 import { z } from 'zod';
@@ -8,8 +9,10 @@ import type { FastifyPluginCallback, FastifyReply } from 'fastify';
 import { requireAuth } from '../auth/session.js';
 import { requireMembership, requirePermission } from './access.js';
 import {
+  changeMemberPermissions,
   changeMemberRole,
   createWorkspace,
+  InvalidSelectedProjectsError,
   LastAdminError,
   listMembers,
   listWorkspacesForUser,
@@ -24,6 +27,9 @@ const MEMBER_NOT_FOUND = 'Miembro no encontrado';
 function sendMemberError(reply: FastifyReply, error: unknown) {
   if (error instanceof MemberNotFoundError) {
     return reply.code(404).send({ message: MEMBER_NOT_FOUND });
+  }
+  if (error instanceof InvalidSelectedProjectsError) {
+    return reply.code(400).send({ message: 'Hay contenedores de "Estos…" que no son del espacio' });
   }
   if (error instanceof LastAdminError) {
     return reply.code(409).send({
@@ -41,14 +47,15 @@ export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => 
     return listWorkspacesForUser(app.db, request.auth!.userId);
   });
 
-  // Un workspace del que soy miembro, con mi rol en él (404 si no lo soy)
+  // Un workspace del que soy miembro, con mi rol y mi matriz (ADR-0006; 404 si no lo soy)
   app.get('/workspaces/:workspaceId', { preHandler: requireMembership }, async (request) => {
-    const { workspaceId, role } = request.membership!;
+    const { workspaceId, role, userId, personId, permissions, selectedProjectIds } =
+      request.membership!;
     const workspace = await app.db.workspace.findUniqueOrThrow({
       where: { id: workspaceId },
       select: { id: true, name: true },
     });
-    return { ...workspace, role };
+    return { ...workspace, role, access: { userId, personId, permissions, selectedProjectIds } };
   });
 
   app.get(
@@ -85,6 +92,32 @@ export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => 
       return sendMemberError(reply, error);
     }
   });
+
+  // Plantilla + matriz ajustada + lista "Estos…" de un miembro (HU-17b, ADR-0006)
+  app.put(
+    '/workspaces/:workspaceId/members/:userId/permissions',
+    onlyManagers,
+    async (request, reply) => {
+      const params = memberParamsSchema.safeParse(request.params);
+      if (!params.success) return reply.code(404).send({ message: MEMBER_NOT_FOUND });
+      const parsed = updateMemberPermissionsSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ message: z.prettifyError(parsed.error) });
+      }
+      try {
+        await changeMemberPermissions(
+          app.db,
+          request.auth!.userId,
+          request.membership!.workspaceId,
+          params.data.userId,
+          parsed.data,
+        );
+        return await reply.code(204).send();
+      } catch (error) {
+        return sendMemberError(reply, error);
+      }
+    },
+  );
 
   app.delete('/workspaces/:workspaceId/members/:userId', onlyManagers, async (request, reply) => {
     const params = memberParamsSchema.safeParse(request.params);

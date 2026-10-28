@@ -9,6 +9,7 @@ export const workspaceTaskSchema = taskSchema.extend({
     id: z.uuid(),
     name: z.string(),
     folio: z.string().nullable(),
+    createdById: z.uuid().nullable(),
     type: projectTypeRefSchema,
   }),
 });

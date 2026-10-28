@@ -35,10 +35,10 @@ interface TaskBoardProps {
   people: Person[];
   /** Tipos de tarea que se pueden elegir al editar (HU-22), con el actual de la tarea */
   taskTypeOptions: (currentId: string) => TaskTypeRef[];
-  /** Si el rol permite crear y editar tareas (la API lo vuelve a comprobar) */
-  canEdit: boolean;
-  /** Si el rol permite dar de baja tareas (HU-15) */
-  canDelete: boolean;
+  /** Si mi matriz permite editar esa tarea (ADR-0006; la API lo vuelve a comprobar) */
+  canEdit: (task: Task) => boolean;
+  /** Si mi matriz permite darla de baja (HU-15) */
+  canDelete: (task: Task) => boolean;
 }
 
 /** Columnas que se pueden plegar: lo terminado ocupa espacio sin pedir atención */
@@ -118,8 +118,8 @@ export function TaskBoard({
                     task={task}
                     workspaceId={workspaceId}
                     projectId={projectId}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
+                    canEdit={canEdit(task)}
+                    canDelete={canDelete(task)}
                     onEdit={() => setEditingId(task.id)}
                   />
                 ))}

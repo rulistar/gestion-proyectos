@@ -17,7 +17,7 @@ const workspaceParamsSchema = z.object({ workspaceId: z.uuid() });
 export type WorkspaceAccess = MemberAccess & { workspaceId: string };
 
 /** Matriz guardada; si no es válida, la de la plantilla de su rol (nunca da más de lo previsto) */
-function parsePermissions(raw: unknown, role: MembershipRole) {
+export function parsePermissions(raw: unknown, role: MembershipRole) {
   const parsed = memberPermissionsSchema.safeParse(raw);
   return parsed.success ? parsed.data : PERMISSION_TEMPLATES[role];
 }

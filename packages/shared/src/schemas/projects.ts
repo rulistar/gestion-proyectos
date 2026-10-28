@@ -69,6 +69,8 @@ export const projectSchema = z.object({
   type: projectTypeRefSchema,
   name: z.string(),
   folio: z.string().nullable(),
+  /** Quién lo creó: "los míos" de la matriz de permisos (ADR-0006) */
+  createdById: z.uuid().nullable(),
   description: z.string().nullable(),
   requester: personRefSchema.nullable(),
   assignedTo: personRefSchema.nullable(),

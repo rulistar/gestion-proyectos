@@ -1,7 +1,7 @@
 import {
+  canUpdateTask,
   filterTasks,
   hasActiveFilters,
-  roleHasPermission,
   sortTasks,
   type TaskSortKey,
   type WorkspaceTask,
@@ -15,6 +15,7 @@ import { EditTaskPanel } from '@/components/task-board';
 import { TaskFiltersBar } from '@/components/task-filters-bar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { containerFacts, taskFacts, useAccess } from '@/lib/access';
 import { nextSort } from '@/lib/sort';
 import { formatDate, todayIso } from '@/lib/dates';
 import { dueInfo } from '@/lib/due';
@@ -44,7 +45,7 @@ export function TasksPage() {
   const { data: projectTypes } = useSuspenseQuery(projectTypesQueryOptions(workspaceId));
   const { data: taskTypes } = useSuspenseQuery(taskTypesQueryOptions(workspaceId));
   const { data: people } = useSuspenseQuery(peopleQueryOptions(workspaceId));
-  const canEdit = roleHasPermission(workspace.role, 'task.update');
+  const access = useAccess(workspaceId);
   const [editingId, setEditingId] = useState<string>();
 
   const visible = sortTasks(filterTasks(tasks, filters, today), filters.sort, filters.dir);
@@ -139,7 +140,11 @@ export function TasksPage() {
                         task={task}
                         workspaceId={workspaceId}
                         today={today}
-                        onEdit={canEdit ? () => setEditingId(task.id) : undefined}
+                        onEdit={
+                          canUpdateTask(access, taskFacts(task, containerFacts(task.project)))
+                            ? () => setEditingId(task.id)
+                            : undefined
+                        }
                       />
                     ))}
                   </tbody>

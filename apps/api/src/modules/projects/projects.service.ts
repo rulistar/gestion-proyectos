@@ -127,6 +127,7 @@ const projectSelect = {
   type: { select: { id: true, name: true, behavior: true } },
   name: true,
   folio: true,
+  createdById: true,
   description: true,
   requester: personSelect,
   assignedTo: personSelect,

@@ -1,10 +1,4 @@
-import {
-  daysRemainingLabel,
-  groupMyWork,
-  roleHasPermission,
-  type MyTask,
-  type Project,
-} from '@gestion/shared';
+import { daysRemainingLabel, groupMyWork, type MyTask, type Project } from '@gestion/shared';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { Check, Wrench } from 'lucide-react';
@@ -12,6 +6,7 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '@/components/progress-bar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAccess } from '@/lib/access';
 import { useCurrentUser } from '@/lib/auth';
 import { todayIso, weekStartIso } from '@/lib/dates';
 import { dueInfo } from '@/lib/due';
@@ -33,7 +28,9 @@ export function MyWorkPage() {
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
   const { data: tasks } = useSuspenseQuery(myTasksQueryOptions(workspaceId, weekStart));
   const { data: projects } = useSuspenseQuery(projectsQueryOptions(workspaceId));
-  const canUpdate = roleHasPermission(workspace.role, 'task.update');
+  // Aquí todas son mías (soy el Responsable): basta con poder modificar "las mías" (ADR-0006)
+  const access = useAccess(workspaceId);
+  const canUpdate = access.role === 'ADMIN' || access.permissions.tasks.update !== 'NONE';
   const work = groupMyWork(tasks, today, weekStart);
   // El saludo usa el nombre de mi persona en este espacio (alias, HU-34), si lo tiene
   const { data: people = [] } = useQuery(peopleQueryOptions(workspaceId));

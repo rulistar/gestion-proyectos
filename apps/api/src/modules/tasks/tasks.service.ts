@@ -28,6 +28,7 @@ const taskSelect = {
   completedAt: true,
   startedAt: true,
   statusReason: true,
+  createdById: true,
   workspaceId: true,
   // Responsable (HU-35): persona del catálogo, con su acceso al espacio
   responsiblePerson: personSelect,
@@ -163,6 +164,7 @@ export async function listWorkspaceTasks(
           id: true,
           name: true,
           folio: true,
+          createdById: true,
           type: { select: { id: true, name: true, behavior: true } },
         },
       },
