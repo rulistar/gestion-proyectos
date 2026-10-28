@@ -49,6 +49,8 @@ const emptyTask = {
   startDate: null,
   endDate: null,
   statusReason: null,
+  originId: null,
+  originDetail: null,
 } as const;
 
 /** Workspace de Ana (Admin) con un proyecto de dos tareas, y Mario (Miembro) */

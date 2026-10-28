@@ -200,6 +200,30 @@ model TaskType {
   @@map("task_types")
 }
 
+/// Origen de una tarea (HU-47): catálogo del espacio (Correo, Teléfono, Junta, Ticket...).
+/// No va a la papelera: uno en uso se archiva (como los tipos, ADR-0004 §4).
+model TaskOrigin {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  position    Int       @default(0)
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz(3)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  createdBy   User?    @relation("TaskOriginCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User?    @relation("TaskOriginUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  tasks Task[]
+
+  @@unique([workspaceId, name], where: { archivedAt: null })
+  @@index([workspaceId])
+  @@map("task_origins")
+}
+
 /// Tipos de tarea que admite un tipo de contenedor (HU-22). Sin filas = admite todos.
 model ProjectTypeTaskType {
   projectTypeId String      @map("project_type_id") @db.Uuid
@@ -279,6 +303,8 @@ model User {
   taskTypesCreated        TaskType[]                @relation("TaskTypeCreatedBy")
   taskTypesUpdated        TaskType[]                @relation("TaskTypeUpdatedBy")
   allowedTaskTypesCreated ProjectTypeTaskType[]     @relation("ProjectTypeTaskTypeCreatedBy")
+  taskOriginsCreated      TaskOrigin[]              @relation("TaskOriginCreatedBy")
+  taskOriginsUpdated      TaskOrigin[]              @relation("TaskOriginUpdatedBy")
 
   @@map("users")
 }
@@ -319,6 +345,7 @@ model Workspace {
   projects      Project[]
   projectTypes  ProjectType[]
   taskTypes     TaskType[]
+  taskOrigins   TaskOrigin[]
   folioCounters FolioCounter[]
   people        Person[]
   tasks         Task[]
@@ -419,29 +446,34 @@ model Project {
 /// Tarea de un proyecto (la "actividad" del prototipo, ADR-0002 §1.1).
 /// Las fases (phaseId) llegan con HU-07.
 model Task {
-  id                  String     @id @default(uuid(7)) @db.Uuid
+  id                  String      @id @default(uuid(7)) @db.Uuid
   /// Redundante con el proyecto a propósito: la frontera de seguridad es el workspace (ADR-0002 §2)
-  workspaceId         String     @map("workspace_id") @db.Uuid
-  workspace           Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  projectId           String     @map("project_id") @db.Uuid
-  project             Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workspaceId         String      @map("workspace_id") @db.Uuid
+  workspace           Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projectId           String      @map("project_id") @db.Uuid
+  project             Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   /// Responsable (HU-35, corregido por el PO): una persona del catálogo del espacio, o nadie
-  responsiblePersonId String?    @map("responsible_person_id") @db.Uuid
-  responsiblePerson   Person?    @relation("TaskResponsible", fields: [responsiblePersonId], references: [id], onDelete: Restrict)
+  responsiblePersonId String?     @map("responsible_person_id") @db.Uuid
+  responsiblePerson   Person?     @relation("TaskResponsible", fields: [responsiblePersonId], references: [id], onDelete: Restrict)
   title               String
   /// Tipo del catálogo (HU-22); un tipo en uso no se borra, se archiva
-  typeId              String     @map("type_id") @db.Uuid
-  type                TaskType   @relation(fields: [typeId], references: [id], onDelete: Restrict)
-  status              TaskStatus @default(PENDING)
-  estimatedMinutes    Int?       @map("estimated_minutes")
-  startDate           DateTime?  @map("start_date") @db.Date
-  endDate             DateTime?  @map("end_date") @db.Date
+  typeId              String      @map("type_id") @db.Uuid
+  type                TaskType    @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  status              TaskStatus  @default(PENDING)
+  estimatedMinutes    Int?        @map("estimated_minutes")
+  startDate           DateTime?   @map("start_date") @db.Date
+  endDate             DateTime?   @map("end_date") @db.Date
   /// Se rellena al pasar a DONE y se vacía al salir de DONE
-  completedAt         DateTime?  @map("completed_at") @db.Timestamptz(3)
+  completedAt         DateTime?   @map("completed_at") @db.Timestamptz(3)
   /// Inicio real (ADR-0004 §2.1): la primera vez que pasa a En curso o a Hecha; no se borra
-  startedAt           DateTime?  @map("started_at") @db.Timestamptz(3)
+  startedAt           DateTime?   @map("started_at") @db.Timestamptz(3)
   /// Motivo de PAUSED o CANCELLED (obligatorio en esos estados); null en los demás
-  statusReason        String?    @map("status_reason")
+  statusReason        String?     @map("status_reason")
+  /// De dónde viene (HU-47): del catálogo del espacio, o ninguno; uno en uso no se borra
+  originId            String?     @map("origin_id") @db.Uuid
+  origin              TaskOrigin? @relation(fields: [originId], references: [id], onDelete: Restrict)
+  /// Detalle del origen: "Ticket #4521 de mesa de ayuda"
+  originDetail        String?     @map("origin_detail")
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -457,6 +489,7 @@ model Task {
   @@index([workspaceId])
   @@index([responsiblePersonId])
   @@index([typeId])
+  @@index([originId])
   @@map("tasks")
 }
 

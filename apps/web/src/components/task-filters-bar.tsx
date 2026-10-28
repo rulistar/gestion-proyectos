@@ -1,10 +1,12 @@
 import {
   hasActiveFilters,
+  NO_ORIGIN,
   NO_RESPONSIBLE,
   type Person,
   type Project,
   type ProjectBehavior,
   type TaskFilters,
+  type TaskOrigin,
   type TaskType,
 } from '@gestion/shared';
 import { Search, X } from 'lucide-react';
@@ -22,12 +24,15 @@ export function TaskFiltersBar({
   projects,
   taskTypes,
   people,
+  origins,
   filters,
   onChange,
 }: {
   projects: Project[];
   taskTypes: TaskType[];
   people: Person[];
+  /** Catálogo de orígenes (HU-47) */
+  origins: TaskOrigin[];
   filters: TaskFilters;
   onChange: (next: TaskFilters) => void;
 }) {
@@ -48,8 +53,8 @@ export function TaskFiltersBar({
           className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
         />
         <Input
-          aria-label="Buscar por título, responsable o proyecto"
-          placeholder="Buscar por título, responsable, folio o proyecto…"
+          aria-label="Buscar por título, responsable, proyecto u origen"
+          placeholder="Buscar por título, responsable, folio, proyecto u origen…"
           className="pl-8"
           value={filters.q ?? ''}
           onChange={(event) => set('q', event.target.value)}
@@ -115,6 +120,21 @@ export function TaskFiltersBar({
           <option key={person.id} value={person.id}>
             {person.name}
             {person.archived ? ' (archivada)' : ''}
+          </option>
+        ))}
+      </NativeSelect>
+      <NativeSelect
+        aria-label="Origen"
+        className="h-9 w-40"
+        value={filters.originId ?? ''}
+        onChange={(event) => set('originId', event.target.value)}
+      >
+        <option value="">Todo origen</option>
+        <option value={NO_ORIGIN}>Sin origen</option>
+        {origins.map((origin) => (
+          <option key={origin.id} value={origin.id}>
+            {origin.name}
+            {origin.archived ? ' (archivado)' : ''}
           </option>
         ))}
       </NativeSelect>

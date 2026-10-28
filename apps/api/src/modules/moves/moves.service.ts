@@ -20,13 +20,14 @@ export class TargetDisallowsTaskTypesError extends Error {
 }
 
 /**
- * Traduce personas y tipos de tarea del espacio de origen al de destino (HU-32): los catálogos
+ * Traduce personas, tipos de tarea y orígenes (HU-47) del espacio de origen al de destino (HU-32): los catálogos
  * son por espacio, así que cada referencia se busca (o se crea) en el destino. Guarda lo ya
  * traducido para no buscar dos veces lo mismo.
  */
 class CatalogMapper {
   private people = new Map<string, string>();
   private taskTypes = new Map<string, { id: string; name: string }>();
+  private origins = new Map<string, string>();
 
   constructor(
     private readonly tx: Tx,
@@ -115,6 +116,44 @@ class CatalogMapper {
     this.taskTypes.set(taskTypeId, target);
     return target;
   }
+
+  /** Origen del destino con el mismo nombre (sin mayúsculas, HU-47); si no existe, se crea */
+  async origin(originId: string | null): Promise<string | null> {
+    if (originId === null) return null;
+    const cached = this.origins.get(originId);
+    if (cached) return cached;
+
+    const source = await this.tx.taskOrigin.findUniqueOrThrow({
+      where: { id: originId },
+      select: { name: true },
+    });
+    const ws = this.targetWorkspaceId;
+    let target = await this.tx.taskOrigin.findFirst({
+      where: {
+        workspaceId: ws,
+        archivedAt: null,
+        name: { equals: source.name, mode: 'insensitive' },
+      },
+      select: { id: true },
+    });
+    if (!target) {
+      const last = await this.tx.taskOrigin.aggregate({
+        where: { workspaceId: ws },
+        _max: { position: true },
+      });
+      target = await this.tx.taskOrigin.create({
+        data: {
+          workspaceId: ws,
+          name: source.name,
+          position: (last._max.position ?? -1) + 1,
+          ...auditCreate(this.actorId),
+        },
+        select: { id: true },
+      });
+    }
+    this.origins.set(originId, target.id);
+    return target.id;
+  }
 }
 
 /** Tipos de tarea que admite un contenedor: los suyos (HU-37) o los de su tipo (HU-22); vacío = todos */
@@ -160,7 +199,15 @@ export async function moveProject(
         projectManagerId: true,
         consultingManagerId: true,
         businessPartnerId: true,
-        tasks: { select: { id: true, typeId: true, responsiblePersonId: true, deletedAt: true } },
+        tasks: {
+          select: {
+            id: true,
+            typeId: true,
+            originId: true,
+            responsiblePersonId: true,
+            deletedAt: true,
+          },
+        },
       },
     });
     if (!project) return false;
@@ -190,6 +237,7 @@ export async function moveProject(
       tasks.push({
         ...task,
         type: await mapper.taskType(task.typeId),
+        originId: await mapper.origin(task.originId),
         responsiblePersonId: await mapper.person(task.responsiblePersonId),
       });
     }
@@ -209,6 +257,7 @@ export async function moveProject(
         data: {
           workspaceId: targetWorkspaceId,
           typeId: task.type.id,
+          originId: task.originId,
           responsiblePersonId: task.responsiblePersonId,
           ...auditUpdate(actorId),
         },
@@ -243,7 +292,7 @@ export async function moveTask(
         ...notDeleted,
         project: notDeleted,
       },
-      select: { typeId: true, responsiblePersonId: true },
+      select: { typeId: true, originId: true, responsiblePersonId: true },
     });
     if (!task) return false;
     const target = await tx.project.findFirst({
@@ -271,6 +320,7 @@ export async function moveTask(
         workspaceId: targetWorkspaceId,
         projectId: targetProjectId,
         typeId: type.id,
+        originId: sameWorkspace ? task.originId : await mapper.origin(task.originId),
         responsiblePersonId: sameWorkspace
           ? task.responsiblePersonId
           : await mapper.person(task.responsiblePersonId),

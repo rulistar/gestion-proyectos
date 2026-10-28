@@ -31,6 +31,8 @@ export type TaskSortKey = z.infer<typeof taskSortKeySchema>;
 
 /** Valor del filtro de responsable para las tareas sin nadie asignado */
 export const NO_RESPONSIBLE = 'none';
+/** Valor del filtro de origen para las tareas sin origen (HU-47) */
+export const NO_ORIGIN = 'none';
 
 /**
  * Filtros y orden de la vista de tareas (HU-39). Igual que los de proyectos (HU-09): viven en la
@@ -48,6 +50,11 @@ export const taskFiltersSchema = z.object({
     .optional()
     .catch(undefined),
   status: taskStatusSchema.optional().catch(undefined),
+  /** ID del origen (HU-47), o "none" para las que no tienen */
+  originId: z
+    .union([z.uuid(), z.literal(NO_ORIGIN)])
+    .optional()
+    .catch(undefined),
   endBy: z.iso.date().optional().catch(undefined),
   /** Solo las abiertas con fin anterior a hoy */
   overdue: z.boolean().optional().catch(undefined),
@@ -61,8 +68,8 @@ export type TaskFilters = z.infer<typeof taskFiltersSchema>;
 const CLOSED = new Set(['DONE', 'CANCELLED']);
 
 /**
- * Aplica los filtros (HU-39). El texto busca en el título, el tipo, el responsable y el nombre o
- * folio del contenedor. `today` (AAAA-MM-DD) es la fecha local del usuario, para "vencidas".
+ * Aplica los filtros (HU-39). El texto busca en el título, el tipo, el responsable, el nombre o
+ * folio del contenedor y el origen con su detalle (HU-47). `today` (AAAA-MM-DD) es la fecha local del usuario, para "vencidas".
  */
 export function filterTasks(
   tasks: readonly WorkspaceTask[],
@@ -81,11 +88,20 @@ export function filterTasks(
       if (responsibleId !== filters.responsibleId) return false;
     }
     if (filters.status && task.status !== filters.status) return false;
+    if (filters.originId && (task.origin?.id ?? NO_ORIGIN) !== filters.originId) return false;
     if (filters.endBy && (task.endDate === null || task.endDate > filters.endBy)) return false;
     if (filters.overdue && (closed || task.endDate === null || task.endDate >= today)) return false;
     if (words.length > 0) {
       const haystack = normalize(
-        [task.title, task.type.name, task.responsible?.name, task.project.name, task.project.folio]
+        [
+          task.title,
+          task.type.name,
+          task.responsible?.name,
+          task.project.name,
+          task.project.folio,
+          task.origin?.name,
+          task.originDetail,
+        ]
           .filter(Boolean)
           .join(' '),
       );

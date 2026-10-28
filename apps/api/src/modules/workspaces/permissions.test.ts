@@ -60,6 +60,8 @@ const emptyTask = {
   startDate: null,
   endDate: null,
   statusReason: null,
+  originId: null,
+  originDetail: null,
 } as const;
 
 const MEMBER = PERMISSION_TEMPLATES.MEMBER;

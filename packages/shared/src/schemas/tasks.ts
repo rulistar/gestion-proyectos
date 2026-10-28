@@ -8,6 +8,7 @@ import {
   optionalText,
 } from './common.js';
 import { personRefSchema } from './people.js';
+import { taskOriginRefSchema } from './task-origins.js';
 import { taskTypeRefSchema } from './task-types.js';
 
 export const taskStatusSchema = z.enum(['PENDING', 'IN_PROGRESS', 'PAUSED', 'DONE', 'CANCELLED']);
@@ -45,6 +46,10 @@ export const taskInputSchema = z
     endDate: optionalDate,
     /** Motivo de Pausada o Cancelada; en los demás estados se ignora */
     statusReason: optionalText(500),
+    /** Origen (HU-47): uno activo del catálogo del espacio, o ninguno */
+    originId: optionalId,
+    /** Detalle del origen: "Ticket #4521 de mesa de ayuda" */
+    originDetail: optionalText(300),
   })
   .refine(endAfterStart, endAfterStartError)
   .refine(reasonWhenRequired, reasonRequiredError);
@@ -67,6 +72,9 @@ export const taskSchema = z.object({
   responsible: personRefSchema.nullable(),
   /** Quién la creó: con el Responsable, decide "las mías" (ADR-0006) */
   createdById: z.uuid().nullable(),
+  /** De dónde viene (HU-47) y su detalle */
+  origin: taskOriginRefSchema.nullable(),
+  originDetail: z.string().nullable(),
   startDate: z.iso.date().nullable(),
   endDate: z.iso.date().nullable(),
   /** Por qué está Pausada o Cancelada; null en los demás estados */

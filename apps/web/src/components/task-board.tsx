@@ -238,6 +238,15 @@ function TaskCard({ task, workspaceId, projectId, canEdit, canDelete, onEdit }: 
           <span className="font-medium">Motivo:</span> {task.statusReason}
         </p>
       )}
+      {(task.origin || task.originDetail) && (
+        <p
+          className="truncate text-xs text-muted-foreground"
+          title={task.originDetail ?? undefined}
+        >
+          <span className="font-medium">Origen:</span>{' '}
+          {[task.origin?.name, task.originDetail].filter(Boolean).join(' · ')}
+        </p>
+      )}
       {askingReasonFor && (
         <ReasonPrompt
           status={askingReasonFor}

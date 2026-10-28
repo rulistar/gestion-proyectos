@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
+import { TaskOriginsCard } from '@/components/task-origin-catalog';
 import { AllowedTaskTypesDialog, TaskTypesCard } from '@/components/task-type-catalog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -97,6 +98,7 @@ export function CatalogPage() {
 
       <NewTypeCard workspaceId={workspaceId} />
       <TaskTypesCard workspaceId={workspaceId} taskTypes={taskTypes} />
+      <TaskOriginsCard workspaceId={workspaceId} />
     </div>
   );
 }

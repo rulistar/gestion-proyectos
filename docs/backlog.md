@@ -90,27 +90,28 @@
 | 32 | HU-44 | Personas: borrar definitivamente a quien no se usa y ocultar las archivadas | Personas | 2 | 🔴 | 5 |
 | 33 | HU-45 | Personas: ver dónde aparece una persona (tareas y proyectos) para reasignarla | Personas | 1 | 🔴 | 5 |
 | 34 | HU-46 | Actividades: columna Fin; Abiertas solo con el menú oculto | Vistas | 1 | 🔴 | 5 |
-| 35 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
-| 36 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
-| 37 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
-| 38 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
-| 39 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 40 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
-| 41 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
-| 42 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
-| 43 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 44 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 45 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 46 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
-| 47 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
-| 48 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 49 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 50 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 51 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 52 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 53 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 54 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 55 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 35 | HU-47 | Origen de la tarea: catálogo en Configuración, detalle y filtro | Tareas | 3 | 🔴 | 5 |
+| 36 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
+| 37 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
+| 38 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
+| 39 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 40 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
+| 41 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
+| 42 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
+| 43 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
+| 44 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 45 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 46 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 47 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
+| 48 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 49 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 50 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 51 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 52 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 53 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 54 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 55 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 56 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -500,6 +501,16 @@ _Como responsable, quiero ver la fecha fin de cada grupo de actividades sin que 
 
 - [x] La tabla de Actividades muestra la columna **Fin** (con los días que faltan), ordenable.
 - [x] **Abiertas** se oculta mientras el menú lateral está visible y vuelve a aparecer al ocultarlo (botón o Ctrl+B). Proyectos y Mantenimientos no cambian.
+
+#### HU-47 · Origen de la tarea (3 pts)
+
+_Como responsable, quiero registrar de dónde llega cada tarea y su detalle, para rastrearla y filtrar por origen._ Pedido del PO (2026-10-28). Decisiones del PO: el origen es una **lista en Configuración**; la descripción es el **detalle del origen**.
+
+- [x] Catálogo **Orígenes de tarea** en Configuración (solo Admin): agregar, renombrar y archivar; sin nombres repetidos (409). Los espacios nuevos traen Correo, Teléfono, Junta y Ticket; los existentes empiezan vacíos.
+- [x] En la tarea, **Origen** (de la lista, o ninguno) y **Detalle del origen** (texto, hasta 300). Un origen de otro espacio o archivado da 400; al editar se conserva el que ya tenía aunque se haya archivado.
+- [x] La tarjeta del tablero muestra "Origen: Ticket · #4521…".
+- [x] Vista Tareas: filtro **Origen**. Ejemplo: con Origen = Ticket encuentra las tareas con origen Ticket y no las que no tienen origen; "Sin origen" encuentra solo esas. El buscador también busca en el origen y su detalle.
+- [x] Al mover una tarea o un contenedor a otro espacio, el origen se busca por nombre en el destino (o se crea). Pruebas.
 
 #### TEC-04 · Despliegue gratuito con HTTPS (5 pts)
 

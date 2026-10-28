@@ -11,6 +11,7 @@ import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
 import { personSelect, toPersonRef, type PersonRow } from '../people/people.service.js';
+import { resolveTaskOrigin } from '../task-origins/task-origins.service.js';
 import { resolveTaskType } from '../task-types/task-types.service.js';
 
 /** El tipo pedido no existe, está archivado o no lo admite el tipo del proyecto (→ 400) */
@@ -29,6 +30,8 @@ const taskSelect = {
   startedAt: true,
   statusReason: true,
   createdById: true,
+  origin: { select: { id: true, name: true } },
+  originDetail: true,
   workspaceId: true,
   // Responsable (HU-35): persona del catálogo, con su acceso al espacio
   responsiblePerson: personSelect,
@@ -180,16 +183,18 @@ export async function createTask(
   actorId: string,
   workspaceId: string,
   projectId: string,
-  { typeId: requestedType, ...input }: TaskInput,
+  { typeId: requestedType, originId: requestedOrigin, ...input }: TaskInput,
 ): Promise<Task> {
   const typeId = await resolveTaskType(db, workspaceId, projectId, requestedType);
   if (!typeId) throw new InvalidTaskTypeError();
+  const originId = await resolveTaskOrigin(db, workspaceId, requestedOrigin);
   const row = await db.task.create({
     data: {
       workspaceId,
       projectId,
       ...input,
       typeId,
+      originId,
       startDate: fromIsoDate(input.startDate),
       endDate: fromIsoDate(input.endDate),
       completedAt: completedAtFor(input.status, null),
@@ -210,11 +215,15 @@ async function applyUpdate(
   db: Db,
   actorId: string,
   where: { workspaceId: string; projectId: string; taskId: string },
-  { typeId: requestedType, ...changes }: Partial<TaskInput> & { status: TaskStatus },
+  {
+    typeId: requestedType,
+    originId: requestedOrigin,
+    ...changes
+  }: Partial<TaskInput> & { status: TaskStatus },
 ): Promise<Task | null> {
   const previous = await db.task.findFirst({
     where: { id: where.taskId, ...taskScope(where.workspaceId, where.projectId) },
-    select: { status: true, completedAt: true, startedAt: true, typeId: true },
+    select: { status: true, completedAt: true, startedAt: true, typeId: true, originId: true },
   });
   if (!previous) return null;
   // Solo la edición completa trae typeId; mover de columna no cambia el tipo
@@ -229,12 +238,18 @@ async function applyUpdate(
           previous.typeId,
         );
   if (!typeId) throw new InvalidTaskTypeError();
+  // Igual con el origen: mover de columna no lo cambia; al editar vale el que ya tenía
+  const originId =
+    requestedOrigin === undefined
+      ? previous.originId
+      : await resolveTaskOrigin(db, where.workspaceId, requestedOrigin, previous.originId);
 
   const row = await db.task.update({
     where: { id: where.taskId },
     data: {
       ...changes,
       typeId,
+      originId,
       startedAt: startedAtFor(changes.status, previous.startedAt),
       ...(changes.startDate !== undefined && { startDate: fromIsoDate(changes.startDate) }),
       ...(changes.endDate !== undefined && { endDate: fromIsoDate(changes.endDate) }),
