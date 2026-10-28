@@ -30,7 +30,7 @@ export const projectFiltersSchema = z.object({
   classification: z.string().trim().max(80).optional().catch(undefined),
   status: projectStatusSchema.optional().catch(undefined),
   priority: projectPrioritySchema.optional().catch(undefined),
-  /** "Vence hasta" (AAAA-MM-DD): el contenedor termina o tiene una tarea abierta que vence a más tardar ese día */
+  /** "Fecha de fin hasta" (AAAA-MM-DD) */
   endBy: z.iso.date().optional().catch(undefined),
   /** Terminados y cancelados se ocultan salvo que se pida verlos */
   showClosed: z.boolean().optional().catch(undefined),
@@ -52,13 +52,6 @@ function normalize(text: string): string {
 
 const CLOSED = new Set(['DONE', 'CANCELLED']);
 
-/** ¿Vence a más tardar `date`? Por su propia fecha de fin o por la de alguna tarea abierta */
-function dueBy(project: Project, date: string): boolean {
-  const { endDate } = project;
-  const { nextDueDate } = project.progress;
-  return (endDate !== null && endDate <= date) || (nextDueDate !== null && nextDueDate <= date);
-}
-
 /**
  * Aplica los filtros (HU-09). El texto busca en nombre, folio, sprint y en las personas del
  * proyecto. Terminados y cancelados se ocultan, salvo con `showClosed` o si se filtra por esos estados.
@@ -72,7 +65,8 @@ export function filterProjects(projects: readonly Project[], filters: ProjectFil
     if (filters.priority && project.priority !== filters.priority) return false;
     if (filters.area && project.area !== filters.area) return false;
     if (filters.classification && project.classification !== filters.classification) return false;
-    if (filters.endBy && !dueBy(project, filters.endBy)) return false;
+    if (filters.endBy && (project.endDate === null || project.endDate > filters.endBy))
+      return false;
     if (words.length > 0) {
       const haystack = normalize(
         [

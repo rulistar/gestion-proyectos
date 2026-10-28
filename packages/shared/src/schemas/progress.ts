@@ -13,8 +13,6 @@ export const projectProgressSchema = z.object({
   openTasks: z.number().int(),
   overdueTasks: z.number().int(),
   doneThisMonth: z.number().int(),
-  /** Fin planeado más próximo entre las tareas abiertas (AAAA-MM-DD); para el filtro "Vence hasta" (HU-09) */
-  nextDueDate: z.iso.date().nullable(),
 });
 export type ProjectProgress = z.infer<typeof projectProgressSchema>;
 
@@ -67,22 +65,20 @@ export type ProjectMetricsQuery = z.infer<typeof projectMetricsQuerySchema>;
 
 /**
  * Lo que se mide en los contenedores Continuos y Por demanda (ADR-0004 §2): tareas abiertas
- * (Pausada cuenta), vencidas (abiertas con fin planeado antes de hoy), Hechas desde
- * `monthStart` y el fin planeado más próximo de las abiertas. `today` (AAAA-MM-DD) y `monthStart` (instante ISO) vienen de la zona del usuario.
+ * (Pausada cuenta), vencidas (abiertas con fin planeado antes de hoy) y Hechas desde
+ * `monthStart`. `today` (AAAA-MM-DD) y `monthStart` (instante ISO) vienen de la zona del usuario.
  */
 export function countTaskActivity(
   tasks: readonly { status: TaskStatus; endDate: string | null; completedAt: string | null }[],
   { today, monthStart }: { today: string; monthStart: string },
-): Pick<ProjectProgress, 'openTasks' | 'overdueTasks' | 'doneThisMonth' | 'nextDueDate'> {
+): Pick<ProjectProgress, 'openTasks' | 'overdueTasks' | 'doneThisMonth'> {
   const open = tasks.filter((t) => t.status !== 'DONE' && t.status !== 'CANCELLED');
   const since = Date.parse(monthStart);
-  const dueDates = open.map((t) => t.endDate).filter((date): date is string => date !== null);
   return {
     openTasks: open.length,
     overdueTasks: open.filter((t) => t.endDate !== null && t.endDate < today).length,
     doneThisMonth: tasks.filter(
       (t) => t.status === 'DONE' && t.completedAt !== null && Date.parse(t.completedAt) >= since,
     ).length,
-    nextDueDate: dueDates.length === 0 ? null : dueDates.reduce((a, b) => (b < a ? b : a)),
   };
 }
