@@ -42,8 +42,9 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 |---|---|---|---|
 | 2026-10-28 | HU-40 | Menú lateral plegable (botón y Ctrl+B) | 1 |
 | 2026-10-28 | HU-41 | Pantallas compactas: más información visible sin desplazarse | 2 |
+| 2026-10-28 | HU-42 | Ocultar lo que el perfil no permite; solo el Admin del sistema crea espacios | 1 |
 
-El compromiso queda en **37 puntos**.
+El compromiso queda en **38 puntos**.
 
 ## Guion de demostración (se arma al planificar, acuerdo del Sprint 3)
 

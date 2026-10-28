@@ -19,18 +19,26 @@ export function HomePage() {
         <FolderKanban className="size-7" />
       </span>
       <h1 className="text-2xl font-bold">Hola, {user.name}</h1>
-      <p className="text-muted-foreground">
-        Todavía no participas en ningún espacio de trabajo. Crea uno para empezar a organizar tus
-        proyectos, o pide a un Admin que te invite al suyo.
-      </p>
-      <CreateWorkspaceDialog
-        trigger={
-          <Button size="lg">
-            <Plus aria-hidden />
-            Crear mi primer espacio
-          </Button>
-        }
-      />
+      {/* Solo el Admin del sistema crea espacios (HU-42); los demás esperan una invitación */}
+      {user.isSystemAdmin ? (
+        <>
+          <p className="text-muted-foreground">
+            Todavía no hay espacios de trabajo. Crea uno para empezar a organizar los proyectos.
+          </p>
+          <CreateWorkspaceDialog
+            trigger={
+              <Button size="lg">
+                <Plus aria-hidden />
+                Crear mi primer espacio
+              </Button>
+            }
+          />
+        </>
+      ) : (
+        <p className="text-muted-foreground">
+          Todavía no participas en ningún espacio de trabajo. Pide a un Admin que te invite al suyo.
+        </p>
+      )}
     </div>
   );
 }

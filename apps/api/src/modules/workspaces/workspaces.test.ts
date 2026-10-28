@@ -4,6 +4,7 @@ import { buildApp } from '../../app.js';
 import { auditSoftDelete } from '../../db/audit.js';
 import { createTestDb, resetDb } from '../../test/test-db.js';
 import { addMember, userWithSession as createUser } from '../../test/users.js';
+import { createWorkspace } from './workspaces.service.js';
 
 const db = createTestDb();
 const app = buildApp({ db });
@@ -23,6 +24,18 @@ function createWs(cookies: Record<string, string>, name: unknown) {
   return app.inject({ method: 'POST', url: '/api/v1/workspaces', cookies, payload: { name } });
 }
 
+/** Preparación: un espacio creado por `owner` (sin pasar por el endpoint, que es solo del Admin del sistema) */
+function setupWs(owner: { user: { id: string } }, name: string) {
+  return createWorkspace(db, owner.user.id, { name });
+}
+
+/** Usuario con sesión que es Admin del sistema */
+async function systemAdminUser(email = 'root@example.com') {
+  const admin = await userWithSession(email);
+  await db.user.update({ where: { id: admin.user.id }, data: { isSystemAdmin: true } });
+  return admin;
+}
+
 function listWs(cookies: Record<string, string>) {
   return app.inject({ method: 'GET', url: '/api/v1/workspaces', cookies });
 }
@@ -35,9 +48,18 @@ describe('sin sesión', () => {
   });
 });
 
-describe('POST /workspaces (HU-03)', () => {
-  it('crea el workspace y deja a quien lo crea como Admin', async () => {
+describe('POST /workspaces (HU-03, HU-42)', () => {
+  it('un usuario que no es Admin del sistema recibe 403 y no se crea nada', async () => {
     const ana = await userWithSession('ana@example.com');
+
+    const response = await createWs(ana.cookies, 'Equipo');
+
+    expect(response.statusCode).toBe(403);
+    expect(await db.workspace.count()).toBe(0);
+  });
+
+  it('el Admin del sistema crea el workspace y queda como Admin', async () => {
+    const ana = await systemAdminUser('ana@example.com');
 
     const response = await createWs(ana.cookies, '  Equipo de cursos  ');
 
@@ -50,7 +72,7 @@ describe('POST /workspaces (HU-03)', () => {
   });
 
   it('registra quién lo creó y cuándo (RNF-01)', async () => {
-    const ana = await userWithSession('ana@example.com');
+    const ana = await systemAdminUser('ana@example.com');
     const before = new Date();
 
     const { id } = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Equipo')).json());
@@ -65,7 +87,7 @@ describe('POST /workspaces (HU-03)', () => {
     ['demasiado largo', 'x'.repeat(81)],
     ['que no es texto', 42],
   ])('rechaza un nombre %s con 400 y no crea nada', async (_caso, name) => {
-    const ana = await userWithSession('ana@example.com');
+    const ana = await systemAdminUser('ana@example.com');
 
     const response = await createWs(ana.cookies, name);
 
@@ -78,8 +100,8 @@ describe('GET /workspaces', () => {
   it('muestra solo los workspaces de los que soy miembro', async () => {
     const ana = await userWithSession('ana@example.com');
     const luis = await userWithSession('luis@example.com');
-    await createWs(ana.cookies, 'De Ana');
-    await createWs(luis.cookies, 'De Luis');
+    await setupWs(ana, 'De Ana');
+    await setupWs(luis, 'De Luis');
 
     const anaList = workspaceListSchema.parse((await listWs(ana.cookies)).json());
     const luisList = workspaceListSchema.parse((await listWs(luis.cookies)).json());
@@ -90,9 +112,9 @@ describe('GET /workspaces', () => {
 
   it('no muestra workspaces ni membresías que están en la papelera', async () => {
     const ana = await userWithSession('ana@example.com');
-    const kept = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Activo')).json());
-    const trashed = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Borrado')).json());
-    const left = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Me salí')).json());
+    const kept = await setupWs(ana, 'Activo');
+    const trashed = await setupWs(ana, 'Borrado');
+    const left = await setupWs(ana, 'Me salí');
 
     await db.workspace.update({
       where: { id: trashed.id },
@@ -111,7 +133,7 @@ describe('GET /workspaces', () => {
 describe('GET /workspaces/:workspaceId/members', () => {
   it('lista los miembros activos por nombre, sin los desactivados ni los que salieron', async () => {
     const ana = await userWithSession('ana@example.com');
-    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Equipo')).json());
+    const ws = await setupWs(ana, 'Equipo');
     const luis = await userWithSession('luis@example.com');
     const eva = await userWithSession('eva@example.com');
     const leo = await userWithSession('leo@example.com');
@@ -138,7 +160,7 @@ describe('GET /workspaces/:workspaceId/members', () => {
 
   it('el Admin del espacio sí ve los correos', async () => {
     const ana = await userWithSession('ana@example.com');
-    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Equipo')).json());
+    const ws = await setupWs(ana, 'Equipo');
 
     const response = await app.inject({
       url: `/api/v1/workspaces/${ws.id}/members`,
@@ -163,7 +185,7 @@ describe('PATCH /workspaces/:workspaceId (renombrar)', () => {
 
   it('el Admin lo renombra: cambia la etiqueta, no el ID, y queda registrado quién (RNF-01)', async () => {
     const ana = await userWithSession('ana@example.com');
-    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'workpers')).json());
+    const ws = await setupWs(ana, 'workpers');
 
     const response = await rename(ana.cookies, ws.id, '  Mi empresa ');
 
@@ -175,7 +197,7 @@ describe('PATCH /workspaces/:workspaceId (renombrar)', () => {
   it.each(['MEMBER', 'VIEWER'] as const)('un %s no puede renombrarlo (403)', async (role) => {
     const ana = await userWithSession('ana@example.com');
     const otro = await userWithSession('otro@example.com');
-    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Original')).json());
+    const ws = await setupWs(ana, 'Original');
     await addMember(db, ws.id, otro.user.id, role);
 
     expect((await rename(otro.cookies, ws.id, 'Cambiado')).statusCode).toBe(403);
@@ -186,7 +208,7 @@ describe('PATCH /workspaces/:workspaceId (renombrar)', () => {
   it('rechaza un nombre vacío (400) y a quien no es miembro (404)', async () => {
     const ana = await userWithSession('ana@example.com');
     const luis = await userWithSession('luis@example.com');
-    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Original')).json());
+    const ws = await setupWs(ana, 'Original');
 
     expect((await rename(ana.cookies, ws.id, '   ')).statusCode).toBe(400);
     expect((await rename(luis.cookies, ws.id, 'Intruso')).statusCode).toBe(404);
@@ -197,7 +219,7 @@ describe('GET /workspaces/:workspaceId', () => {
   it('devuelve el workspace con mi rol en él', async () => {
     const ana = await userWithSession('ana@example.com');
     const luis = await userWithSession('luis@example.com');
-    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Equipo')).json());
+    const ws = await setupWs(ana, 'Equipo');
     await addMember(db, ws.id, luis.user.id, 'VIEWER');
 
     const asAna = await app.inject({ url: `/api/v1/workspaces/${ws.id}`, cookies: ana.cookies });
@@ -210,7 +232,7 @@ describe('GET /workspaces/:workspaceId', () => {
   it('responde 404 a quien no es miembro y a un ID no válido (no revela si existe)', async () => {
     const ana = await userWithSession('ana@example.com');
     const luis = await userWithSession('luis@example.com');
-    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'De Ana')).json());
+    const ws = await setupWs(ana, 'De Ana');
 
     const notMember = await app.inject({
       url: `/api/v1/workspaces/${ws.id}`,
@@ -227,17 +249,13 @@ describe('GET /workspaces/:workspaceId', () => {
 });
 
 describe('Admin del sistema (ve y entra a todos los espacios)', () => {
-  async function systemAdmin() {
-    const admin = await userWithSession('root@example.com');
-    await db.user.update({ where: { id: admin.user.id }, data: { isSystemAdmin: true } });
-    return admin;
-  }
+  const systemAdmin = () => systemAdminUser();
 
   it('lista todos los espacios, como Admin en los que no es miembro', async () => {
     const ana = await userWithSession('ana@example.com');
     const root = await systemAdmin();
-    const deAna = workspaceSummarySchema.parse((await createWs(ana.cookies, 'De Ana')).json());
-    const propio = workspaceSummarySchema.parse((await createWs(root.cookies, 'Propio')).json());
+    const deAna = await setupWs(ana, 'De Ana');
+    const propio = await setupWs(root, 'Propio');
 
     const list = workspaceListSchema.parse((await listWs(root.cookies)).json());
 
@@ -250,7 +268,7 @@ describe('Admin del sistema (ve y entra a todos los espacios)', () => {
   it('entra a un espacio ajeno con permisos de Admin', async () => {
     const ana = await userWithSession('ana@example.com');
     const root = await systemAdmin();
-    const deAna = workspaceSummarySchema.parse((await createWs(ana.cookies, 'De Ana')).json());
+    const deAna = await setupWs(ana, 'De Ana');
 
     const detail = await app.inject({
       url: `/api/v1/workspaces/${deAna.id}`,
@@ -270,7 +288,7 @@ describe('Admin del sistema (ve y entra a todos los espacios)', () => {
   it('no ve los espacios en la papelera', async () => {
     const ana = await userWithSession('ana@example.com');
     const root = await systemAdmin();
-    const borrado = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Borrado')).json());
+    const borrado = await setupWs(ana, 'Borrado');
     await db.workspace.update({ where: { id: borrado.id }, data: auditSoftDelete(ana.user.id) });
 
     const list = workspaceListSchema.parse((await listWs(root.cookies)).json());
@@ -286,7 +304,7 @@ describe('Admin del sistema (ve y entra a todos los espacios)', () => {
   it('un usuario normal sigue sin ver ni entrar a espacios ajenos', async () => {
     const ana = await userWithSession('ana@example.com');
     const luis = await userWithSession('luis@example.com');
-    const deAna = workspaceSummarySchema.parse((await createWs(ana.cookies, 'De Ana')).json());
+    const deAna = await setupWs(ana, 'De Ana');
 
     const list = workspaceListSchema.parse((await listWs(luis.cookies)).json());
     const detail = await app.inject({
@@ -302,7 +320,7 @@ describe('Admin del sistema (ve y entra a todos los espacios)', () => {
 describe('gestionar miembros (HU-25)', () => {
   async function team() {
     const ana = await userWithSession('ana@example.com');
-    const ws = workspaceSummarySchema.parse((await createWs(ana.cookies, 'Equipo')).json());
+    const ws = await setupWs(ana, 'Equipo');
     const luis = await userWithSession('luis@example.com');
     await addMember(db, ws.id, luis.user.id, 'VIEWER');
     return { ana, ws, luis };

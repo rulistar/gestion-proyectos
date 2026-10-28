@@ -107,14 +107,17 @@ export function AppSidebar() {
           ))}
         </NativeSelect>
         <div className="flex flex-wrap gap-1">
-          <CreateWorkspaceDialog
-            trigger={
-              <Button variant="ghost" size="sm" className="text-primary">
-                <Plus aria-hidden />
-                Nuevo espacio
-              </Button>
-            }
-          />
+          {/* Solo el Admin del sistema crea espacios (HU-42); lo verifica también la API */}
+          {user.isSystemAdmin && (
+            <CreateWorkspaceDialog
+              trigger={
+                <Button variant="ghost" size="sm" className="text-primary">
+                  <Plus aria-hidden />
+                  Nuevo espacio
+                </Button>
+              }
+            />
+          )}
           {current && roleHasPermission(current.role, 'workspace.update') && (
             <RenameWorkspaceDialog
               workspace={current}
