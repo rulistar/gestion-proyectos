@@ -122,7 +122,17 @@ export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => 
     },
   );
 
+  // Solo el Admin del sistema crea espacios (HU-42); los demás entran por invitación
   app.post('/workspaces', async (request, reply) => {
+    const actor = await app.db.user.findUnique({
+      where: { id: request.auth!.userId },
+      select: { isSystemAdmin: true },
+    });
+    if (!actor?.isSystemAdmin) {
+      return reply
+        .code(403)
+        .send({ message: 'Solo el Admin del sistema puede crear espacios de trabajo' });
+    }
     const parsed = createWorkspaceRequestSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ message: z.prettifyError(parsed.error) });

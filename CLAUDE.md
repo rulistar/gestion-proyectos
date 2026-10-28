@@ -17,7 +17,7 @@ Aplicación web para gestionar proyectos personales y de un equipo pequeño (wor
 
 Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/backlog.md).
 
-- **Registro solo por invitación**; el primer Admin se crea con `setup:admin`.
+- **Registro solo por invitación**; el primer Admin se crea con `setup:admin`. Solo el Admin del sistema crea espacios (HU-42, 2026-10-28).
 - **Roles por workspace** (Admin, Miembro, Lector) vía `Membership`, más **ajustes de permisos por usuario**.
 - **Visibilidad**: proyectos públicos (todo el workspace) o restringidos (lista de usuarios). Los Admin ven todo.
 - **Borrado lógico** (papelera, restaurable) y **físico solo desde la papelera**, solo Admin. Lo borrado no aparece en listados, exportaciones ni gráficas.

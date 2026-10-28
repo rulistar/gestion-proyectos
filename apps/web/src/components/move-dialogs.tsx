@@ -61,6 +61,9 @@ export function MoveProjectDialog({
     activeTypes.find((type) => type.behavior === project.type.behavior);
   const chosenType = typeId || suggested?.id || '';
 
+  // Sin otro espacio donde sea Admin no hay a dónde moverlo: no se muestra (HU-42)
+  if (targets.length === 0) return null;
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     move.mutate(
@@ -83,7 +86,7 @@ export function MoveProjectDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" disabled={targets.length === 0}>
+        <Button variant="ghost" size="sm">
           <ArrowRightLeft aria-hidden />
           Mover
         </Button>
