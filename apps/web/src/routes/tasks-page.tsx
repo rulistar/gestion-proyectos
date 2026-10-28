@@ -6,7 +6,7 @@ import {
   type TaskSortKey,
   type WorkspaceTask,
 } from '@gestion/shared';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { useState, type ReactNode } from 'react';
 import { PageHeader } from '@/components/page-header';
@@ -22,6 +22,7 @@ import { dueInfo } from '@/lib/due';
 import { peopleQueryOptions } from '@/lib/people';
 import { projectTypesQueryOptions } from '@/lib/project-types';
 import { projectsQueryOptions } from '@/lib/projects';
+import { taskOriginsQueryOptions } from '@/lib/task-origins';
 import { allowedTaskTypes, taskTypeClass, taskTypesQueryOptions } from '@/lib/task-types';
 import { TASK_STATUSES, workspaceTasksQueryOptions } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
@@ -45,6 +46,7 @@ export function TasksPage() {
   const { data: projectTypes } = useSuspenseQuery(projectTypesQueryOptions(workspaceId));
   const { data: taskTypes } = useSuspenseQuery(taskTypesQueryOptions(workspaceId));
   const { data: people } = useSuspenseQuery(peopleQueryOptions(workspaceId));
+  const { data: origins = [] } = useQuery(taskOriginsQueryOptions(workspaceId));
   const access = useAccess(workspaceId);
   const [editingId, setEditingId] = useState<string>();
 
@@ -106,6 +108,7 @@ export function TasksPage() {
               projects={projects}
               taskTypes={taskTypes}
               people={people}
+              origins={origins}
               filters={filters}
               onChange={onFilters}
             />

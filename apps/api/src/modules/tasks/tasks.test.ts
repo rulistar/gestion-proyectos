@@ -195,6 +195,8 @@ describe('POST .../tasks (HU-08)', () => {
       estimatedMinutes: 45,
       responsible: null,
       createdById: ana.user.id,
+      origin: null,
+      originDetail: null,
       startDate: null,
       endDate: '2026-11-20',
       completedAt: null,

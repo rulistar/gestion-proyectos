@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { filterTasks, sortTasks, taskFiltersSchema, type WorkspaceTask } from './task-filters.js';
+import {
+  filterTasks,
+  NO_ORIGIN,
+  sortTasks,
+  taskFiltersSchema,
+  type WorkspaceTask,
+} from './task-filters.js';
 
 const TODAY = '2026-10-28';
 
@@ -36,6 +42,8 @@ function task(overrides: Partial<WorkspaceTask>): WorkspaceTask {
     estimatedMinutes: null,
     responsible: null,
     createdById: null,
+    origin: null,
+    originDetail: null,
     startDate: null,
     endDate: null,
     statusReason: null,
@@ -83,6 +91,28 @@ describe('filterTasks (HU-39)', () => {
     expect(filterTasks(all, { endBy: '2026-11-03' }, TODAY)).toEqual([lecciones, vencida]);
     // La Hecha con fecha pasada no es vencida aunque se muestren las cerradas
     expect(filterTasks(all, { overdue: true, showClosed: true }, TODAY)).toEqual([vencida]);
+  });
+});
+
+describe('filtro por origen (HU-47)', () => {
+  const ticket = { id: '00000000-0000-4000-8000-000000000001', name: 'Ticket' };
+  const conTicket = task({
+    title: 'Con ticket',
+    origin: ticket,
+    originDetail: '#4521 mesa de ayuda',
+  });
+  const sinOrigen = task({ title: 'Sin origen' });
+
+  it('con Origen = Ticket encuentra las de Ticket, no las que no tienen origen', () => {
+    const found = filterTasks([conTicket, sinOrigen], { originId: ticket.id }, TODAY);
+    expect(found.map((t) => t.title)).toEqual(['Con ticket']);
+  });
+
+  it('"Sin origen" encuentra solo las que no tienen; el texto busca también en el detalle', () => {
+    expect(
+      filterTasks([conTicket, sinOrigen], { originId: NO_ORIGIN }, TODAY).map((t) => t.title),
+    ).toEqual(['Sin origen']);
+    expect(filterTasks([conTicket, sinOrigen], { q: '4521' }, TODAY)).toEqual([conTicket]);
   });
 });
 

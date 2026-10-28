@@ -8,6 +8,7 @@ import {
 } from '@gestion/shared';
 import type { Db, Tx } from '../../db/client.js';
 import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
+import { seedTaskOrigins } from '../task-origins/task-origins.service.js';
 
 /** El nombre ya lo usa otro tipo activo del espacio (→ 409) */
 export class DuplicateTypeNameError extends Error {}
@@ -52,6 +53,7 @@ export async function seedCatalog(tx: Tx, workspaceId: string, actorId: string |
       })),
     ),
   });
+  await seedTaskOrigins(tx, workspaceId, actorId);
 }
 
 /** Catálogo del espacio, archivados incluidos, en su orden */

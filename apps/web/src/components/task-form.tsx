@@ -7,6 +7,7 @@ import {
   type TaskStatus,
   type TaskTypeRef,
 } from '@gestion/shared';
+import { useQuery } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
@@ -15,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { selectablePeople } from '@/lib/people';
+import { taskOriginsQueryOptions } from '@/lib/task-origins';
 import { TASK_STATUSES } from '@/lib/tasks';
 import { useSchemaForm } from '@/lib/use-schema-form';
 
@@ -27,6 +29,8 @@ const FIELDS = [
   'startDate',
   'endDate',
   'statusReason',
+  'originId',
+  'originDetail',
 ] as const;
 
 interface TaskFormProps {
@@ -60,6 +64,9 @@ export function TaskForm({
   const form = useSchemaForm(taskInputSchema, FIELDS, onSubmit);
   // El motivo solo se pide (y se muestra) en Pausada y Cancelada (HU-24)
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? 'PENDING');
+  // Orígenes activos (HU-47) y, al editar, el que ya tenía aunque esté archivado
+  const { data: origins = [] } = useQuery(taskOriginsQueryOptions(workspaceId));
+  const originChoices = origins.filter((o) => !o.archived || o.id === task?.origin?.id);
 
   return (
     <form onSubmit={form.onSubmit} noValidate>
@@ -153,6 +160,31 @@ export function TaskForm({
           <Label htmlFor={form.idOf('endDate')}>Fin</Label>
           <Input {...form.field('endDate')} type="date" defaultValue={task?.endDate ?? ''} />
           <FieldError {...form.errorProps('endDate')} />
+        </div>
+
+        {/* De dónde viene (HU-47): del catálogo de Configuración, con su detalle */}
+        <div className="grid gap-2">
+          <Label htmlFor={form.idOf('originId')}>Origen</Label>
+          <NativeSelect {...form.field('originId')} defaultValue={task?.origin?.id ?? ''}>
+            <option value="">Sin origen</option>
+            {originChoices.map((origin) => (
+              <option key={origin.id} value={origin.id}>
+                {origin.name}
+                {origin.archived ? ' (archivado)' : ''}
+              </option>
+            ))}
+          </NativeSelect>
+          <FieldError {...form.errorProps('originId')} />
+        </div>
+        <div className="grid gap-2 sm:col-span-1 lg:col-span-3">
+          <Label htmlFor={form.idOf('originDetail')}>Detalle del origen</Label>
+          <Input
+            {...form.field('originDetail')}
+            defaultValue={task?.originDetail ?? ''}
+            maxLength={300}
+            placeholder="Por ejemplo: Ticket #4521 de mesa de ayuda"
+          />
+          <FieldError {...form.errorProps('originDetail')} />
         </div>
 
         <FormActions submitLabel={submitLabel} isPending={isPending} error={error}>

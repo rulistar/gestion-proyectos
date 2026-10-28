@@ -100,6 +100,8 @@ apps/
                           ensureMemberPerson al entrar un miembro; displayNames = alias que se muestra
       project-types/      catálogo de tipos de contenedor (HU-21, ADR-0004): GET (project.read), POST/PATCH (catalog.manage);
                           seedCatalog carga tipos de contenedor, de tarea y permitidos al crear un espacio
+      task-origins/       catálogo de orígenes de tarea (HU-47): GET (miembros), POST/PATCH (catalog.manage);
+                          resolveTaskOrigin valida el origen de una tarea; seedTaskOrigins va en seedCatalog
       task-types/         catálogo de tipos de tarea (HU-22): GET (project.read), POST/PATCH (catalog.manage);
                           resolveTaskType valida el tipo contra los permitidos del contenedor
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05); DELETE = a la papelera.

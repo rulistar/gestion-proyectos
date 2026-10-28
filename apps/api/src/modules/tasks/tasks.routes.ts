@@ -14,6 +14,7 @@ import { forbidden, requireMembership } from '../workspaces/access.js';
 import { visibleContainer, visibleTask } from '../workspaces/facts.js';
 import { taskVisibleWhere } from '../workspaces/visibility.js';
 import { assignablePeople } from '../people/people.service.js';
+import { InvalidTaskOriginError } from '../task-origins/task-origins.service.js';
 import {
   createTask,
   currentResponsible,
@@ -42,6 +43,9 @@ function invalidType(reply: FastifyReply, error: unknown) {
     return reply
       .code(400)
       .send({ message: 'Ese tipo de tarea no existe, está archivado o no se admite aquí' });
+  }
+  if (error instanceof InvalidTaskOriginError) {
+    return reply.code(400).send({ message: 'Ese origen no existe o está archivado' });
   }
   throw error;
 }
