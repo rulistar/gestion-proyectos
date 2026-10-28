@@ -36,6 +36,7 @@
 | Corrección de HU-35 (2026-10-27) | **Actividad, Gestión y Seguimiento son tipos de tarea** (no responsabilidades). La tarea tiene **un solo Responsable**, elegido del catálogo de personas. |
 | Revisión del Sprint 3 (2026-10-26) | Se hizo lo pedido. Nuevos: **Sprint** y **Actividades del sprint** en proyectos y mantenimientos; en cada tarea **Actividad, Gestión y Seguimiento** (una persona cada una; Actividad reemplaza a Responsable); **catálogo de personas por espacio**, con o sin cuenta, vinculables a un usuario para mostrarlo con otro nombre; personas del proyecto desde el catálogo; **tipos de tarea limitados por contenedor**. Diseño en [ADR-0005](adr/ADR-0005-personas-y-responsabilidades.md). Sprint 4: estas historias + HU-32 + HU-09 (28 pts); HU-23 pasa al Sprint 5. |
 | Datos del proyecto (2026-10-25) | Los proyectos llevan **Folio** (viene de otro sistema: opcional, editable, puede repetirse), **Descripción**, **Observaciones** (antes "Notas") y personas como **texto libre** (solo el nombre): Solicitante, Asignado a, Project manager, Gte. Consultoría y Business partner. Se hace ya (HU-31). **Mover** proyectos, mantenimientos y tareas **entre espacios**, solo Admin (HU-32, Sprint 4). |
+| Revisión del Sprint 4 (2026-10-27) | Se hizo lo pedido (36 pts). "Fin hasta" de la lista de proyectos es la fecha de fin del contenedor; las tareas se consultan en la vista **Tareas** (HU-39). Sprint 5: despliegue, fases, pestaña Lista (reducida a 2 pts), Gantt, Mi perfil, usuarios del sistema y visibilidad (34 pts); HU-23 y HU-17 pasan al Sprint 6. |
 
 ## Requisitos no funcionales (aplican a todas las historias)
 
@@ -80,15 +81,15 @@
 | 25 | HU-32 | Mover un proyecto, mantenimiento o tarea a otro espacio de trabajo (solo Admin) | Workspaces | 5 | 🔴 | 4 |
 | 26 | HU-09 | Tabla de proyectos con filtros y orden por columna | Vistas | 5 | 🔴 | 4 |
 | 27 | HU-39 | Vista "Tareas": todas las tareas del espacio con filtros y orden | Vistas | 5 | 🔴 | 4 |
-| 28 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
-| 29 | HU-26 | Muchas tareas: vista Lista, filtros y columnas plegables | Vistas | 5 | 🔴 | 5 |
-| 30 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 5 |
-| 31 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
-| 32 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
-| 33 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 5 |
+| 28 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
+| 29 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
+| 30 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 5 |
+| 31 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
+| 32 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 33 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
 | 34 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
-| 35 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
-| 36 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
+| 35 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
+| 36 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 6 |
 | 37 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
 | 38 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
 | 39 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
@@ -430,6 +431,20 @@ _Como miembro, quiero ver todas las tareas del espacio y filtrarlas como los pro
 - [x] Clic en la tarea abre su edición (quien tiene permiso), la misma ventana del tablero.
 - [x] API `GET /workspaces/:id/tasks` con permiso de lectura; sin lo que está en la papelera. Pruebas en shared y en la API.
 
+### Sprint 5
+
+Plan: [sprints/sprint-05.md](sprints/sprint-05.md). Decisiones del PO al planificar (2026-10-27): HU-26 baja a 2 pts porque la vista Tareas (HU-39) ya cubre los filtros; HU-23 y HU-17 pasan al Sprint 6.
+
+#### TEC-04 · Despliegue gratuito con HTTPS (5 pts)
+
+_Como PO, quiero la aplicación en una URL pública con HTTPS, para usarla con mi equipo sin depender de mi PC._
+
+- [ ] Se comparan 2 o 3 servicios gratuitos (aplicación y PostgreSQL) con sus condiciones vigentes, y la elección queda en un ADR. El PO aprueba antes de crear cuentas.
+- [ ] API y web en producción con **HTTPS**, HSTS y cookies `Secure` (ya previsto en `security.ts`); CORS solo para el dominio publicado.
+- [ ] Secretos solo en las variables del hosting (nunca en el repositorio); `.env.example` documenta cada una.
+- [ ] Las migraciones se aplican al desplegar; el primer Admin se crea con `setup:admin`.
+- [ ] Se despliega desde `main` con CI en verde; un documento explica cómo desplegar, cómo ver los registros y cómo respaldar la base de datos.
+
 #### HU-07 · Fases (8 pts)
 
 _Como responsable de un proyecto, quiero agrupar sus tareas en fases (y subfases), para ver el trabajo ordenado y el avance de cada parte, como en Project._
@@ -442,23 +457,55 @@ _Como responsable de un proyecto, quiero agrupar sus tareas en fases (y subfases
 - [ ] El tipo de contenedor (ADR-0004) decide si usa fases: Proyecto sí; Mantenimiento y Actividades, no por defecto.
 - [ ] Cumple RNF-01 y RNF-05, con pruebas de permisos y de los cálculos (funciones puras en shared).
 
-#### HU-26 · Muchas tareas en pantalla (5 pts)
+#### HU-26 · Pestaña Lista del proyecto (2 pts)
 
-_Como miembro, quiero ver las tareas en lista y filtrarlas, para manejar proyectos con muchas tareas._
+_Como miembro, quiero ver las tareas de un proyecto en lista, para manejar proyectos con muchas tareas._ Reducida por el PO (2026-10-27): reutiliza la vista Tareas (HU-39).
 
-- [ ] En el proyecto se alterna entre **Tablero** y **Lista** (tabla compacta y ordenable, agrupada por fases con sangría).
-- [ ] Filtros: texto, **Mis tareas**, responsable, tipo, estado, vencidas y rango de fechas (se muestran las tareas cuyo rango se cruza con el elegido, como en el prototipo).
-- [ ] Las columnas Hecha y Cancelada muestran las 10 más recientes y un botón "Ver más".
-- [ ] Los filtros viven en la URL.
-- [ ] La lógica de filtrado son funciones puras con pruebas.
+- [ ] En el proyecto se alterna entre **Tablero** y **Lista**; la Lista es la tabla de la vista Tareas filtrada a ese proyecto (mismos filtros y orden, en la URL).
+- [ ] Con fases (HU-07), las tareas se **agrupan por fase con sangría**, y se pueden plegar.
+- [ ] Clic en una tarea abre su edición, como en el tablero.
+
+#### HU-27 · Gantt (8 pts)
+
+_Como responsable, quiero ver mis proyectos y tareas en un diagrama de Gantt, para comparar lo planeado contra lo real._
+
+- [ ] Dentro de cada proyecto (sus tareas) y uno general del espacio (los proyectos como barras, con sus tareas desplegables).
+- [ ] Barras con las fechas planeadas coloreadas por estado, línea de "hoy" y vencido resaltado.
+- [ ] **Planeado contra real** (ADR-0004 §2.1).
+- [ ] Zoom semana / mes / trimestre.
+- [ ] **Fases como barras resumen** (HU-07) y Entregables como hitos (rombo).
+- [ ] Sin librería nueva (cuadrícula de CSS). Dependencias entre tareas: más adelante, si hacen falta.
+
+#### HU-29 · Mi perfil (3 pts)
+
+_Como usuario, quiero cambiar mi nombre, mi correo y mi contraseña, sin pedírselo al Admin._
+
+- [ ] Desde el menú del usuario: cambiar nombre, correo y contraseña.
+- [ ] Cambiar el correo o la contraseña pide la **contraseña actual**.
+- [ ] El correo nuevo se guarda en minúsculas y no puede estar en uso.
+- [ ] Al cambiar el correo o la contraseña se **cierran mis demás sesiones**.
+- [ ] Cumple RNF-01. Sin verificación por correo mientras no haya servicio de correo.
+
+#### HU-30 · Usuarios del sistema (3 pts)
+
+_Como Admin del sistema, quiero corregir correos y desactivar cuentas, para mantener los accesos en orden._
+
+- [ ] Pantalla solo para el **Admin del sistema** con todos los usuarios (nombre, correo, espacios, estado).
+- [ ] Puede **cambiar el correo** de cualquiera (mismas reglas que HU-29); se cierran sus sesiones.
+- [ ] Puede **desactivar o reactivar** una cuenta: una cuenta desactivada no inicia sesión y sus sesiones se cierran.
+- [ ] El Admin de un espacio no cambia correos: quita al miembro e invita el correo correcto.
+
+#### HU-16 · Visibilidad de proyectos (5 pts)
+
+_Como Admin, quiero restringir un proyecto a ciertos usuarios, para que los demás no lo vean._
+
+- [ ] Un proyecto puede marcarse como **restringido**, con una lista de usuarios autorizados. Los Admin ven todo.
+- [ ] Los demás no lo ven en ninguna vista: Proyectos, Tareas, Mi trabajo, búsqueda, Mover, papelera, Gantt ni exportación. Pedirlo por su ID da 404.
+- [ ] Un solo filtro de visibilidad en la API, con pruebas por endpoint.
 
 ### Sprints siguientes (criterios por detallar en su planificación)
 
-- **HU-16 · Visibilidad:** un proyecto puede marcarse como restringido, con una lista de usuarios autorizados; los demás no lo ven en ninguna vista, búsqueda ni exportación.
 - **HU-17 · Permisos por usuario:** pantalla con la **matriz de permisos** de cada miembro (filas: ver, crear, editar, borrar, exportar... sobre proyectos y tareas; columnas: lo que da su rol y el ajuste personal). El Admin concede o quita acciones concretas, por ejemplo limitar las altas o las modificaciones.
-- **HU-29 · Mi perfil:** desde el menú del usuario, cambiar mi nombre, mi correo y mi contraseña. Cambiar el correo o la contraseña pide la **contraseña actual**; el correo nuevo se guarda en minúsculas y no puede estar en uso; al cambiarlos se **cierran mis demás sesiones**. Cumple RNF-01. Sin verificación por correo mientras no haya servicio de correo.
-- **HU-30 · Usuarios del sistema:** pantalla solo para el **Admin del sistema** con todos los usuarios (nombre, correo, espacios, estado). Puede **cambiar el correo** de cualquiera (mismas reglas que HU-29; se cierran sus sesiones) y **desactivar o reactivar** una cuenta (una cuenta desactivada no inicia sesión y sus sesiones se cierran). El Admin de un espacio no cambia correos: quita al miembro e invita el correo correcto.
-- **HU-27 · Gantt:** dentro de cada proyecto (sus tareas) y uno general del espacio (los proyectos como barras, con sus tareas desplegables). Barras con las fechas planeadas coloreadas por estado, línea de "hoy", vencido resaltado, **planeado contra real** (ADR-0004 §2.1), zoom semana / mes / trimestre, **fases como barras resumen** (HU-07) y Entregables como hitos (rombo). Sin librería nueva (cuadrícula de CSS). Dependencias entre tareas: más adelante, si hacen falta.
 - **HU-13 · Exportar:** JSON (respaldo completo) y CSV con BOM UTF-8 (una fila por tarea, compatible con el formato del prototipo); respeta la visibilidad y excluye lo borrado. Sin dependencias nuevas.
 - **HU-14 · Importar:** JSON o CSV, incluidos los respaldos del prototipo; "Actualizar" busca coincidencias por ID o, si no hay, por nombre sin distinguir mayúsculas; "Reemplazar" pide doble confirmación y manda lo anterior a la papelera; fechas normalizadas a AAAA-MM-DD (ambiguas = día/mes/año).
 - **Integraciones (TEC-08 a HU-20):** diseño en ADR-0002 §7.

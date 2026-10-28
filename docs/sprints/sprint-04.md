@@ -74,8 +74,66 @@ El PO puede reordenar.
 | Revisión | Al terminar las 7 historias | Guion de demostración con datos reales |
 | Retrospectiva | Junto con la revisión | Qué salió bien, qué mejorar |
 
-## Resultado (se completa al cierre)
+## Resultado (cierre: 2026-10-27)
 
-- Puntos completados: \_\_ / 28
-- Objetivo cumplido: ☐ Sí ☐ No
-- Notas de la retrospectiva:
+- Puntos completados: **36 / 28 comprometidos** (más 8 de historias que el PO agregó durante el sprint: HU-38 y HU-39)
+- Objetivo cumplido: ☑ Sí. El PO probó cada historia en el navegador antes de fusionarla.
+- Se cerró antes de la fecha planeada (2026-11-08); el Sprint 5 empieza el 2026-10-28.
+
+### Revisión
+
+| ID | Historia | Pts | PR |
+|---|---|---|---|
+| HU-33 | Sprint y actividades del sprint en proyectos y mantenimientos | 2 | #34 |
+| HU-38 | Folios automáticos PY / MT / ACT, sin duplicados y con autocompletado del formato | 3 | #35 |
+| HU-34 | Catálogo de personas por espacio, con alias para los usuarios | 5 | #38 |
+| — | Quitar la columna Solicitante de Proyectos y Mantenimientos | — | #39 |
+| HU-35 | Responsable desde el catálogo; tipos de tarea Actividad, Gestión y Seguimiento | 5 | #40, #43 |
+| HU-37 | Tipos de tarea por contenedor | 3 | #41, #42 |
+| HU-36 | Personas del proyecto desde el catálogo | 3 | #44 |
+| — | Formulario de tarea: "agregar persona" en su propia fila | — | #46 |
+| HU-32 | Mover proyectos, mantenimientos y tareas entre espacios (solo Admin) | 5 | #45 |
+| HU-09 | Filtros y orden en las listas de contenedores (+ conteo junto al título) | 5 | #47, #48, #49 |
+| HU-39 | Vista "Tareas": todas las tareas del espacio con filtros | 5 | #50 |
+
+- 254 pruebas en verde (218 de la API y 36 de shared).
+- Migraciones con datos (responsables y personas del proyecto) verificadas contra la base del PO: mismos conteos antes y después.
+
+**Guion de demostración** (datos reales del espacio Monex):
+
+1. **Personas** → el usuario adminrul se muestra como "Rodrigo"; alta de una persona sin cuenta.
+2. **Proyectos** → nuevo proyecto con el folio vacío → recibe `PY2610-0xx`; teclear "MT" en un mantenimiento lo completa.
+3. **Datos del proyecto** → personas desde el catálogo, Sprint y Actividades del sprint.
+4. **Mantenimiento** → limitar sus tipos de tarea; el formulario de tarea solo ofrece esos; Fast track ⚡ primero en su columna.
+5. **Proyectos** → buscar "linux", filtrar por prioridad, ordenar por Fin y copiar el enlace en otra pestaña.
+6. **Tareas** → "Fin hasta" 3 de noviembre, "Solo vencidas", responsable "Sin asignar"; editar una tarea desde la lista.
+7. **Mover** → un mantenimiento a otro espacio (como Admin de ambos).
+
+**Comentarios del PO durante la revisión**, ya atendidos dentro del sprint:
+
+| Comentario | Respuesta |
+|---|---|
+| "Fin hasta" no encontraba un proyecto por la fecha de una de sus tareas | Se queda como fecha de fin del contenedor (#49); las tareas se consultan en la nueva vista **Tareas** (HU-39) |
+| El conteo bajo el título ocupa espacio vertical | Va a la derecha del título en las listas (#48) |
+| "Responsable" se encimaba con "Minutos estimados" | "Agregar persona" en su propia fila (#46) |
+
+### Retrospectiva
+
+**Salió bien**
+
+- Se entregaron 36 puntos (28 comprometidos) con pruebas, CI en verde y "Cómo probarlo" en cada PR.
+- Los acuerdos del Sprint 3 funcionaron: la carpeta del PO quedó en la rama correcta antes de cada prueba, y lo agregado a mitad del sprint se anotó el mismo día (HU-38, HU-39).
+- Las preguntas antes de construir (folios, filtros, alcance) evitaron retrabajo en las historias grandes.
+
+**A mejorar**
+
+- Hubo un malentendido de fondo: "Actividad, Gestión y Seguimiento" se construyó como tres responsables por tarea, pero eran **tipos de tarea**. Se corrigió con #43, pero costó una migración extra.
+- Dos veces se subió una corrección a una rama cuyo PR ya estaba fusionado, y una vez se borró una rama sin fusionar. Se rehízo el trabajo en ramas nuevas.
+- gitleaks detectó una contraseña de prueba escrita en el código; se cambió por un valor aleatorio.
+- "Fin hasta" se interpretó distinto (proyecto contra tareas). Se descubrió en la prueba del PO, no al planear.
+
+**Acuerdos para el Sprint 5**
+
+1. **Ante un término nuevo del PO, confirmar con un ejemplo concreto** ("¿se vería así en la pantalla?") antes de cambiar el modelo de datos.
+2. **Antes de subir cambios a una rama, comprobar que su PR no está fusionado**; antes de borrar una rama, que esté en `main`.
+3. **Cada filtro nuevo se describe en el PR con un ejemplo de qué encuentra y qué no.**
