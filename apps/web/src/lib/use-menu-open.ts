@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 
 const STORAGE_KEY = 'menu-lateral-visible';
 
@@ -29,4 +29,11 @@ export function useMenuOpen() {
     });
   }, []);
   return { open, toggle };
+}
+
+/** Si el menú lateral está visible, para las páginas que aprovechan el espacio extra (HU-46) */
+export const MenuOpenContext = createContext(true);
+
+export function useIsMenuOpen(): boolean {
+  return useContext(MenuOpenContext);
 }

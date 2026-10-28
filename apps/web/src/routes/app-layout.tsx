@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useCurrentUser, useLogout } from '@/lib/auth';
 import { initials } from '@/lib/brand';
-import { useMenuOpen } from '@/lib/use-menu-open';
+import { MenuOpenContext, useMenuOpen } from '@/lib/use-menu-open';
 
 /**
  * Marco de todas las páginas con sesión (HU-28): menú lateral + barra superior + contenido.
@@ -55,7 +55,9 @@ export function AppLayout() {
           <UserMenu />
         </header>
         <main className="mx-auto w-full max-w-screen-2xl flex-1 p-3 md:px-6 md:py-4">
-          <Outlet />
+          <MenuOpenContext value={menu.open}>
+            <Outlet />
+          </MenuOpenContext>
         </main>
       </div>
     </div>

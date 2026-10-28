@@ -53,7 +53,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 
 - **HU-16 se une a HU-17** (la opción "Estos…" de la matriz).
 - **Pasan al Sprint 6:** Gantt (HU-27, 8 pts) y pestaña Lista (HU-26, 2 pts).
-- Con las adiciones (HU-40 a HU-45: 8 pts), el compromiso queda en **40 puntos**.
+- Con las adiciones (HU-40 a HU-46: 9 pts), el compromiso queda en **41 puntos**.
 
 **Lo que el PO pida a mitad del sprint** se anota aquí el mismo día, con sus puntos:
 
@@ -65,8 +65,9 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 | 2026-10-28 | HU-43 | "Sin folio" es el único folio que puede repetirse | 1 |
 | 2026-10-28 | HU-44 | Personas: borrar a quien no se usa y ocultar las archivadas | 2 |
 | 2026-10-28 | HU-45 | Personas: ver dónde aparece una persona para reasignarla | 1 |
+| 2026-10-28 | HU-46 | Actividades: fecha fin; Abiertas solo con el menú oculto | 1 |
 
-El compromiso queda en **42 puntos** (40 después de la replaneación de abajo).
+El compromiso queda en **43 puntos** (41 después de la replaneación de abajo).
 
 ## Guion de demostración (se arma al planificar, acuerdo del Sprint 3)
 
