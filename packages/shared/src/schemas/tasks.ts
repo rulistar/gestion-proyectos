@@ -65,6 +65,8 @@ export const taskSchema = z.object({
   estimatedMinutes: z.number().int().nullable(),
   /** Responsable: una persona del catálogo (con alias), tenga o no cuenta */
   responsible: personRefSchema.nullable(),
+  /** Quién la creó: con el Responsable, decide "las mías" (ADR-0006) */
+  createdById: z.uuid().nullable(),
   startDate: z.iso.date().nullable(),
   endDate: z.iso.date().nullable(),
   /** Por qué está Pausada o Cancelada; null en los demás estados */

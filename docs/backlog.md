@@ -558,9 +558,9 @@ _Como Admin, quiero configurar a cada persona al invitarla (en qué espacios ent
 - [x] Pruebas por endpoint de "otro usuario no lo ve" y de cada opción de la matriz.
 
 **HU-17b · Pantalla de permisos (5 pts)**
-- [ ] En Miembros, "Permisos" abre la matriz de la persona: plantilla y ajustes por sección (Ver, Crear, Modificar, Dar de baja y restaurar) y la lista "Estos…".
-- [ ] Muestra "Miembro (ajustado)" cuando la matriz ya no coincide con la plantilla.
-- [ ] La web oculta lo que el usuario no puede hacer según su matriz (botones, secciones, papelera).
+- [x] En Miembros, "Permisos" abre la matriz de la persona: plantilla y ajustes por sección (Ver, Crear, Modificar, Dar de baja y restaurar) y la lista "Estos…" (solo se guardan los contenedores de secciones que ven "Estos…"). Cambiar el rol en el combo aplica su plantilla y descarta los ajustes.
+- [x] Muestra "Miembro (ajustado)" cuando la matriz ya no coincide con la plantilla (en Miembros y en "tu rol" de cada sección).
+- [x] La web oculta lo que el usuario no puede hacer según su matriz: Nuevo proyecto/mantenimiento/actividad por sección, Editar datos, Dar de baja, Nueva tarea y editar o dar de baja cada tarea. La Papelera aparece para quien puede dar de baja algo; "Borrar definitivamente" sigue siendo solo del Admin.
 
 **HU-17c · Invitación a varios espacios (3 pts)**
 - [ ] Una invitación incluye uno o varios espacios, cada uno con su plantilla y su matriz; quien invita debe ser Admin de cada uno.

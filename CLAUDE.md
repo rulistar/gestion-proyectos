@@ -65,6 +65,8 @@ apps/
                         .../miembros, .../personas, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
+    src/lib/access.ts   useAccess (mi matriz en el espacio) + containerFacts/taskFacts: la web oculta botones
+                        con las reglas de shared (canUpdateContainer, canUpdateTask…; ADR-0006)
     src/lib/<mod>.ts    queryOptions + mutaciones de cada módulo (p. ej. workspaces.ts); la ruta precarga con loader
     src/lib/use-schema-form.ts  formularios validados con el esquema de shared (FormData + errores por campo)
     src/components/ui/  componentes de shadcn/ui (copiados, sin el CLI; se pueden modificar)
@@ -85,7 +87,8 @@ apps/
       auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth + startSession
       auth/current-user.ts getCurrentUser: el usuario con sus workspaces (/auth/me, login, HU-01)
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
-      workspaces/         GET/POST/PATCH /workspaces[/:id], /:id/members (PATCH rol, DELETE quitar; HU-25)
+      workspaces/         GET/POST/PATCH /workspaces[/:id] (el detalle trae mi matriz), /:id/members (PATCH rol = plantilla,
+                          PUT /:userId/permissions = matriz y "Estos…" (HU-17b), DELETE quitar; HU-25)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02);
                           request.membership = acceso con su matriz (ADR-0006). requirePermission solo para lo del Admin
       workspaces/visibility.ts  filtro de visibilidad único (ADR-0006): projectVisibleWhere / taskVisibleWhere;

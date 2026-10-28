@@ -32,6 +32,7 @@ function project(overrides: Partial<Project>): Project {
     type: { id: 'tipo-proyecto', name: 'Proyecto', behavior: 'WITH_END' },
     name: 'Sin nombre',
     folio: null,
+    createdById: null,
     description: null,
     requester: null,
     assignedTo: null,

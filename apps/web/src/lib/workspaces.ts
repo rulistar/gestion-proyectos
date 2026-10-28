@@ -1,9 +1,13 @@
 import {
+  matchesTemplate,
   memberListSchema,
+  workspaceDetailSchema,
   workspaceListSchema,
   workspaceSummarySchema,
   type CreateWorkspaceRequest,
+  type MemberPermissions,
   type MembershipRole,
+  type UpdateMemberPermissions,
 } from '@gestion/shared';
 import { queryOptions, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
@@ -15,16 +19,21 @@ export const ROLE_LABELS: Record<MembershipRole, string> = {
   VIEWER: 'Lector',
 };
 
+/** "Miembro" o "Miembro (ajustado)" si la matriz ya no es la de la plantilla (ADR-0006 §2) */
+export function roleLabel(role: MembershipRole, permissions: MemberPermissions): string {
+  return matchesTemplate(role, permissions) ? ROLE_LABELS[role] : `${ROLE_LABELS[role]} (ajustado)`;
+}
+
 export const workspacesQueryOptions = queryOptions({
   queryKey: ['workspaces'],
   queryFn: () => apiFetch('/workspaces', { schema: workspaceListSchema }),
 });
 
-/** Un workspace con mi rol en él (para saber qué botones mostrar; la API decide igualmente) */
+/** Un workspace con mi rol y mi matriz (para saber qué botones mostrar; la API decide igualmente) */
 export const workspaceQueryOptions = (workspaceId: string) =>
   queryOptions({
     queryKey: ['workspaces', workspaceId],
-    queryFn: () => apiFetch(`/workspaces/${workspaceId}`, { schema: workspaceSummarySchema }),
+    queryFn: () => apiFetch(`/workspaces/${workspaceId}`, { schema: workspaceDetailSchema }),
   });
 
 /** Miembros activos del workspace (p. ej. para elegir el responsable de una tarea) */
@@ -94,6 +103,19 @@ export function useRemoveMember(workspaceId: string) {
   return useMutation({
     mutationFn: (userId: string) =>
       apiFetch(`/workspaces/${workspaceId}/members/${userId}`, { method: 'DELETE' }),
+    onSuccess: () => invalidateMembers(queryClient),
+  });
+}
+
+/** Plantilla + matriz + lista "Estos…" de un miembro (HU-17b, solo el Admin) */
+export function useChangeMemberPermissions(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, ...data }: UpdateMemberPermissions & { userId: string }) =>
+      apiFetch(`/workspaces/${workspaceId}/members/${userId}/permissions`, {
+        method: 'PUT',
+        body: data,
+      }),
     onSuccess: () => invalidateMembers(queryClient),
   });
 }

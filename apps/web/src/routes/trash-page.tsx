@@ -1,4 +1,4 @@
-import { roleHasPermission, type TrashItem } from '@gestion/shared';
+import { canUseTrash, roleHasPermission, type TrashItem } from '@gestion/shared';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { FolderKanban, ListChecks, RotateCcw, Trash2 } from 'lucide-react';
@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAccess } from '@/lib/access';
 import { trashQueryOptions, usePurgeFromTrash, useRestoreFromTrash } from '@/lib/trash';
 import { workspaceQueryOptions } from '@/lib/workspaces';
 
@@ -18,24 +19,28 @@ const dateTimeFormat = new Intl.DateTimeFormat('es-MX', {
   timeStyle: 'short',
 });
 
-/** Papelera del espacio (HU-15): restaurar o borrar definitivamente. Solo para el Admin */
+/**
+ * Papelera del espacio (HU-15): cada quien ve y restaura lo que su matriz le deja dar de baja
+ * (ADR-0006 §3); borrar definitivamente, solo el Admin
+ */
 export function TrashPage() {
   const { workspaceId } = route.useParams();
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
-  const canManage = roleHasPermission(workspace.role, 'trash.manage');
-  // Sin permiso ni se pide: la API respondería 403
+  const canSee = canUseTrash(useAccess(workspaceId));
+  const canPurge = roleHasPermission(workspace.role, 'trash.manage');
+  // Sin permiso ni se pide: la API no devolvería nada
   const { data: items = [], isPending } = useQuery({
     ...trashQueryOptions(workspaceId),
-    enabled: canManage,
+    enabled: canSee,
   });
 
-  if (!canManage) {
+  if (!canSee) {
     return (
       <Card className="mx-auto mt-8 max-w-md">
         <CardHeader>
-          <CardTitle>Solo para el Admin</CardTitle>
+          <CardTitle>Sin acceso a la papelera</CardTitle>
           <CardDescription>
-            La papelera la gestiona el Admin de este espacio de trabajo.
+            Tus permisos en este espacio no incluyen dar de baja ni restaurar.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -51,7 +56,11 @@ export function TrashPage() {
     <div className="grid gap-3">
       <PageHeader
         title="Papelera"
-        description={`Lo dado de baja en ${workspace.name}. Restáuralo si fue un error; bórralo definitivamente si ya no lo necesitas.`}
+        description={
+          canPurge
+            ? `Lo dado de baja en ${workspace.name}. Restáuralo si fue un error; bórralo definitivamente si ya no lo necesitas.`
+            : `Lo que puedes restaurar en ${workspace.name}, si se dio de baja por error.`
+        }
       />
 
       <Card>
@@ -69,7 +78,12 @@ export function TrashPage() {
           ) : (
             <ul className="divide-y rounded-md border">
               {items.map((item) => (
-                <TrashRow key={`${item.kind}-${item.id}`} workspaceId={workspaceId} item={item} />
+                <TrashRow
+                  key={`${item.kind}-${item.id}`}
+                  workspaceId={workspaceId}
+                  item={item}
+                  canPurge={canPurge}
+                />
               ))}
             </ul>
           )}
@@ -79,7 +93,16 @@ export function TrashPage() {
   );
 }
 
-function TrashRow({ workspaceId, item }: { workspaceId: string; item: TrashItem }) {
+function TrashRow({
+  workspaceId,
+  item,
+  canPurge,
+}: {
+  workspaceId: string;
+  item: TrashItem;
+  /** Borrar definitivamente: solo el Admin */
+  canPurge: boolean;
+}) {
   const restore = useRestoreFromTrash(workspaceId);
   const purge = usePurgeFromTrash(workspaceId);
   const isProject = item.kind === 'project';
@@ -130,28 +153,30 @@ function TrashRow({ workspaceId, item }: { workspaceId: string; item: TrashItem 
           <RotateCcw aria-hidden />
           Restaurar
         </Button>
-        <ConfirmDialog
-          trigger={
-            <Button
-              variant="destructive"
-              size="sm"
-              disabled={restore.isPending || purge.isPending}
-              aria-label={`Borrar definitivamente "${item.name}"`}
-            >
-              <Trash2 aria-hidden />
-              Borrar
-            </Button>
-          }
-          title={`¿Borrar definitivamente "${item.name}"?`}
-          description={
-            isProject
-              ? `Se borrará el proyecto con sus ${item.taskCount} tareas. Esto no se puede deshacer.`
-              : 'Se borrará la tarea. Esto no se puede deshacer.'
-          }
-          confirmLabel="Borrar definitivamente"
-          typeToConfirm={item.name}
-          onConfirm={handlePurge}
-        />
+        {canPurge && (
+          <ConfirmDialog
+            trigger={
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={restore.isPending || purge.isPending}
+                aria-label={`Borrar definitivamente "${item.name}"`}
+              >
+                <Trash2 aria-hidden />
+                Borrar
+              </Button>
+            }
+            title={`¿Borrar definitivamente "${item.name}"?`}
+            description={
+              isProject
+                ? `Se borrará el proyecto con sus ${item.taskCount} tareas. Esto no se puede deshacer.`
+                : 'Se borrará la tarea. Esto no se puede deshacer.'
+            }
+            confirmLabel="Borrar definitivamente"
+            typeToConfirm={item.name}
+            onConfirm={handlePurge}
+          />
+        )}
       </div>
     </li>
   );

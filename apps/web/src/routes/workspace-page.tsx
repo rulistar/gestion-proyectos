@@ -1,8 +1,8 @@
 import {
+  canCreateContainer,
   daysRemainingLabel,
   filterProjects,
   hasActiveFilters,
-  roleHasPermission,
   sortProjects,
   type Project,
   type ProjectFilters,
@@ -39,7 +39,8 @@ import { projectTypesQueryOptions, SECTIONS } from '@/lib/project-types';
 import { PROJECT_PRIORITIES, projectsQueryOptions, useCreateProject } from '@/lib/projects';
 import { peopleQueryOptions } from '@/lib/people';
 import { taskTypesQueryOptions } from '@/lib/task-types';
-import { ROLE_LABELS, workspaceQueryOptions } from '@/lib/workspaces';
+import { useAccess } from '@/lib/access';
+import { roleLabel, workspaceQueryOptions } from '@/lib/workspaces';
 
 // Son los id de las rutas (no la URL): cuelgan de la ruta sin URL "app", de ahí el /app
 const projectsRoute = getRouteApi('/app/w/$workspaceId');
@@ -112,7 +113,8 @@ function ContainersPage({
   const section = SECTIONS[behavior];
   const projects = allProjects.filter((p) => p.type.behavior === behavior);
   const types = allTypes.filter((t) => t.behavior === behavior && !t.archived);
-  const canCreate = roleHasPermission(workspace.role, 'project.create') && types.length > 0;
+  const access = useAccess(workspaceId);
+  const canCreate = canCreateContainer(access, behavior) && types.length > 0;
   // Con varios tipos (Mtto correctivo y evolutivo) se muestra la columna Tipo
   const sectionTypes = allTypes.filter((t) => t.behavior === behavior);
   const showType = sectionTypes.length > 1;
@@ -128,7 +130,7 @@ function ContainersPage({
       {/* Título, descripción, conteo y botón en una sola línea (HU-41) */}
       <PageHeader
         title={section.title}
-        description={`${workspace.name} · tu rol: ${ROLE_LABELS[workspace.role]}`}
+        description={`${workspace.name} · tu rol: ${roleLabel(workspace.role, access.permissions)}`}
       >
         <span className="text-sm text-muted-foreground">
           {projects.length === 0

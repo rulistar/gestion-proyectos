@@ -159,3 +159,33 @@ export function canCreateTaskIn(
   if (isAdmin(access)) return true;
   return access.permissions.tasks.create && (sectionCanView(access, project) || hasMyTask);
 }
+
+/** ¿La matriz es exactamente la de la plantilla? Si no, la pantalla dice "Miembro (ajustado)" */
+export function matchesTemplate(role: MembershipRole, permissions: MemberPermissions): boolean {
+  if (role === 'ADMIN') return true;
+  const template = PERMISSION_TEMPLATES[role];
+  const same = <T extends object>(a: T, b: T) =>
+    (Object.keys(b) as (keyof T)[]).every((key) => a[key] === b[key]);
+  return (
+    (['WITH_END', 'ONGOING', 'ON_DEMAND'] as const).every((behavior) =>
+      same(permissions.sections[behavior], template.sections[behavior]),
+    ) && same(permissions.tasks, template.tasks)
+  );
+}
+
+/** ¿Usa la papelera? Quien puede dar de baja algo también lo restaura desde ahí (ADR-0006 §3) */
+export function canUseTrash(access: MemberAccess): boolean {
+  if (isAdmin(access)) return true;
+  const { sections, tasks } = access.permissions;
+  return (
+    tasks.remove !== 'NONE' || Object.values(sections).some((section) => section.remove !== 'NONE')
+  );
+}
+
+/** Mi acceso en un espacio, como lo recibe la web en el detalle del espacio (HU-17b) */
+export const memberAccessSchema = z.object({
+  userId: z.uuid(),
+  personId: z.uuid().nullable(),
+  permissions: memberPermissionsSchema,
+  selectedProjectIds: z.array(z.uuid()),
+});

@@ -6,7 +6,9 @@ import {
   canRemoveTask,
   canUpdateContainer,
   canUpdateTask,
+  canUseTrash,
   canViewTask,
+  matchesTemplate,
   memberPermissionsSchema,
   PERMISSION_TEMPLATES,
   sectionCanView,
@@ -120,5 +122,32 @@ describe('tareas: "las mías" = las que creé o donde soy Responsable', () => {
     expect(canCreateTaskIn(member, mine, false)).toBe(true);
     expect(canCreateTaskIn(member, theirs, false)).toBe(false);
     expect(canCreateTaskIn(member, theirs, true)).toBe(true);
+  });
+});
+
+describe('pantalla de permisos (HU-17b)', () => {
+  it('"ajustado" cuando la matriz ya no es la de su plantilla', () => {
+    const adjusted = memberPermissionsSchema.parse(
+      JSON.parse(JSON.stringify(PERMISSION_TEMPLATES.MEMBER)),
+    );
+    expect(matchesTemplate('MEMBER', adjusted)).toBe(true);
+
+    adjusted.sections.ONGOING.view = 'ALL';
+    expect(matchesTemplate('MEMBER', adjusted)).toBe(false);
+    expect(matchesTemplate('VIEWER', PERMISSION_TEMPLATES.MEMBER)).toBe(false);
+    // El Admin puede todo: nunca está "ajustado"
+    expect(matchesTemplate('ADMIN', PERMISSION_TEMPLATES.VIEWER)).toBe(true);
+  });
+
+  it('usa la papelera quien puede dar de baja algo', () => {
+    const removesTasks = memberPermissionsSchema.parse(
+      JSON.parse(JSON.stringify(PERMISSION_TEMPLATES.MEMBER)),
+    );
+    removesTasks.tasks.remove = 'MINE';
+
+    expect(canUseTrash(member)).toBe(false);
+    expect(canUseTrash(access(PERMISSION_TEMPLATES.VIEWER))).toBe(false);
+    expect(canUseTrash(access(removesTasks))).toBe(true);
+    expect(canUseTrash(access(PERMISSION_TEMPLATES.VIEWER, { role: 'ADMIN' }))).toBe(true);
   });
 });

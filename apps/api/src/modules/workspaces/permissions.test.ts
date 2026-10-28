@@ -1,4 +1,5 @@
 import {
+  memberListSchema,
   PERMISSION_TEMPLATES,
   projectListSchema,
   taskListSchema,
@@ -347,5 +348,125 @@ describe('otras rutas', () => {
       },
     );
     expect(status.statusCode).toBe(200);
+  });
+});
+
+describe('pantalla de permisos (HU-17b)', () => {
+  // Copia profunda sin referencias compartidas: en la plantilla, las tres secciones son el mismo objeto
+  const copyOf = (permissions: MemberPermissions) =>
+    JSON.parse(JSON.stringify(permissions)) as MemberPermissions;
+
+  async function containerOf(
+    owner: { user: { id: string } },
+    workspaceId: string,
+    behavior: 'WITH_END' | 'ONGOING',
+    name: string,
+  ) {
+    const type = await db.projectType.findFirstOrThrow({ where: { workspaceId, behavior } });
+    const project = await createProject(db, owner.user.id, workspaceId, {
+      ...emptyProject,
+      name,
+      typeId: type.id,
+    });
+    return project.id;
+  }
+
+  const permissionsUrl = (ws: string, userId: string) =>
+    `/api/v1/workspaces/${ws}/members/${userId}/permissions`;
+
+  function putPermissions(cookies: Cookies, ws: string, userId: string, payload: object) {
+    return app.inject({ method: 'PUT', url: permissionsUrl(ws, userId), cookies, payload });
+  }
+
+  async function matrixOf(cookies: Cookies, ws: string, userId: string) {
+    const response = await app.inject({ url: `/api/v1/workspaces/${ws}/members`, cookies });
+    return memberListSchema.parse(response.json()).find((m) => m.userId === userId)!;
+  }
+
+  it('el Admin ajusta la matriz y "Estos…": se guarda solo lo de secciones que ven "Estos…"', async () => {
+    const { ana, juan, ws } = await setup();
+    const proyecto = await containerOf(ana, ws.id, 'WITH_END', 'Proyecto A');
+    const mtto = await containerOf(ana, ws.id, 'ONGOING', 'Mtto B');
+    const permissions = copyOf(PERMISSION_TEMPLATES.MEMBER);
+    permissions.sections.WITH_END.view = 'SELECTED';
+    permissions.tasks.remove = 'MINE';
+
+    const response = await putPermissions(ana.cookies, ws.id, juan.user.id, {
+      role: 'MEMBER',
+      permissions,
+      // El mantenimiento no cuenta: Mantenimientos ve "solo los míos"
+      selectedProjectIds: [proyecto, mtto],
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect((await matrixOf(ana.cookies, ws.id, juan.user.id)).matrix).toEqual({
+      permissions,
+      selectedProjectIds: [proyecto],
+    });
+    // Y la API ya lo aplica: Juan ve el proyecto elegido
+    const list = await app.inject({
+      url: `/api/v1/workspaces/${ws.id}/projects`,
+      cookies: juan.cookies,
+    });
+    const names = projectListSchema.parse(list.json()).map((p) => p.name);
+    expect(names).toContain('Proyecto A');
+    expect(names).not.toContain('ERP');
+  });
+
+  it('cambiar el rol aplica la plantilla y borra los ajustes', async () => {
+    const { ana, juan, ws } = await setup();
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/workspaces/${ws.id}/members/${juan.user.id}`,
+      cookies: ana.cookies,
+      payload: { role: 'MEMBER' },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect((await matrixOf(ana.cookies, ws.id, juan.user.id)).matrix?.permissions).toEqual(
+      PERMISSION_TEMPLATES.MEMBER,
+    );
+  });
+
+  it('con plantilla Admin se ignora la matriz; no se queda el espacio sin Admin (409)', async () => {
+    const { ana, juan, ws } = await setup();
+    const body = { permissions: PERMISSION_TEMPLATES.VIEWER, selectedProjectIds: [] };
+
+    await putPermissions(ana.cookies, ws.id, juan.user.id, { role: 'ADMIN', ...body });
+    expect((await matrixOf(ana.cookies, ws.id, juan.user.id)).matrix?.permissions).toEqual(
+      PERMISSION_TEMPLATES.ADMIN,
+    );
+    await putPermissions(ana.cookies, ws.id, juan.user.id, { role: 'VIEWER', ...body });
+    const last = await putPermissions(ana.cookies, ws.id, ana.user.id, { role: 'MEMBER', ...body });
+    expect(last.statusCode).toBe(409);
+  });
+
+  it('solo el Admin; contenedores de otro espacio dan 400; matriz inválida, 400', async () => {
+    const { ana, juan, ws } = await setup();
+    const other = await createWorkspace(db, ana.user.id, { name: 'Otro' });
+    const ajeno = await containerOf(ana, other.id, 'WITH_END', 'Ajeno');
+    const permissions = copyOf(PERMISSION_TEMPLATES.MEMBER);
+    permissions.sections.WITH_END.view = 'SELECTED';
+
+    const asJuan = await putPermissions(juan.cookies, ws.id, juan.user.id, {
+      role: 'ADMIN',
+      permissions,
+      selectedProjectIds: [],
+    });
+    const foreign = await putPermissions(ana.cookies, ws.id, juan.user.id, {
+      role: 'MEMBER',
+      permissions,
+      selectedProjectIds: [ajeno],
+    });
+    const invalid = await putPermissions(ana.cookies, ws.id, juan.user.id, {
+      role: 'MEMBER',
+      permissions: { sections: {}, tasks: {} },
+      selectedProjectIds: [],
+    });
+
+    expect(asJuan.statusCode).toBe(403);
+    expect(foreign.statusCode).toBe(400);
+    expect(invalid.statusCode).toBe(400);
   });
 });

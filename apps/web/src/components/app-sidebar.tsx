@@ -1,4 +1,5 @@
-import { roleHasPermission } from '@gestion/shared';
+import { canUseTrash, roleHasPermission } from '@gestion/shared';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import {
   ChartGantt,
@@ -22,6 +23,7 @@ import { RenameWorkspaceDialog } from '@/components/rename-workspace-dialog';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useCurrentUser } from '@/lib/auth';
+import { workspaceQueryOptions } from '@/lib/workspaces';
 import { cn } from '@/lib/utils';
 
 const itemClass =
@@ -70,6 +72,12 @@ export function AppSidebar() {
   // Las rutas /w/$workspaceId/... traen el espacio actual; en las demás no hay uno elegido
   const { workspaceId } = useParams({ strict: false });
   const current = user.workspaces.find((w) => w.id === workspaceId);
+  // Mi matriz en el espacio actual: la Papelera también es de quien puede dar de baja (ADR-0006)
+  const { data: detail } = useQuery({
+    ...workspaceQueryOptions(current?.id ?? ''),
+    enabled: current !== undefined,
+  });
+  const canTrash = detail !== undefined && canUseTrash({ role: detail.role, ...detail.access });
 
   return (
     <nav
@@ -192,6 +200,18 @@ export function AppSidebar() {
           </Link>
         )}
         <SoonItem icon={ChartGantt} label="Gantt" story="HU-27" />
+        {/* Papelera: para quien puede dar de baja algo (ADR-0006 §3), no solo el Admin */}
+        {current && canTrash && (
+          <Link
+            to="/w/$workspaceId/papelera"
+            params={{ workspaceId: current.id }}
+            className={itemClass}
+            activeProps={{ className: 'bg-accent text-accent-foreground', 'aria-current': 'page' }}
+          >
+            <Trash2 aria-hidden />
+            Papelera
+          </Link>
+        )}
       </div>
 
       {/* Administración: solo para quien administra el espacio (los demás no ven la sección) */}
@@ -216,20 +236,6 @@ export function AppSidebar() {
             <Contact aria-hidden />
             Personas
           </Link>
-          {roleHasPermission(current.role, 'trash.manage') && (
-            <Link
-              to="/w/$workspaceId/papelera"
-              params={{ workspaceId: current.id }}
-              className={itemClass}
-              activeProps={{
-                className: 'bg-accent text-accent-foreground',
-                'aria-current': 'page',
-              }}
-            >
-              <Trash2 aria-hidden />
-              Papelera
-            </Link>
-          )}
           {roleHasPermission(current.role, 'catalog.manage') && (
             <Link
               to="/w/$workspaceId/configuracion"

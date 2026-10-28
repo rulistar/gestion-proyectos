@@ -3,9 +3,12 @@ import {
   type CreateWorkspaceRequest,
   type Member,
   type MembershipRole,
+  type ProjectBehavior,
+  type UpdateMemberPermissions,
   type WorkspaceSummary,
 } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
+import { parsePermissions } from './access.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { displayNames, ensureMemberPerson } from '../people/people.service.js';
 import { seedCatalog } from '../project-types/project-types.service.js';
@@ -41,7 +44,8 @@ function activeMembers(workspaceId: string) {
 
 /**
  * Miembros activos del workspace, por nombre. Todos los miembros los necesitan (p. ej. para
- * elegir el responsable de una tarea), pero el correo solo lo ve quien gestiona miembros.
+ * elegir el responsable de una tarea), pero el correo y la matriz de permisos solo los ve quien
+ * gestiona miembros.
  */
 export async function listMembers(
   db: Db,
@@ -50,7 +54,12 @@ export async function listMembers(
 ): Promise<Member[]> {
   const memberships = await db.membership.findMany({
     where: activeMembers(workspaceId),
-    select: { role: true, user: { select: { id: true, name: true, email: true } } },
+    select: {
+      role: true,
+      permissions: true,
+      projectAccess: { select: { projectId: true } },
+      user: { select: { id: true, name: true, email: true } },
+    },
     orderBy: { user: { name: 'asc' } },
   });
   // El nombre que se muestra es el de su persona del catálogo, si la tiene (alias, HU-34)
@@ -59,11 +68,17 @@ export async function listMembers(
     workspaceId,
     memberships.map(({ user }) => user.id),
   );
-  return memberships.map(({ role, user }) => ({
+  return memberships.map(({ role, permissions, projectAccess, user }) => ({
     userId: user.id,
     name: names.get(user.id) ?? user.name,
     email: withEmail ? user.email : null,
     role,
+    matrix: withEmail
+      ? {
+          permissions: parsePermissions(permissions, role),
+          selectedProjectIds: projectAccess.map((access) => access.projectId),
+        }
+      : null,
   }));
 }
 
@@ -71,18 +86,24 @@ export async function listMembers(
 export class MemberNotFoundError extends Error {}
 /** La operación dejaría el espacio sin ningún Admin → 409 */
 export class LastAdminError extends Error {}
+/** Algún contenedor de "Estos…" no es del espacio o está en la papelera → 400 */
+export class InvalidSelectedProjectsError extends Error {}
+
+/** Nueva matriz: la plantilla (al cambiar el rol) o la ajustada en la pantalla de permisos */
+type MatrixChange = UpdateMemberPermissions;
 
 /**
- * Cambia el rol o quita a un miembro (HU-25), en una transacción que comprueba que el espacio no
- * se quede sin Admin. Quitar es un borrado lógico de la membresía: pierde el acceso al instante
- * (cada petición revisa la membresía) y sus tareas conservan su nombre hasta reasignarlas.
+ * Cambia la plantilla y la matriz (HU-25, HU-17b) o quita a un miembro, en una transacción que
+ * comprueba que el espacio no se quede sin Admin. Quitar es un borrado lógico de la membresía:
+ * pierde el acceso al instante (cada petición revisa la membresía) y sus tareas conservan su
+ * nombre hasta reasignarlas.
  */
 async function changeMembership(
   db: Db,
   actorId: string,
   workspaceId: string,
   userId: string,
-  change: { role: MembershipRole } | { remove: true },
+  change: MatrixChange | { remove: true },
 ) {
   await db.$transaction(async (tx) => {
     const membership = await tx.membership.findFirst({
@@ -100,16 +121,47 @@ async function changeMembership(
       if (admins <= 1) throw new LastAdminError();
     }
 
+    if ('remove' in change) {
+      await tx.membership.update({ where: { id: membership.id }, data: auditSoftDelete(actorId) });
+      return;
+    }
+
+    // El Admin puede todo: su matriz es la plantilla y no usa "Estos…"
+    const permissions = change.role === 'ADMIN' ? PERMISSION_TEMPLATES.ADMIN : change.permissions;
+    const selectedSections = (
+      Object.entries(permissions.sections) as [ProjectBehavior, { view: string }][]
+    )
+      .filter(([, section]) => section.view === 'SELECTED')
+      .map(([behavior]) => behavior);
+    const requested = [...new Set(change.selectedProjectIds)];
+    const projects = await tx.project.findMany({
+      where: { id: { in: requested }, workspaceId, ...notDeleted },
+      select: { id: true, type: { select: { behavior: true } } },
+    });
+    if (projects.length !== requested.length) throw new InvalidSelectedProjectsError();
+    // Solo se guardan los de secciones que ven "Estos…"; el resto no tendría efecto
+    const selected = projects
+      .filter((project) => selectedSections.includes(project.type.behavior))
+      .map((project) => project.id);
+
     await tx.membership.update({
       where: { id: membership.id },
-      data:
-        'remove' in change
-          ? auditSoftDelete(actorId)
-          : { role: change.role, ...auditUpdate(actorId) },
+      data: { role: change.role, permissions, ...auditUpdate(actorId) },
     });
+    await tx.membershipProjectAccess.deleteMany({ where: { membershipId: membership.id } });
+    if (selected.length > 0) {
+      await tx.membershipProjectAccess.createMany({
+        data: selected.map((projectId) => ({
+          membershipId: membership.id,
+          projectId,
+          createdById: actorId,
+        })),
+      });
+    }
   });
 }
 
+/** Cambiar el rol aplica su plantilla: se pierden los ajustes y la lista "Estos…" (ADR-0006 §2) */
 export function changeMemberRole(
   db: Db,
   actorId: string,
@@ -117,7 +169,22 @@ export function changeMemberRole(
   userId: string,
   role: MembershipRole,
 ) {
-  return changeMembership(db, actorId, workspaceId, userId, { role });
+  return changeMembership(db, actorId, workspaceId, userId, {
+    role,
+    permissions: PERMISSION_TEMPLATES[role],
+    selectedProjectIds: [],
+  });
+}
+
+/** Plantilla + matriz ajustada + lista "Estos…" (HU-17b) */
+export function changeMemberPermissions(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  userId: string,
+  change: MatrixChange,
+) {
+  return changeMembership(db, actorId, workspaceId, userId, change);
 }
 
 export function removeMember(db: Db, actorId: string, workspaceId: string, userId: string) {
