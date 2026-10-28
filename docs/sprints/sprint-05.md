@@ -10,6 +10,8 @@
 
 > **"La aplicación está en la nube con HTTPS; organizo cada proyecto en fases, lo veo en Gantt (planeado contra real) y controlo quién entra y qué ve."**
 
+> **Replaneado por el PO (2026-10-28):** "Configuro a cada persona al invitarla (qué espacios, qué ve y qué puede hacer); la aplicación está en la nube con HTTPS y organizo cada proyecto en fases." Diseño de permisos: [ADR-0006](../adr/ADR-0006-permisos-por-persona.md).
+
 ## Elementos comprometidos
 
 | Orden | ID | Elemento | Pts |
@@ -36,6 +38,23 @@
 
 Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 
+**Replaneación del PO (2026-10-28):** los permisos por persona van antes del despliegue, para que la aplicación salga a internet con ellos.
+
+| Orden | ID | Elemento | Pts |
+|---|---|---|---|
+| 1 | HU-17a | Permisos: modelo, migración que conserva los accesos y filtro de visibilidad en la API | 5 |
+| 2 | HU-17b | Permisos: pantalla de la matriz en Miembros | 5 |
+| 3 | HU-17c | Permisos: invitación a varios espacios | 3 |
+| 4 | TEC-04 | Despliegue gratuito en la nube con HTTPS | 5 |
+| 5 | HU-07 | Fases anidadas (hasta 4 niveles) | 8 |
+| 6 | HU-29 | Mi perfil | 3 |
+| 7 | HU-30 | Usuarios del sistema | 3 |
+| | | **Total replaneado** | **32** |
+
+- **HU-16 se une a HU-17** (la opción "Estos…" de la matriz).
+- **Pasan al Sprint 6:** Gantt (HU-27, 8 pts) y pestaña Lista (HU-26, 2 pts).
+- Con las adiciones ya entregadas (HU-40, HU-41, HU-42: 4 pts), el compromiso queda en **36 puntos**.
+
 **Lo que el PO pida a mitad del sprint** se anota aquí el mismo día, con sus puntos:
 
 | Fecha | ID | Elemento | Pts |
@@ -44,7 +63,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 | 2026-10-28 | HU-41 | Pantallas compactas: más información visible sin desplazarse | 2 |
 | 2026-10-28 | HU-42 | Ocultar lo que el perfil no permite; solo el Admin del sistema crea espacios | 1 |
 
-El compromiso queda en **38 puntos**.
+El compromiso queda en **38 puntos** (36 después de la replaneación de abajo).
 
 ## Guion de demostración (se arma al planificar, acuerdo del Sprint 3)
 

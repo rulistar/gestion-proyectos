@@ -18,8 +18,8 @@ Aplicación web para gestionar proyectos personales y de un equipo pequeño (wor
 Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/backlog.md).
 
 - **Registro solo por invitación**; el primer Admin se crea con `setup:admin`. Solo el Admin del sistema crea espacios (HU-42, 2026-10-28).
-- **Roles por workspace** (Admin, Miembro, Lector) vía `Membership`, más **ajustes de permisos por usuario**.
-- **Visibilidad**: proyectos públicos (todo el workspace) o restringidos (lista de usuarios). Los Admin ven todo.
+- **Roles por workspace** (Admin, Miembro, Lector) vía `Membership`, usados como **plantilla** de una **matriz de permisos por persona y espacio** (ADR-0006, 2026-10-28): qué ve (lo suyo, todo o una lista), crea, modifica y da de baja, por proyectos, mantenimientos, actividades y tareas.
+- **Visibilidad**: por persona (ADR-0006), no por proyecto; un solo filtro en la API. Lo que no ve da 404. Los Admin ven todo.
 - **Borrado lógico** (papelera, restaurable) y **físico solo desde la papelera**, solo Admin. Lo borrado no aparece en listados, exportaciones ni gráficas.
 - **RNF-01 trazabilidad**: toda entidad lleva `createdById/createdAt/updatedById/updatedAt` (+ `deletedById/deletedAt`).
 - **HTTPS obligatorio en producción** (HSTS, cookies `Secure`); HTTP en localhost.
