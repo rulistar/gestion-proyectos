@@ -1,4 +1,10 @@
-import { memberListSchema, personListSchema, personSchema, taskSchema } from '@gestion/shared';
+import {
+  memberListSchema,
+  personListSchema,
+  personSchema,
+  personUsageSchema,
+  taskSchema,
+} from '@gestion/shared';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
@@ -250,5 +256,66 @@ describe('borrar definitivamente (HU-44)', () => {
     await patchPerson(ana.cookies, ws.id, anaPerson!.id, { archived: true });
 
     expect((await deletePerson(ana.cookies, ws.id, anaPerson!.id)).statusCode).toBe(409);
+  });
+});
+
+describe('dónde se usa (HU-45)', () => {
+  it('lista sus tareas y proyectos con sus roles, papelera incluida; solo el Admin', async () => {
+    const { ana, luis, ws } = await setup();
+    const laura = personSchema.parse((await addPerson(ana.cookies, ws.id, 'Laura')).json());
+    const other = await createWorkspace(db, ana.user.id, { name: 'Otro' });
+    const projectsUrl = `/api/v1/workspaces/${ws.id}/projects`;
+    const project = await app.inject({
+      method: 'POST',
+      url: projectsUrl,
+      cookies: ana.cookies,
+      payload: { name: 'Portal', requesterId: laura.id, projectManagerId: laura.id },
+    });
+    const projectId = project.json<{ id: string }>().id;
+    for (const title of ['Diseño', 'Pruebas']) {
+      await app.inject({
+        method: 'POST',
+        url: `${projectsUrl}/${projectId}/tasks`,
+        cookies: ana.cookies,
+        payload: { title, responsiblePersonId: laura.id },
+      });
+    }
+    const tasks = taskSchema
+      .array()
+      .parse(
+        (
+          await app.inject({ url: `${projectsUrl}/${projectId}/tasks`, cookies: ana.cookies })
+        ).json(),
+      );
+    await app.inject({
+      method: 'DELETE',
+      url: `${projectsUrl}/${projectId}/tasks/${tasks.find((t) => t.title === 'Pruebas')!.id}`,
+      cookies: ana.cookies,
+    });
+    const usageUrl = `${peopleUrl(ws.id)}/${laura.id}/usage`;
+
+    const response = await app.inject({ url: usageUrl, cookies: ana.cookies });
+
+    expect(response.statusCode).toBe(200);
+    const usage = personUsageSchema.parse(response.json());
+    expect(usage.tasks.map((t) => [t.title, t.projectName, t.deleted])).toEqual([
+      ['Diseño', 'Portal', false],
+      ['Pruebas', 'Portal', true],
+    ]);
+    expect(usage.projects).toEqual([
+      {
+        id: projectId,
+        name: 'Portal',
+        folio: expect.any(String) as string,
+        roles: ['requester', 'projectManager'],
+        deleted: false,
+      },
+    ]);
+    expect((await app.inject({ url: usageUrl, cookies: luis.cookies })).statusCode).toBe(403);
+    const foreign = await app.inject({
+      url: `${peopleUrl(other.id)}/${laura.id}/usage`,
+      cookies: ana.cookies,
+    });
+    expect(foreign.statusCode).toBe(404);
   });
 });

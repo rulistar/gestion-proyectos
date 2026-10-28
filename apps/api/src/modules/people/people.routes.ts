@@ -10,6 +10,7 @@ import {
   listPeople,
   NotAMemberError,
   PersonNotDeletableError,
+  personUsage,
   updatePerson,
   UserAlreadyLinkedError,
 } from './people.service.js';
@@ -100,6 +101,23 @@ export const peopleRoutes: FastifyPluginCallback = (app, _options, done) => {
         return peopleError(reply, error);
       }
       return listPeople(app.db, request.membership!.workspaceId);
+    },
+  );
+
+  // Dónde aparece una persona, para reasignarla antes de borrarla (HU-45)
+  app.get(
+    `${BASE}/:personId/usage`,
+    { preHandler: requirePermission('member.manage') },
+    async (request, reply) => {
+      const params = personParamsSchema.safeParse(request.params);
+      if (!params.success) return reply.code(404).send({ message: 'Persona no encontrada' });
+      const usage = await personUsage(
+        app.db,
+        request.membership!.workspaceId,
+        params.data.personId,
+      );
+      if (!usage) return reply.code(404).send({ message: 'Persona no encontrada' });
+      return usage;
     },
   );
 
