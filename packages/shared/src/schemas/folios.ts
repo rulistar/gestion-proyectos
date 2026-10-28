@@ -30,6 +30,17 @@ export function parseFolioTemplate(
 }
 
 /**
+ * Lo que se teclea cuando el contenedor no tiene folio y no se quiere el automático (HU-43): es el
+ * único folio que puede repetirse en el espacio.
+ */
+export const REPEATABLE_FOLIO = 'Sin folio';
+
+/** "Sin Folio", " sin  folio " y "SIN FOLIO" cuentan como "Sin folio"; "Sin folio 2" no */
+export function isRepeatableFolio(value: string): boolean {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase() === REPEATABLE_FOLIO.toLowerCase();
+}
+
+/**
  * Folio automático (decisión del PO): prefijo + AAMM + "-" + contador de 3 dígitos, que vuelve a
  * empezar cada mes. Pasado el 999 sigue creciendo (MT2610-1000).
  */

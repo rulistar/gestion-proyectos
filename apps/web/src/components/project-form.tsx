@@ -3,6 +3,7 @@ import {
   folioPeriod,
   formatFolio,
   projectInputSchema,
+  REPEATABLE_FOLIO,
   type Project,
   type ProjectInput,
   type Person,
@@ -198,7 +199,7 @@ export function ProjectForm({
           />
           <p className="text-xs text-muted-foreground">
             Escribe solo PY, MT o ACT y se completa con el número vigente. No se repite en el
-            espacio.
+            espacio, salvo &ldquo;{REPEATABLE_FOLIO}&rdquo; (para dejarlo sin folio automático).
           </p>
           <FieldError {...form.errorProps('folio')} />
         </div>

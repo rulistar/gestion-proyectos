@@ -53,7 +53,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 
 - **HU-16 se une a HU-17** (la opción "Estos…" de la matriz).
 - **Pasan al Sprint 6:** Gantt (HU-27, 8 pts) y pestaña Lista (HU-26, 2 pts).
-- Con las adiciones ya entregadas (HU-40, HU-41, HU-42: 4 pts), el compromiso queda en **36 puntos**.
+- Con las adiciones (HU-40, HU-41, HU-42, HU-43: 5 pts), el compromiso queda en **37 puntos**.
 
 **Lo que el PO pida a mitad del sprint** se anota aquí el mismo día, con sus puntos:
 
@@ -62,8 +62,9 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 | 2026-10-28 | HU-40 | Menú lateral plegable (botón y Ctrl+B) | 1 |
 | 2026-10-28 | HU-41 | Pantallas compactas: más información visible sin desplazarse | 2 |
 | 2026-10-28 | HU-42 | Ocultar lo que el perfil no permite; solo el Admin del sistema crea espacios | 1 |
+| 2026-10-28 | HU-43 | "Sin folio" es el único folio que puede repetirse | 1 |
 
-El compromiso queda en **38 puntos** (36 después de la replaneación de abajo).
+El compromiso queda en **39 puntos** (37 después de la replaneación de abajo).
 
 ## Guion de demostración (se arma al planificar, acuerdo del Sprint 3)
 
