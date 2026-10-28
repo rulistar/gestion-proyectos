@@ -481,7 +481,7 @@ _Como responsable, quiero capturar "Sin folio" en varios contenedores, para marc
 _Como Admin, quiero borrar a las personas que di de baja y que nadie usa, y ocultar las archivadas, para que el catálogo no estorbe._ Pedido del PO (2026-10-28).
 
 - [x] Una persona **archivada** que no aparece en ninguna tarea (papelera incluida) ni en ningún rol de proyecto se puede **borrar definitivamente**, con confirmación. Solo el Admin.
-- [x] Si alguien la usa, o su cuenta sigue siendo miembro del espacio, el botón aparece deshabilitado y explica por qué (p. ej. "Aparece en 2 tarea(s)… reasígnalas primero"); la API responde 409.
+- [x] Si alguien la usa, o su cuenta sigue siendo miembro del espacio, el botón aparece deshabilitado y **el motivo se ve bajo el nombre** (p. ej. "Aparece en 2 tarea(s)… reasígnalas primero"; corregido tras la prueba del PO: antes solo salía al pasar el ratón); la API responde 409.
 - [x] Las archivadas se **ocultan por defecto**; el interruptor "Mostrar archivadas (N)" las muestra.
 - [x] Debajo del nombre ya no se repite la cuenta vinculada: la muestra el combo. Pruebas.
 

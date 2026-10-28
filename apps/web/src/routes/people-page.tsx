@@ -186,18 +186,22 @@ function PersonRow({
           </form>
         ) : (
           // La cuenta vinculada no se repite aquí: ya la muestra el combo de la derecha
-          <p
-            className={
-              person.archived ? 'min-w-0 font-medium text-muted-foreground' : 'min-w-0 font-medium'
-            }
-          >
-            {person.name}
+          <div className="min-w-0">
+            <p className={person.archived ? 'font-medium text-muted-foreground' : 'font-medium'}>
+              {person.name}
+              {person.archived && (
+                <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold">
+                  Archivada
+                </span>
+              )}
+            </p>
+            {/* En las archivadas, a la vista: por qué no se puede borrar (o que sí se puede) */}
             {person.archived && (
-              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold">
-                Archivada
-              </span>
+              <p className="text-xs text-muted-foreground">
+                {whyNotDeletable(person) ?? 'Sin uso: se puede borrar'}
+              </p>
             )}
-          </p>
+          </div>
         )}
       </div>
       <div className="flex items-center gap-2">
