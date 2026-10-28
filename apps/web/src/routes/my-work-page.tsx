@@ -1,10 +1,11 @@
 import { daysRemainingLabel, groupMyWork, type MyTask, type Project } from '@gestion/shared';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import { Check, Wrench } from 'lucide-react';
+import { Check, PanelRightClose, PanelRightOpen, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '@/components/progress-bar';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccess } from '@/lib/access';
 import { useCurrentUser } from '@/lib/auth';
@@ -14,6 +15,8 @@ import { myTasksQueryOptions } from '@/lib/my-work';
 import { peopleQueryOptions } from '@/lib/people';
 import { projectsQueryOptions } from '@/lib/projects';
 import { TASK_STATUSES, useMoveTask } from '@/lib/tasks';
+import { useSavedToggle } from '@/lib/use-menu-open';
+import { cn } from '@/lib/utils';
 import { workspaceQueryOptions } from '@/lib/workspaces';
 
 // Es el id de la ruta (no la URL): cuelga de la ruta sin URL "app", de ahí el /app
@@ -36,6 +39,8 @@ export function MyWorkPage() {
   const { data: people = [] } = useQuery(peopleQueryOptions(workspaceId));
   const myName = people.find((person) => person.userId === me.id)?.name ?? me.name;
   const firstName = myName.split(' ')[0];
+  // Panel de proyectos activos y mantenimientos (HU-48): se oculta para dar espacio a las tareas
+  const panel = useSavedToggle('mi-trabajo-panel-visible');
 
   const kpis = [
     { label: 'Vencen hoy', value: work.kpis.dueToday, color: '#E8C468' },
@@ -55,7 +60,19 @@ export function MyWorkPage() {
       <PageHeader
         title={`Hola, ${firstName}`}
         description={`Esto es lo que tienes pendiente en ${workspace.name}.`}
-      />
+      >
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={panel.toggle}
+          aria-expanded={panel.open}
+          title="Proyectos activos y mantenimientos"
+        >
+          {panel.open ? <PanelRightClose aria-hidden /> : <PanelRightOpen aria-hidden />}
+          {panel.open ? 'Ocultar panel' : 'Mostrar panel'}
+        </Button>
+      </PageHeader>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {kpis.map((kpi) => (
@@ -72,7 +89,7 @@ export function MyWorkPage() {
         ))}
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[1fr_20rem]">
+      <div className={cn('grid items-start gap-4', panel.open && 'lg:grid-cols-[1fr_20rem]')}>
         <Card>
           <CardHeader>
             <CardTitle>Mis tareas</CardTitle>
@@ -99,6 +116,7 @@ export function MyWorkPage() {
                         task={task}
                         today={today}
                         canUpdate={canUpdate}
+                        compact={!panel.open}
                       />
                     ))}
                   </ul>
@@ -108,10 +126,12 @@ export function MyWorkPage() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4">
-          <ActiveProjectsCard workspaceId={workspaceId} projects={projects} today={today} />
-          <MaintenanceCard workspaceId={workspaceId} projects={projects} />
-        </div>
+        {panel.open && (
+          <div className="grid gap-4">
+            <ActiveProjectsCard workspaceId={workspaceId} projects={projects} today={today} />
+            <MaintenanceCard workspaceId={workspaceId} projects={projects} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -122,11 +142,14 @@ function MyTaskRow({
   task,
   today,
   canUpdate,
+  compact,
 }: {
   workspaceId: string;
   task: MyTask;
   today: string;
   canUpdate: boolean;
+  /** Con el panel oculto (HU-48): título y descripción en un solo renglón */
+  compact: boolean;
 }) {
   const move = useMoveTask(workspaceId, task.projectId, task.id);
   const due = dueInfo(task.endDate, today);
@@ -155,9 +178,11 @@ function MyTaskRow({
           <Check aria-hidden className="size-3 text-primary opacity-0 group-hover:opacity-100" />
         </button>
       )}
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{task.title}</p>
-        <p className="truncate text-xs text-muted-foreground">
+      <div className={cn('min-w-0 flex-1', compact && 'flex items-baseline gap-3')}>
+        <p className={cn('truncate font-medium', compact && 'shrink-0 max-w-[60%]')}>
+          {task.title}
+        </p>
+        <p className="min-w-0 truncate text-xs text-muted-foreground">
           {task.type.expedited ? `⚡ ${task.type.name}` : task.type.name} ·{' '}
           <Link
             to="/w/$workspaceId/p/$projectId"
