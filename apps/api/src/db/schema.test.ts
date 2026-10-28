@@ -1,3 +1,4 @@
+import { PERMISSION_TEMPLATES } from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb, resetDb } from '../test/test-db.js';
 import { auditCreate, auditRestore, auditSoftDelete, notDeleted } from './audit.js';
@@ -91,6 +92,7 @@ describe('membresías', () => {
       workspaceId: workspace.id,
       userId: ana.id,
       role: 'ADMIN' as const,
+      permissions: PERMISSION_TEMPLATES.ADMIN,
       ...auditCreate(ana.id),
     };
 
@@ -109,6 +111,7 @@ describe('membresías', () => {
       workspaceId: workspace.id,
       userId: luis.id,
       role: 'MEMBER' as const,
+      permissions: PERMISSION_TEMPLATES.MEMBER,
       ...auditCreate(ana.id),
     };
 

@@ -2,7 +2,7 @@ import { createPersonSchema, updatePersonSchema } from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyPluginCallback, FastifyReply } from 'fastify';
 import { requireAuth } from '../auth/session.js';
-import { requirePermission } from '../workspaces/access.js';
+import { forbidden, requireMembership, requirePermission } from '../workspaces/access.js';
 import {
   createPerson,
   DuplicatePersonNameError,
@@ -43,7 +43,14 @@ export const peopleRoutes: FastifyPluginCallback = (app, _options, done) => {
     listPeople(app.db, request.membership!.workspaceId),
   );
 
-  app.post(BASE, { preHandler: requirePermission('task.create') }, async (request, reply) => {
+  app.post(BASE, { preHandler: requireMembership }, async (request, reply) => {
+    // Se da de alta desde los formularios: hace falta poder crear tareas o algún contenedor
+    const { permissions, role } = request.membership!;
+    const canCreateSomething =
+      role === 'ADMIN' ||
+      permissions.tasks.create ||
+      Object.values(permissions.sections).some((section) => section.create);
+    if (!canCreateSomething) return forbidden(reply);
     const parsed = createPersonSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ message: z.prettifyError(parsed.error) });

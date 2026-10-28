@@ -531,12 +531,12 @@ _Como Admin del sistema, quiero corregir correos y desactivar cuentas, para mant
 _Como Admin, quiero configurar a cada persona al invitarla (en qué espacios entra, qué ve y qué puede hacer), para que cada quien trabaje solo con lo que le corresponde._ Une HU-17 y HU-16. Diseño en [ADR-0006](adr/ADR-0006-permisos-por-persona.md).
 
 **HU-17a · Modelo y API (5 pts)**
-- [ ] Matriz por membresía (JSON validado con Zod) y lista "Estos…"; plantillas Admin, Miembro y Lector.
-- [ ] La migración conserva lo que hoy puede hacer cada miembro (ADR-0006 §5); quita `Project.visibility`.
-- [ ] Un solo filtro de visibilidad aplicado en listas, detalle, tareas del proyecto, vista Tareas, Mi trabajo, Mover y papelera: lo que no ve da 404; lo que ve pero no puede modificar da 403.
-- [ ] Contenedor visible en solo lectura si tengo una tarea en él.
-- [ ] Papelera: cada quien restaura lo que su permiso le permite; borrar definitivamente, solo Admin.
-- [ ] Pruebas por endpoint de "otro usuario no lo ve" y de cada opción de la matriz.
+- [x] Matriz por membresía (JSON validado con Zod) y lista "Estos…"; plantillas Admin, Miembro y Lector.
+- [x] La migración conserva lo que hoy puede hacer cada miembro (ADR-0006 §5); quita `Project.visibility`.
+- [x] Un solo filtro de visibilidad aplicado en listas, detalle, tareas del proyecto, vista Tareas, Mi trabajo, Mover y papelera: lo que no ve da 404; lo que ve pero no puede modificar da 403.
+- [x] Contenedor visible en solo lectura si tengo una tarea en él.
+- [x] Papelera: cada quien restaura lo que su permiso le permite; borrar definitivamente, solo Admin.
+- [x] Pruebas por endpoint de "otro usuario no lo ve" y de cada opción de la matriz.
 
 **HU-17b · Pantalla de permisos (5 pts)**
 - [ ] En Miembros, "Permisos" abre la matriz de la persona: plantilla y ajustes por sección (Ver, Crear, Modificar, Dar de baja y restaurar) y la lista "Estos…".

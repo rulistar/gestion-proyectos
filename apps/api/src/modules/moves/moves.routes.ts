@@ -1,8 +1,14 @@
-import { moveProjectSchema, moveTaskSchema } from '@gestion/shared';
+import { canCreateTaskIn, canUpdateTask, moveProjectSchema, moveTaskSchema } from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { requireAuth } from '../auth/session.js';
-import { permissionIn, requirePermission } from '../workspaces/access.js';
+import {
+  forbidden,
+  permissionIn,
+  requireMembership,
+  requirePermission,
+} from '../workspaces/access.js';
+import { visibleContainer, visibleTask } from '../workspaces/facts.js';
 import {
   InvalidTargetTypeError,
   moveProject,
@@ -94,16 +100,26 @@ export const movesRoutes: FastifyPluginCallback = (app, _options, done) => {
 
   app.post(
     '/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/move',
-    { preHandler: requirePermission('task.update') },
+    { preHandler: requireMembership },
     async (request, reply) => {
+      const access = request.membership!;
       const params = taskParamsSchema.safeParse(request.params);
       if (!params.success) return reply.code(404).send({ message: 'Tarea no encontrada' });
       const parsed = moveTaskSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({ message: z.prettifyError(parsed.error) });
       }
-      const sourceWorkspaceId = request.membership!.workspaceId;
-      if (parsed.data.targetWorkspaceId !== sourceWorkspaceId) {
+      // Debe poder ver y modificar la tarea (ADR-0006)
+      const task = await visibleTask(app.db, access, params.data.projectId, params.data.taskId);
+      if (!task) return reply.code(404).send({ message: 'Tarea no encontrada' });
+      if (!canUpdateTask(access, task)) return forbidden(reply);
+      const sourceWorkspaceId = access.workspaceId;
+      if (parsed.data.targetWorkspaceId === sourceWorkspaceId) {
+        // En el mismo espacio: también debe poder agregar tareas al destino
+        const target = await visibleContainer(app.db, access, parsed.data.targetProjectId);
+        if (!target) return reply.code(404).send({ message: 'Proyecto de destino no encontrado' });
+        if (!canCreateTaskIn(access, target, true)) return forbidden(reply);
+      } else {
         // A otro espacio: Admin en los dos
         const inSource = await permissionIn(
           app.db,

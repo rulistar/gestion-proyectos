@@ -1,4 +1,4 @@
-import type { MembershipRole } from '@gestion/shared';
+import { PERMISSION_TEMPLATES, type MemberPermissions, type MembershipRole } from '@gestion/shared';
 import type { Db } from '../db/client.js';
 import { auditCreate } from '../db/audit.js';
 import { createSession, SESSION_COOKIE } from '../modules/auth/session.js';
@@ -10,7 +10,32 @@ export async function userWithSession(db: Db, email: string) {
   return { user, cookies: { [SESSION_COOKIE]: token } };
 }
 
-/** Agrega un usuario a un workspace con el rol indicado */
-export async function addMember(db: Db, workspaceId: string, userId: string, role: MembershipRole) {
-  await db.membership.create({ data: { workspaceId, userId, role, ...auditCreate(null) } });
+/**
+ * Matriz "como antes de ADR-0006" (§5): la que la migración dio a los miembros existentes. Las
+ * pruebas anteriores a los permisos por persona la usan para seguir describiendo lo mismo.
+ */
+export const LEGACY_PERMISSIONS: Record<MembershipRole, MemberPermissions> = {
+  ADMIN: PERMISSION_TEMPLATES.ADMIN,
+  MEMBER: {
+    sections: {
+      WITH_END: { view: 'ALL', create: true, update: 'VISIBLE', remove: 'NONE' },
+      ONGOING: { view: 'ALL', create: true, update: 'VISIBLE', remove: 'NONE' },
+      ON_DEMAND: { view: 'ALL', create: true, update: 'VISIBLE', remove: 'NONE' },
+    },
+    tasks: { view: 'VISIBLE', create: true, update: 'VISIBLE', remove: 'EDITABLE' },
+  },
+  VIEWER: PERMISSION_TEMPLATES.VIEWER,
+};
+
+/** Agrega un usuario a un workspace con el rol y la matriz indicados */
+export async function addMember(
+  db: Db,
+  workspaceId: string,
+  userId: string,
+  role: MembershipRole,
+  permissions: MemberPermissions = LEGACY_PERMISSIONS[role],
+) {
+  return db.membership.create({
+    data: { workspaceId, userId, role, permissions, ...auditCreate(null) },
+  });
 }

@@ -28,9 +28,26 @@ export function createTestDb(): Db {
   return createDb(testDatabaseUrl());
 }
 
-/** Vacía todas las tablas entre pruebas para que cada una empiece desde cero. */
+const TRUNCATE_ALL =
+  'TRUNCATE TABLE "invitations", "membership_project_access", "tasks", "projects", "project_type_task_types", "task_types", "project_types", "people", "folio_counters", "sessions", "memberships", "workspaces", "users" RESTART IDENTITY CASCADE';
+
+/** PostgreSQL canceló la consulta por un bloqueo mutuo (deadlock) */
+function isDeadlock(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('40P01');
+}
+
+/**
+ * Vacía todas las tablas entre pruebas para que cada una empiece desde cero. TRUNCATE bloquea
+ * todas las tablas a la vez y, en CI, a veces choca con otra conexión que aún se está cerrando:
+ * PostgreSQL cancela uno de los dos (deadlock) y basta con reintentar.
+ */
 export async function resetDb(db: Db): Promise<void> {
-  await db.$executeRawUnsafe(
-    'TRUNCATE TABLE "invitations", "tasks", "projects", "project_type_task_types", "task_types", "project_types", "people", "folio_counters", "sessions", "memberships", "workspaces", "users" RESTART IDENTITY CASCADE',
-  );
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await db.$executeRawUnsafe(TRUNCATE_ALL);
+      return;
+    } catch (error) {
+      if (!isDeadlock(error) || attempt >= 3) throw error;
+    }
+  }
 }

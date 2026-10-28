@@ -1,7 +1,7 @@
 import cookie from '@fastify/cookie';
 import Fastify, { type FastifyServerOptions } from 'fastify';
-import type { MembershipRole } from '@gestion/shared';
 import type { Db } from './db/client.js';
+import type { WorkspaceAccess } from './modules/workspaces/access.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { acceptInvitationRoutes } from './modules/invitations/accept.routes.js';
@@ -28,8 +28,8 @@ declare module 'fastify' {
   interface FastifyRequest {
     /** Sesión del usuario; la rellena `requireAuth` (null en rutas públicas) */
     auth: { userId: string; tokenHash: string } | null;
-    /** Membresía en el workspace de la URL; la rellenan `requireMembership`/`requirePermission` */
-    membership: { workspaceId: string; role: MembershipRole } | null;
+    /** Acceso en el workspace de la URL, con su matriz (ADR-0006); lo rellenan `requireMembership`/`requirePermission` */
+    membership: WorkspaceAccess | null;
   }
 }
 

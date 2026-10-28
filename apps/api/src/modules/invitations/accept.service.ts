@@ -1,4 +1,4 @@
-import type { InvitationPreview } from '@gestion/shared';
+import { PERMISSION_TEMPLATES, type InvitationPreview } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
 import { hashPassword } from '../auth/password.js';
@@ -74,6 +74,8 @@ async function joinWorkspace(
         workspaceId: invitation.workspaceId,
         userId,
         role: invitation.role,
+        // Matriz de la plantilla del rol (ADR-0006 §2); HU-17c permitirá ajustarla al invitar
+        permissions: PERMISSION_TEMPLATES[invitation.role],
         ...auditCreate(userId),
       },
     });

@@ -6,6 +6,7 @@ import {
   type TaskStatus,
   type WorkspaceTask,
 } from '@gestion/shared';
+import type { Prisma } from '../../generated/prisma/client.js';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
@@ -99,9 +100,15 @@ function taskScope(workspaceId: string, projectId: string) {
   return { workspaceId, projectId, ...notDeleted, project: notDeleted };
 }
 
-export async function listTasks(db: Db, workspaceId: string, projectId: string): Promise<Task[]> {
+/** `visible`: las tareas que ve quien pregunta (ADR-0006); vacío = todas */
+export async function listTasks(
+  db: Db,
+  workspaceId: string,
+  projectId: string,
+  visible: Prisma.TaskWhereInput = {},
+): Promise<Task[]> {
   const rows = await db.task.findMany({
-    where: taskScope(workspaceId, projectId),
+    where: { ...taskScope(workspaceId, projectId), AND: [visible] },
     select: taskSelect,
     orderBy: { createdAt: 'asc' },
   });
@@ -142,9 +149,13 @@ export async function listMyTasks(
  * Todas las tareas del espacio con su contenedor (HU-39, vista "Tareas"), de contenedores que no
  * están en la papelera; por fecha de fin (sin fecha al final). Los filtros se aplican en la web.
  */
-export async function listWorkspaceTasks(db: Db, workspaceId: string): Promise<WorkspaceTask[]> {
+export async function listWorkspaceTasks(
+  db: Db,
+  workspaceId: string,
+  visible: Prisma.TaskWhereInput = {},
+): Promise<WorkspaceTask[]> {
   const rows = await db.task.findMany({
-    where: { workspaceId, ...notDeleted, project: notDeleted },
+    where: { workspaceId, ...notDeleted, project: notDeleted, AND: [visible] },
     select: {
       ...taskSelect,
       project: {

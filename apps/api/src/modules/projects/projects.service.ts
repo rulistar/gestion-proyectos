@@ -6,6 +6,7 @@ import {
   type ProjectStatus,
   type TaskStatus,
 } from '@gestion/shared';
+import type { Prisma } from '../../generated/prisma/client.js';
 import type { Db, Tx } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
@@ -248,13 +249,15 @@ function toData({ taskTypeIds: _ownTypes, ...input }: ProjectInput, typeId: stri
 }
 
 /** Proyectos del workspace que no están en la papelera; los más recientes primero */
+/** `visible`: el filtro de visibilidad de quien pregunta (ADR-0006); vacío = todos */
 export async function listProjects(
   db: Db,
   workspaceId: string,
   metrics = defaultMetrics(),
+  visible: Prisma.ProjectWhereInput = {},
 ): Promise<Project[]> {
   const rows = await db.project.findMany({
-    where: { workspaceId, ...notDeleted },
+    where: { workspaceId, ...notDeleted, AND: [visible] },
     select: projectSelect,
     orderBy: { createdAt: 'desc' },
   });
@@ -267,9 +270,10 @@ export async function getProject(
   workspaceId: string,
   projectId: string,
   metrics = defaultMetrics(),
+  visible: Prisma.ProjectWhereInput = {},
 ): Promise<Project | null> {
   const row = await db.project.findFirst({
-    where: { id: projectId, workspaceId, ...notDeleted },
+    where: { id: projectId, workspaceId, ...notDeleted, AND: [visible] },
     select: projectSelect,
   });
   return row && toProject(row, metrics);

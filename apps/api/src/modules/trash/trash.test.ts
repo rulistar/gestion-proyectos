@@ -140,10 +140,17 @@ describe('dar de baja (HU-15)', () => {
 });
 
 describe('papelera', () => {
-  it('solo el Admin la ve (un Miembro recibe 403)', async () => {
-    const { mario, ws } = await setup();
-    const response = await app.inject({ url: trashUrl(ws.id), cookies: mario.cookies });
-    expect(response.statusCode).toBe(403);
+  it('cada quien ve solo lo que puede restaurar (ADR-0006 §3)', async () => {
+    const { ana, mario, ws, project, task } = await setup();
+    await remove(ana.cookies, taskUrl(ws.id, project.id, task.id));
+    const other = await createProject(db, ana.user.id, ws.id, { name: 'Otro', ...emptyProject });
+    await remove(ana.cookies, projectUrl(ws.id, other.id));
+
+    // Mario (Miembro "como antes") restaura tareas que puede modificar, pero no proyectos
+    expect((await trash(mario.cookies, ws.id)).map((i) => [i.kind, i.name])).toEqual([
+      ['task', 'Leer'],
+    ]);
+    expect(await trash(ana.cookies, ws.id)).toHaveLength(2);
   });
 
   it('lista qué se dio de baja, quién y cuándo; las tareas del proyecto borrado van con él', async () => {
@@ -209,11 +216,12 @@ describe('papelera', () => {
     expect(await db.task.count()).toBe(2);
   });
 
-  it('un Miembro no puede restaurar ni borrar definitivamente (403)', async () => {
+  it('un Miembro no restaura lo que su permiso no cubre (404) ni borra definitivamente (403)', async () => {
     const { ana, mario, ws, project } = await setup();
     await remove(ana.cookies, projectUrl(ws.id, project.id));
 
-    expect((await restore(mario.cookies, ws.id, 'project', project.id)).statusCode).toBe(403);
+    // Para él no está en la papelera: no revela que existe
+    expect((await restore(mario.cookies, ws.id, 'project', project.id)).statusCode).toBe(404);
     const purge = await remove(mario.cookies, `${trashUrl(ws.id)}/project/${project.id}`);
     expect(purge.statusCode).toBe(403);
     expect(await db.project.count()).toBe(1);
