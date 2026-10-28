@@ -14,8 +14,22 @@ export const personSchema = z.object({
   /** El usuario vinculado sigue siendo miembro activo del espacio */
   hasAccess: z.boolean(),
   archived: z.boolean(),
+  /** Tareas donde es Responsable, papelera incluida (HU-44): con alguna no se borra */
+  taskCount: z.number().int(),
+  /** Proyectos donde tiene un rol (Solicitante, PM…), papelera incluida */
+  projectCount: z.number().int(),
 });
 export type Person = z.infer<typeof personSchema>;
+
+/**
+ * ¿Se puede borrar definitivamente? (HU-44) Solo archivada y sin uso: nadie la cita en tareas ni
+ * proyectos, y su cuenta (si tiene) ya no es miembro del espacio
+ */
+export function canDeletePerson(person: Person): boolean {
+  return (
+    person.archived && person.taskCount === 0 && person.projectCount === 0 && !person.hasAccess
+  );
+}
 
 export const personListSchema = z.array(personSchema);
 

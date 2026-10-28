@@ -43,3 +43,13 @@ export function useUpdatePerson(workspaceId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] }),
   });
 }
+
+/** Borrar definitivamente (HU-44): solo una persona archivada y sin uso */
+export function useDeletePerson(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (personId: string) =>
+      apiFetch(`${peoplePath(workspaceId)}/${personId}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] }),
+  });
+}

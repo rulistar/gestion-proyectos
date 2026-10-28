@@ -1,7 +1,13 @@
-import { createPersonSchema, roleHasPermission, type Member, type Person } from '@gestion/shared';
+import {
+  canDeletePerson,
+  createPersonSchema,
+  roleHasPermission,
+  type Member,
+  type Person,
+} from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import { Archive, ArchiveRestore, Check, Pencil, X } from 'lucide-react';
+import { Archive, ArchiveRestore, Check, Pencil, Trash2, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
@@ -9,11 +15,25 @@ import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { initials } from '@/lib/brand';
-import { peopleQueryOptions, useCreatePerson, useUpdatePerson } from '@/lib/people';
+import {
+  peopleQueryOptions,
+  useCreatePerson,
+  useDeletePerson,
+  useUpdatePerson,
+} from '@/lib/people';
 import { useSchemaForm } from '@/lib/use-schema-form';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
 
@@ -26,6 +46,8 @@ export function PeoplePage() {
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
   const { data: people } = useSuspenseQuery(peopleQueryOptions(workspaceId));
   const { data: members } = useSuspenseQuery(membersQueryOptions(workspaceId));
+  // Las archivadas se ocultan por defecto para que no estorben (HU-44)
+  const [showArchived, setShowArchived] = useState(false);
 
   if (!roleHasPermission(workspace.role, 'member.manage')) {
     return (
@@ -60,11 +82,24 @@ export function PeoplePage() {
       <Card>
         <CardHeader className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <CardTitle>Catálogo</CardTitle>
-          <CardDescription>{active.length} activas</CardDescription>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <CardDescription>{active.length} activas</CardDescription>
+            {archived.length > 0 && (
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(event) => setShowArchived(event.target.checked)}
+                  className="size-4 accent-primary"
+                />
+                Mostrar archivadas ({archived.length})
+              </label>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <ul className="divide-y rounded-md border">
-            {[...active, ...archived].map((person) => (
+            {[...active, ...(showArchived ? archived : [])].map((person) => (
               <PersonRow
                 key={person.id}
                 workspaceId={workspaceId}
@@ -150,23 +185,19 @@ function PersonRow({
             </Button>
           </form>
         ) : (
-          <div className="min-w-0">
-            <p className={person.archived ? 'font-medium text-muted-foreground' : 'font-medium'}>
-              {person.name}
-              {person.archived && (
-                <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold">
-                  Archivada
-                </span>
-              )}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {person.userId === null
-                ? 'Sin cuenta'
-                : person.hasAccess
-                  ? `Cuenta: ${person.userName}`
-                  : `Cuenta: ${person.userName} · sin acceso al espacio`}
-            </p>
-          </div>
+          // La cuenta vinculada no se repite aquí: ya la muestra el combo de la derecha
+          <p
+            className={
+              person.archived ? 'min-w-0 font-medium text-muted-foreground' : 'min-w-0 font-medium'
+            }
+          >
+            {person.name}
+            {person.archived && (
+              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold">
+                Archivada
+              </span>
+            )}
+          </p>
         )}
       </div>
       <div className="flex items-center gap-2">
@@ -219,8 +250,81 @@ function PersonRow({
           {person.archived ? <ArchiveRestore aria-hidden /> : <Archive aria-hidden />}
           {person.archived ? 'Reactivar' : 'Archivar'}
         </Button>
+        {person.archived && <DeletePersonButton workspaceId={workspaceId} person={person} />}
       </div>
     </li>
+  );
+}
+
+/** Por qué no se puede borrar (HU-44); null si sí se puede */
+function whyNotDeletable(person: Person): string | null {
+  if (canDeletePerson(person)) return null;
+  if (person.hasAccess) return 'Su cuenta sigue siendo miembro del espacio: quítala en Miembros';
+  const uses = [
+    person.taskCount > 0 && `${person.taskCount} tarea(s)`,
+    person.projectCount > 0 && `${person.projectCount} proyecto(s)`,
+  ].filter(Boolean);
+  return `Aparece en ${uses.join(' y ')} (papelera incluida): reasígnalas primero`;
+}
+
+/** Borrar definitivamente una persona archivada que nadie usa (HU-44) */
+function DeletePersonButton({ workspaceId, person }: { workspaceId: string; person: Person }) {
+  const remove = useDeletePerson(workspaceId);
+  const reason = whyNotDeletable(person);
+
+  if (reason) {
+    return (
+      // El span recibe el title: un botón deshabilitado no muestra el aviso
+      <span title={reason}>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled
+          aria-label={`Borrar a ${person.name}: ${reason}`}
+        >
+          <Trash2 aria-hidden />
+          Borrar
+        </Button>
+      </span>
+    );
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" aria-label={`Borrar definitivamente a ${person.name}`}>
+          <Trash2 aria-hidden />
+          Borrar
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>¿Borrar definitivamente a {person.name}?</DialogTitle>
+          <DialogDescription>
+            No aparece en ninguna tarea ni proyecto. Se quita del catálogo y no se puede deshacer;
+            si la necesitas después, tendrás que darla de alta otra vez.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end gap-2">
+          <DialogClose asChild>
+            <Button variant="ghost">Conservar</Button>
+          </DialogClose>
+          <DialogClose asChild>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                remove.mutate(person.id, {
+                  onSuccess: () => toast.success(`"${person.name}" se borró`),
+                  onError: (error) => toast.error(error.message),
+                })
+              }
+            >
+              Borrar definitivamente
+            </Button>
+          </DialogClose>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

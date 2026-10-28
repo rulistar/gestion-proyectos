@@ -1,4 +1,10 @@
-import type { CreatePersonInput, Person, PersonRef, UpdatePersonInput } from '@gestion/shared';
+import {
+  canDeletePerson,
+  type CreatePersonInput,
+  type Person,
+  type PersonRef,
+  type UpdatePersonInput,
+} from '@gestion/shared';
 import type { Db, Tx } from '../../db/client.js';
 import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
 
@@ -8,6 +14,8 @@ export class DuplicatePersonNameError extends Error {}
 export class UserAlreadyLinkedError extends Error {}
 /** Solo se vincula a usuarios que son miembros activos del espacio (→ 400) */
 export class NotAMemberError extends Error {}
+/** Solo se borra una persona archivada, sin uso y sin cuenta con acceso (HU-44, → 409) */
+export class PersonNotDeletableError extends Error {}
 
 const activePerson = { archivedAt: null } as const;
 
@@ -89,8 +97,38 @@ export async function ensureMemberPerson(
   });
 }
 
+const PROJECT_ROLES = [
+  'requesterId',
+  'assignedToId',
+  'projectManagerId',
+  'consultingManagerId',
+  'businessPartnerId',
+] as const;
+
+/**
+ * Cuántos proyectos del espacio cita a cada persona en algún rol, papelera incluida. Un proyecto
+ * donde es Solicitante y PM cuenta una vez
+ */
+async function projectCounts(db: Db | Tx, workspaceId: string): Promise<Map<string, number>> {
+  const projects = await db.project.findMany({
+    where: { workspaceId, OR: PROJECT_ROLES.map((role) => ({ [role]: { not: null } })) },
+    select: Object.fromEntries(PROJECT_ROLES.map((role) => [role, true])) as Record<
+      (typeof PROJECT_ROLES)[number],
+      true
+    >,
+  });
+  const counts = new Map<string, number>();
+  for (const project of projects) {
+    for (const id of new Set(PROJECT_ROLES.map((role) => project[role]))) {
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
 /** Catálogo del espacio, archivadas incluidas, por nombre */
 export async function listPeople(db: Db, workspaceId: string): Promise<Person[]> {
+  const projects = await projectCounts(db, workspaceId);
   const rows = await db.person.findMany({
     where: { workspaceId },
     select: {
@@ -105,15 +143,19 @@ export async function listPeople(db: Db, workspaceId: string): Promise<Person[]>
           memberships: { where: { workspaceId, ...notDeleted }, select: { id: true } },
         },
       },
+      // Todas las filas, papelera incluida: la BD no deja borrar a alguien que una tarea cita
+      _count: { select: { tasksResponsible: true } },
     },
     orderBy: { name: 'asc' },
   });
-  return rows.map(({ archivedAt, user, ...row }) => ({
+  return rows.map(({ archivedAt, user, _count, ...row }) => ({
     ...row,
     userName: user?.name ?? null,
     // Sin cuenta no hay acceso que perder; con cuenta, debe seguir siendo miembro activo
     hasAccess: user !== null && user.status === 'ACTIVE' && user.memberships.length > 0,
     archived: archivedAt !== null,
+    taskCount: _count.tasksResponsible,
+    projectCount: projects.get(row.id) ?? 0,
   }));
 }
 
@@ -173,6 +215,18 @@ export async function updatePerson(
     });
     return true;
   });
+}
+
+/**
+ * Borra definitivamente una persona del catálogo (HU-44). false si no es de ese espacio (→ 404);
+ * PersonNotDeletableError si no está archivada, alguien la cita o su cuenta sigue siendo miembro.
+ */
+export async function deletePerson(db: Db, workspaceId: string, personId: string) {
+  const person = (await listPeople(db, workspaceId)).find((row) => row.id === personId);
+  if (!person) return false;
+  if (!canDeletePerson(person)) throw new PersonNotDeletableError();
+  await db.person.delete({ where: { id: personId } });
+  return true;
 }
 
 /**
