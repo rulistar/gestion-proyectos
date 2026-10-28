@@ -41,8 +41,9 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 | Fecha | ID | Elemento | Pts |
 |---|---|---|---|
 | 2026-10-28 | HU-40 | Menú lateral plegable (botón y Ctrl+B) | 1 |
+| 2026-10-28 | HU-41 | Pantallas compactas: más información visible sin desplazarse | 2 |
 
-El compromiso queda en **35 puntos**.
+El compromiso queda en **37 puntos**.
 
 ## Guion de demostración (se arma al planificar, acuerdo del Sprint 3)
 

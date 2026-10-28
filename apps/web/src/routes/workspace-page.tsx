@@ -17,13 +17,14 @@ import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '@/components/progress-bar';
 import { ProjectFiltersBar } from '@/components/project-filters-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { SortTh } from '@/components/sort-th';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -123,14 +124,17 @@ function ContainersPage({
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{section.title}</h1>
-          <p className="mt-1 text-muted-foreground">
-            {workspace.name} · tu rol: {ROLE_LABELS[workspace.role]}
-          </p>
-        </div>
+    <div className="grid gap-3">
+      {/* Título, descripción, conteo y botón en una sola línea (HU-41) */}
+      <PageHeader
+        title={section.title}
+        description={`${workspace.name} · tu rol: ${ROLE_LABELS[workspace.role]}`}
+      >
+        <span className="text-sm text-muted-foreground">
+          {projects.length === 0
+            ? section.empty
+            : `${visible.length} de ${projects.length}${hidden > 0 && !hasActiveFilters(filters) ? ' (terminados y cancelados ocultos)' : ''}`}
+        </span>
         {canCreate && (
           <CreateProjectDialog
             workspaceId={workspaceId}
@@ -140,20 +144,11 @@ function ContainersPage({
             people={people}
           />
         )}
-      </div>
+      </PageHeader>
 
-      <Card>
-        {/* El conteo a la derecha del título ahorra una línea */}
-        <CardHeader className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <CardTitle>{section.title}</CardTitle>
-          <CardDescription>
-            {projects.length === 0
-              ? section.empty
-              : `${visible.length} de ${projects.length}${hidden > 0 && !hasActiveFilters(filters) ? ' (terminados y cancelados ocultos)' : ''}`}
-          </CardDescription>
-        </CardHeader>
-        {projects.length > 0 && (
-          <CardContent className="grid gap-4">
+      {projects.length > 0 && (
+        <Card>
+          <CardContent className="grid gap-3">
             <ProjectFiltersBar
               projects={projects}
               types={sectionTypes}
@@ -185,14 +180,14 @@ function ContainersPage({
               </div>
             )}
           </CardContent>
-        )}
-      </Card>
+        </Card>
+      )}
     </div>
   );
 }
 
 function Td({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <td className={`py-2 pr-4 ${className}`}>{children}</td>;
+  return <td className={`py-1.5 pr-4 ${className}`}>{children}</td>;
 }
 
 function ContainersTable({
@@ -283,7 +278,7 @@ function ContainersTable({
                 <Td className="whitespace-nowrap">
                   {formatMinutes(project.progress.pendingMinutes)}
                 </Td>
-                <td className="py-2 whitespace-nowrap">
+                <td className="py-1.5 whitespace-nowrap">
                   {formatDate(project.endDate)}
                   <span className="block text-xs text-muted-foreground">
                     {daysRemainingLabel(project.endDate, today)}

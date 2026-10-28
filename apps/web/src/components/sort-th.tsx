@@ -21,7 +21,7 @@ export function SortTh<K extends string>({
   const active = sort === column;
   return (
     <th
-      className="py-2 pr-4 font-medium"
+      className="py-1.5 pr-4 font-medium"
       aria-sort={active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
       <button

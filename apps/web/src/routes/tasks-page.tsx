@@ -9,11 +9,12 @@ import {
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { useState, type ReactNode } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { SortTh } from '@/components/sort-th';
 import { EditTaskPanel } from '@/components/task-board';
 import { TaskFiltersBar } from '@/components/task-filters-bar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { nextSort } from '@/lib/sort';
 import { formatDate, todayIso } from '@/lib/dates';
 import { dueInfo } from '@/lib/due';
@@ -68,13 +69,17 @@ export function TasksPage() {
   );
 
   return (
-    <div className="grid gap-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Tareas</h1>
-        <p className="mt-1 text-muted-foreground">
-          {workspace.name} · todas las tareas de proyectos, mantenimientos y actividades
-        </p>
-      </div>
+    <div className="grid gap-3">
+      <PageHeader
+        title="Tareas"
+        description={`${workspace.name} · todas las tareas de proyectos, mantenimientos y actividades`}
+      >
+        <span className="text-sm text-muted-foreground">
+          {tasks.length === 0
+            ? 'Todavía no hay tareas'
+            : `${visible.length} de ${tasks.length}${hidden > 0 && !hasActiveFilters(filters) ? ' (hechas y canceladas ocultas)' : ''}`}
+        </span>
+      </PageHeader>
 
       {editing && editingProject && (
         <EditTaskPanel
@@ -93,17 +98,9 @@ export function TasksPage() {
         />
       )}
 
-      <Card>
-        <CardHeader className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <CardTitle>Lista de tareas</CardTitle>
-          <CardDescription>
-            {tasks.length === 0
-              ? 'Todavía no hay tareas'
-              : `${visible.length} de ${tasks.length}${hidden > 0 && !hasActiveFilters(filters) ? ' (hechas y canceladas ocultas)' : ''}`}
-          </CardDescription>
-        </CardHeader>
-        {tasks.length > 0 && (
-          <CardContent className="grid gap-4">
+      {tasks.length > 0 && (
+        <Card>
+          <CardContent className="grid gap-3">
             <TaskFiltersBar
               projects={projects}
               taskTypes={taskTypes}
@@ -150,14 +147,14 @@ export function TasksPage() {
               </div>
             )}
           </CardContent>
-        )}
-      </Card>
+        </Card>
+      )}
     </div>
   );
 }
 
 function Td({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <td className={`py-2 pr-4 ${className}`}>{children}</td>;
+  return <td className={`py-1.5 pr-4 ${className}`}>{children}</td>;
 }
 
 function TaskRow({
@@ -216,7 +213,7 @@ function TaskRow({
         {task.responsible?.name ?? 'Sin asignar'}
       </Td>
       <Td className="whitespace-nowrap">{TASK_STATUSES[task.status]}</Td>
-      <td className="py-2 whitespace-nowrap">
+      <td className="py-1.5 whitespace-nowrap">
         {finished ? (
           <span className="text-muted-foreground">{formatDate(task.endDate)}</span>
         ) : (

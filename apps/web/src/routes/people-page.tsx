@@ -4,6 +4,7 @@ import { getRouteApi, Link } from '@tanstack/react-router';
 import { Archive, ArchiveRestore, Check, Pencil, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { Button } from '@/components/ui/button';
@@ -50,14 +51,11 @@ export function PeoplePage() {
   const archived = people.filter((person) => person.archived);
 
   return (
-    <div className="grid gap-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Personas</h1>
-        <p className="mt-1 text-muted-foreground">
-          Las personas de {workspace.name}, tengan o no cuenta. El nombre que pongas aquí es el que
-          se ve en tareas y proyectos: si vinculas a "adminrul" con "Rodrigo", se verá "Rodrigo".
-        </p>
-      </div>
+    <div className="grid gap-3">
+      <PageHeader
+        title="Personas"
+        description={`Las personas de ${workspace.name}, tengan o no cuenta. El nombre que pongas aquí es el que se ve en tareas y proyectos: si vinculas a "adminrul" con "Rodrigo", se verá "Rodrigo".`}
+      />
 
       <Card>
         <CardHeader className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
