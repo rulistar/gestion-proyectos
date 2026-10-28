@@ -54,6 +54,22 @@ model ProjectTaskType {
   @@map("project_task_types")
 }
 
+/// Contenedores que una persona ve con la opción "Estos…" de su matriz (ADR-0006 §1)
+model MembershipProjectAccess {
+  membershipId String     @map("membership_id") @db.Uuid
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  projectId    String     @map("project_id") @db.Uuid
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdBy   User?    @relation("MembershipProjectAccessCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@id([membershipId, projectId])
+  @@index([projectId])
+  @@map("membership_project_access")
+}
+
 /// Persona del catálogo del espacio (HU-34, ADR-0005), con o sin cuenta. Vinculada a un usuario,
 /// su nombre es el que se muestra en lugar del de la cuenta. No va a la papelera: se archiva.
 model Person {
@@ -155,13 +171,6 @@ enum ProjectPriority {
   @@map("project_priority")
 }
 
-enum ProjectVisibility {
-  WORKSPACE // lo ve todo el workspace
-  RESTRICTED // solo los Admin y los usuarios de ProjectAccess (HU-16)
-
-  @@map("project_visibility")
-}
-
 /// Tipos genéricos de tarea (ADR-0002 §1.1)
 /// Tipo de tarea del espacio (HU-22): Tarea, Incidencia, Fast track... Reemplaza al enum TaskType.
 /// No va a la papelera: un tipo en uso se archiva (ADR-0004 §4).
@@ -242,33 +251,34 @@ model User {
   memberships Membership[] @relation("MembershipUser")
 
   // Relaciones inversas de trazabilidad
-  usersCreated            User[]                @relation("UserCreatedBy")
-  usersUpdated            User[]                @relation("UserUpdatedBy")
-  workspacesCreated       Workspace[]           @relation("WorkspaceCreatedBy")
-  workspacesUpdated       Workspace[]           @relation("WorkspaceUpdatedBy")
-  workspacesDeleted       Workspace[]           @relation("WorkspaceDeletedBy")
-  membershipsCreated      Membership[]          @relation("MembershipCreatedBy")
-  membershipsUpdated      Membership[]          @relation("MembershipUpdatedBy")
-  membershipsDeleted      Membership[]          @relation("MembershipDeletedBy")
-  projectsCreated         Project[]             @relation("ProjectCreatedBy")
-  projectsUpdated         Project[]             @relation("ProjectUpdatedBy")
-  projectsDeleted         Project[]             @relation("ProjectDeletedBy")
-  tasksCreated            Task[]                @relation("TaskCreatedBy")
-  tasksUpdated            Task[]                @relation("TaskUpdatedBy")
-  tasksDeleted            Task[]                @relation("TaskDeletedBy")
-  invitationsCreated      Invitation[]          @relation("InvitationCreatedBy")
-  invitationsUpdated      Invitation[]          @relation("InvitationUpdatedBy")
-  invitationsRevoked      Invitation[]          @relation("InvitationRevokedBy")
-  invitationsAccepted     Invitation[]          @relation("InvitationAcceptedBy")
-  projectTaskTypesCreated ProjectTaskType[]     @relation("ProjectTaskTypeCreatedBy")
-  people                  Person[]              @relation("PersonUser")
-  peopleCreated           Person[]              @relation("PersonCreatedBy")
-  peopleUpdated           Person[]              @relation("PersonUpdatedBy")
-  projectTypesCreated     ProjectType[]         @relation("ProjectTypeCreatedBy")
-  projectTypesUpdated     ProjectType[]         @relation("ProjectTypeUpdatedBy")
-  taskTypesCreated        TaskType[]            @relation("TaskTypeCreatedBy")
-  taskTypesUpdated        TaskType[]            @relation("TaskTypeUpdatedBy")
-  allowedTaskTypesCreated ProjectTypeTaskType[] @relation("ProjectTypeTaskTypeCreatedBy")
+  usersCreated            User[]                    @relation("UserCreatedBy")
+  usersUpdated            User[]                    @relation("UserUpdatedBy")
+  workspacesCreated       Workspace[]               @relation("WorkspaceCreatedBy")
+  workspacesUpdated       Workspace[]               @relation("WorkspaceUpdatedBy")
+  workspacesDeleted       Workspace[]               @relation("WorkspaceDeletedBy")
+  membershipsCreated      Membership[]              @relation("MembershipCreatedBy")
+  membershipsUpdated      Membership[]              @relation("MembershipUpdatedBy")
+  membershipsDeleted      Membership[]              @relation("MembershipDeletedBy")
+  projectsCreated         Project[]                 @relation("ProjectCreatedBy")
+  projectsUpdated         Project[]                 @relation("ProjectUpdatedBy")
+  projectsDeleted         Project[]                 @relation("ProjectDeletedBy")
+  tasksCreated            Task[]                    @relation("TaskCreatedBy")
+  tasksUpdated            Task[]                    @relation("TaskUpdatedBy")
+  tasksDeleted            Task[]                    @relation("TaskDeletedBy")
+  invitationsCreated      Invitation[]              @relation("InvitationCreatedBy")
+  invitationsUpdated      Invitation[]              @relation("InvitationUpdatedBy")
+  invitationsRevoked      Invitation[]              @relation("InvitationRevokedBy")
+  invitationsAccepted     Invitation[]              @relation("InvitationAcceptedBy")
+  projectTaskTypesCreated ProjectTaskType[]         @relation("ProjectTaskTypeCreatedBy")
+  projectAccessCreated    MembershipProjectAccess[] @relation("MembershipProjectAccessCreatedBy")
+  people                  Person[]                  @relation("PersonUser")
+  peopleCreated           Person[]                  @relation("PersonCreatedBy")
+  peopleUpdated           Person[]                  @relation("PersonUpdatedBy")
+  projectTypesCreated     ProjectType[]             @relation("ProjectTypeCreatedBy")
+  projectTypesUpdated     ProjectType[]             @relation("ProjectTypeUpdatedBy")
+  taskTypesCreated        TaskType[]                @relation("TaskTypeCreatedBy")
+  taskTypesUpdated        TaskType[]                @relation("TaskTypeUpdatedBy")
+  allowedTaskTypesCreated ProjectTypeTaskType[]     @relation("ProjectTypeTaskTypeCreatedBy")
 
   @@map("users")
 }
@@ -319,12 +329,17 @@ model Workspace {
 
 /// Pertenencia de un usuario a un workspace, con su rol (roles por workspace).
 model Membership {
-  id          String         @id @default(uuid(7)) @db.Uuid
-  workspaceId String         @map("workspace_id") @db.Uuid
-  userId      String         @map("user_id") @db.Uuid
-  role        MembershipRole
-  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user        User           @relation("MembershipUser", fields: [userId], references: [id], onDelete: Restrict)
+  id            String                    @id @default(uuid(7)) @db.Uuid
+  workspaceId   String                    @map("workspace_id") @db.Uuid
+  userId        String                    @map("user_id") @db.Uuid
+  /// Plantilla de la que partió la matriz (ADR-0006 §2); el Admin puede todo
+  role          MembershipRole
+  /// Matriz de permisos (ADR-0006 §1): JSON validado con memberPermissionsSchema de shared
+  permissions   Json
+  workspace     Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user          User                      @relation("MembershipUser", fields: [userId], references: [id], onDelete: Restrict)
+  /// Contenedores de la opción "Estos…" de la matriz
+  projectAccess MembershipProjectAccess[]
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -344,44 +359,43 @@ model Membership {
 
 /// Proyecto (el "curso" del prototipo, ADR-0002 §1.1).
 model Project {
-  id                  String            @id @default(uuid(7)) @db.Uuid
-  workspaceId         String            @map("workspace_id") @db.Uuid
-  workspace           Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                  String          @id @default(uuid(7)) @db.Uuid
+  workspaceId         String          @map("workspace_id") @db.Uuid
+  workspace           Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   /// Tipo de contenedor (HU-21); un tipo en uso no se borra, se archiva
-  typeId              String            @map("type_id") @db.Uuid
-  type                ProjectType       @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  typeId              String          @map("type_id") @db.Uuid
+  type                ProjectType     @relation(fields: [typeId], references: [id], onDelete: Restrict)
   name                String
   /// Folio del sistema de origen (HU-31): opcional, editable, puede repetirse
   folio               String?
   description         String?
   /// Personas del proyecto (HU-36, ADR-0005 §3): del catálogo del espacio, con o sin cuenta
-  requesterId         String?           @map("requester_id") @db.Uuid
-  requester           Person?           @relation("ProjectRequester", fields: [requesterId], references: [id], onDelete: Restrict)
-  assignedToId        String?           @map("assigned_to_id") @db.Uuid
-  assignedTo          Person?           @relation("ProjectAssignedTo", fields: [assignedToId], references: [id], onDelete: Restrict)
-  projectManagerId    String?           @map("project_manager_id") @db.Uuid
-  projectManager      Person?           @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: Restrict)
-  consultingManagerId String?           @map("consulting_manager_id") @db.Uuid
-  consultingManager   Person?           @relation("ProjectConsultingManager", fields: [consultingManagerId], references: [id], onDelete: Restrict)
-  businessPartnerId   String?           @map("business_partner_id") @db.Uuid
-  businessPartner     Person?           @relation("ProjectBusinessPartner", fields: [businessPartnerId], references: [id], onDelete: Restrict)
+  requesterId         String?         @map("requester_id") @db.Uuid
+  requester           Person?         @relation("ProjectRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  assignedToId        String?         @map("assigned_to_id") @db.Uuid
+  assignedTo          Person?         @relation("ProjectAssignedTo", fields: [assignedToId], references: [id], onDelete: Restrict)
+  projectManagerId    String?         @map("project_manager_id") @db.Uuid
+  projectManager      Person?         @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: Restrict)
+  consultingManagerId String?         @map("consulting_manager_id") @db.Uuid
+  consultingManager   Person?         @relation("ProjectConsultingManager", fields: [consultingManagerId], references: [id], onDelete: Restrict)
+  businessPartnerId   String?         @map("business_partner_id") @db.Uuid
+  businessPartner     Person?         @relation("ProjectBusinessPartner", fields: [businessPartnerId], references: [id], onDelete: Restrict)
   /// Texto libre (antes "Plataforma"): Personal, Trabajo, Estudio...
   area                String?
   classification      String?
-  status              ProjectStatus     @default(NOT_STARTED)
-  priority            ProjectPriority   @default(MEDIUM)
-  visibility          ProjectVisibility @default(WORKSPACE)
+  status              ProjectStatus   @default(NOT_STARTED)
+  priority            ProjectPriority @default(MEDIUM)
   /// Fechas sin hora: "termina el 15 de noviembre"
-  startDate           DateTime?         @map("start_date") @db.Date
-  endDate             DateTime?         @map("end_date") @db.Date
+  startDate           DateTime?       @map("start_date") @db.Date
+  endDate             DateTime?       @map("end_date") @db.Date
   /// Observaciones (en pantalla; antes "Notas")
   notes               String?
   /// Sprint en curso y lo que se hace en él (HU-33): texto libre
   sprint              String?
-  sprintActivities    String?           @map("sprint_activities")
+  sprintActivities    String?         @map("sprint_activities")
   /// Fechas reales (ADR-0004 §2.1): las pone el sistema al cambiar el estado, no se editan
-  startedAt           DateTime?         @map("started_at") @db.Timestamptz(3)
-  finishedAt          DateTime?         @map("finished_at") @db.Timestamptz(3)
+  startedAt           DateTime?       @map("started_at") @db.Timestamptz(3)
+  finishedAt          DateTime?       @map("finished_at") @db.Timestamptz(3)
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -395,6 +409,7 @@ model Project {
 
   tasks            Task[]
   allowedTaskTypes ProjectTaskType[]
+  memberAccess     MembershipProjectAccess[]
 
   @@index([workspaceId])
   @@index([typeId])

@@ -1,4 +1,11 @@
-import { roleHasPermission, type Permission } from '@gestion/shared';
+import {
+  memberPermissionsSchema,
+  PERMISSION_TEMPLATES,
+  roleHasPermission,
+  type MemberAccess,
+  type MembershipRole,
+  type Permission,
+} from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Db } from '../../db/client.js';
@@ -6,46 +13,85 @@ import { notDeleted } from '../../db/audit.js';
 
 const workspaceParamsSchema = z.object({ workspaceId: z.uuid() });
 
+/** Acceso de quien pregunta en el workspace de la URL (ADR-0006) */
+export type WorkspaceAccess = MemberAccess & { workspaceId: string };
+
+/** Matriz guardada; si no es válida, la de la plantilla de su rol (nunca da más de lo previsto) */
+function parsePermissions(raw: unknown, role: MembershipRole) {
+  const parsed = memberPermissionsSchema.safeParse(raw);
+  return parsed.success ? parsed.data : PERMISSION_TEMPLATES[role];
+}
+
 /**
- * Rol del usuario en el workspace: el de su membresía activa o, si es el **Admin del sistema**,
- * ADMIN en cualquier workspace existente (decisión del PO, ADR-0002 §5). null = sin acceso.
+ * Acceso del usuario al workspace: su membresía activa con su matriz (ADR-0006) o, si es el
+ * **Admin del sistema**, ADMIN en cualquier workspace existente (ADR-0002 §5). null = sin acceso.
  */
-async function findAccess(db: Db, workspaceId: string, userId: string) {
-  const membership = await db.membership.findFirst({
-    where: { workspaceId, userId, ...notDeleted, workspace: notDeleted },
-    select: { workspaceId: true, role: true },
-  });
-  if (membership) return membership;
+export async function findAccess(
+  db: Db,
+  workspaceId: string,
+  userId: string,
+): Promise<WorkspaceAccess | null> {
+  const [membership, person] = await Promise.all([
+    db.membership.findFirst({
+      where: { workspaceId, userId, ...notDeleted, workspace: notDeleted },
+      select: {
+        role: true,
+        permissions: true,
+        projectAccess: { select: { projectId: true } },
+      },
+    }),
+    // Su persona del catálogo: "las tareas donde soy Responsable" (ADR-0005)
+    db.person.findFirst({ where: { workspaceId, userId }, select: { id: true } }),
+  ]);
+  const base = { workspaceId, userId, personId: person?.id ?? null };
+  if (membership) {
+    return {
+      ...base,
+      role: membership.role,
+      permissions: parsePermissions(membership.permissions, membership.role),
+      selectedProjectIds: membership.projectAccess.map((access) => access.projectId),
+    };
+  }
 
   const [user, workspace] = await Promise.all([
     db.user.findUnique({ where: { id: userId }, select: { isSystemAdmin: true } }),
     db.workspace.findFirst({ where: { id: workspaceId, ...notDeleted }, select: { id: true } }),
   ]);
-  return user?.isSystemAdmin && workspace ? { workspaceId, role: 'ADMIN' as const } : null;
+  return user?.isSystemAdmin && workspace
+    ? {
+        ...base,
+        role: 'ADMIN',
+        permissions: PERMISSION_TEMPLATES.ADMIN,
+        selectedProjectIds: [],
+      }
+    : null;
 }
 
 /**
  * preHandler para rutas `/workspaces/:workspaceId/...` (RNF-02, ADR-0002 §5). Va después de
- * `requireAuth` y deja la membresía en `request.membership`:
+ * `requireAuth` y deja el acceso en `request.membership`:
  *
  * - no es miembro (o el ID no es válido) → 404: no revela que el workspace existe
  * - es miembro pero su rol no tiene el permiso → 403
+ *
+ * Lo que depende de la matriz (ver, crear, modificar, dar de baja) lo decide cada ruta con
+ * `visibility.ts` y las reglas de shared (ADR-0006).
  */
 function workspaceGuard(permission?: Permission) {
   return async function (request: FastifyRequest, reply: FastifyReply) {
     const params = workspaceParamsSchema.safeParse(request.params);
-    const membership =
+    const access =
       params.success && request.auth
         ? await findAccess(request.server.db, params.data.workspaceId, request.auth.userId)
         : null;
 
-    if (!membership) {
+    if (!access) {
       return reply.code(404).send({ message: 'Espacio de trabajo no encontrado' });
     }
-    if (permission && !roleHasPermission(membership.role, permission)) {
+    if (permission && !roleHasPermission(access.role, permission)) {
       return reply.code(403).send({ message: 'No tienes permiso para esta acción' });
     }
-    request.membership = membership;
+    request.membership = access;
   };
 }
 
@@ -67,7 +113,15 @@ export async function permissionIn(
 /** Solo exige ser miembro del workspace, con cualquier rol */
 export const requireMembership = workspaceGuard();
 
-/** Exige ser miembro y que el rol tenga el permiso: `{ preHandler: requirePermission('project.create') }` */
+/**
+ * Exige ser miembro y que el rol tenga el permiso: `{ preHandler: requirePermission('member.manage') }`.
+ * Para lo que es solo del Admin (miembros, catálogos, mover, borrar definitivamente).
+ */
 export function requirePermission(permission: Permission) {
   return workspaceGuard(permission);
+}
+
+/** 403 estándar cuando la matriz no permite la acción */
+export function forbidden(reply: FastifyReply) {
+  return reply.code(403).send({ message: 'No tienes permiso para esta acción' });
 }

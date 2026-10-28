@@ -1,4 +1,9 @@
-import { emailSchema, passwordSchema, personNameSchema } from '@gestion/shared';
+import {
+  emailSchema,
+  passwordSchema,
+  PERMISSION_TEMPLATES,
+  personNameSchema,
+} from '@gestion/shared';
 import { z } from 'zod';
 import type { Db } from '../../db/client.js';
 import { auditCreate } from '../../db/audit.js';
@@ -54,7 +59,13 @@ export async function createFirstAdmin(db: Db, input: FirstAdminInput) {
       data: { name: FIRST_WORKSPACE_NAME, ...auditCreate(user.id) },
     });
     await tx.membership.create({
-      data: { workspaceId: workspace.id, userId: user.id, role: 'ADMIN', ...auditCreate(user.id) },
+      data: {
+        workspaceId: workspace.id,
+        userId: user.id,
+        role: 'ADMIN',
+        permissions: PERMISSION_TEMPLATES.ADMIN,
+        ...auditCreate(user.id),
+      },
     });
     await seedCatalog(tx, workspace.id, user.id);
     await ensureMemberPerson(tx, workspace.id, user, user.id);

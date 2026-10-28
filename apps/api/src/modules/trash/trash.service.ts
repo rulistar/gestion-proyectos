@@ -1,4 +1,4 @@
-import type { TrashItem, TrashKind } from '@gestion/shared';
+import type { ContainerFacts, TaskFacts, TrashItem, TrashKind } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
 import { auditRestore, notDeleted } from '../../db/audit.js';
 
@@ -7,16 +7,32 @@ const inTrash = { deletedAt: { not: null } } as const;
 
 const deletedBySelect = { deletedAt: true, deletedBy: { select: { name: true } } } as const;
 
+/** Qué elementos de la papelera puede ver y restaurar quien pregunta (ADR-0006 §3) */
+export interface TrashFilter {
+  project: (facts: ContainerFacts) => boolean;
+  task: (facts: TaskFacts) => boolean;
+}
+
+const containerFactsSelect = {
+  id: true,
+  createdById: true,
+  type: { select: { behavior: true } },
+} as const;
+
 /**
  * Papelera del workspace (HU-15), lo más reciente primero. Las tareas de un proyecto dado de baja
- * no se listan aparte: se fueron con él y vuelven con él.
+ * no se listan aparte: se fueron con él y vuelven con él. Sin `filter` (Admin) se ve todo.
  */
-export async function listTrash(db: Db, workspaceId: string): Promise<TrashItem[]> {
-  const [projects, tasks] = await Promise.all([
+export async function listTrash(
+  db: Db,
+  workspaceId: string,
+  filter?: TrashFilter,
+): Promise<TrashItem[]> {
+  const [allProjects, allTasks] = await Promise.all([
     db.project.findMany({
       where: { workspaceId, ...inTrash },
       select: {
-        id: true,
+        ...containerFactsSelect,
         name: true,
         ...deletedBySelect,
         _count: { select: { tasks: { where: notDeleted } } },
@@ -24,9 +40,35 @@ export async function listTrash(db: Db, workspaceId: string): Promise<TrashItem[
     }),
     db.task.findMany({
       where: { workspaceId, ...inTrash, project: notDeleted },
-      select: { id: true, title: true, project: { select: { name: true } }, ...deletedBySelect },
+      select: {
+        id: true,
+        title: true,
+        createdById: true,
+        responsiblePersonId: true,
+        project: { select: { ...containerFactsSelect, name: true } },
+        ...deletedBySelect,
+      },
     }),
   ]);
+  const container = (p: {
+    id: string;
+    createdById: string | null;
+    type: { behavior: ContainerFacts['behavior'] };
+  }) => ({
+    id: p.id,
+    createdById: p.createdById,
+    behavior: p.type.behavior,
+  });
+  const projects = filter ? allProjects.filter((p) => filter.project(container(p))) : allProjects;
+  const tasks = filter
+    ? allTasks.filter((t) =>
+        filter.task({
+          createdById: t.createdById,
+          responsiblePersonId: t.responsiblePersonId,
+          project: container(t.project),
+        }),
+      )
+    : allTasks;
 
   const items: TrashItem[] = [
     ...projects.map((p) => ({

@@ -1,8 +1,18 @@
-import { projectInputSchema, projectMetricsQuerySchema } from '@gestion/shared';
+import {
+  canCreateContainer,
+  canRemoveContainer,
+  canUpdateContainer,
+  projectInputSchema,
+  projectMetricsQuerySchema,
+  type ProjectBehavior,
+} from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { requireAuth } from '../auth/session.js';
-import { requirePermission } from '../workspaces/access.js';
+import { resolveProjectType } from '../project-types/project-types.service.js';
+import { forbidden, requireMembership } from '../workspaces/access.js';
+import { visibleContainer } from '../workspaces/facts.js';
+import { projectVisibleWhere } from '../workspaces/visibility.js';
 import {
   createProject,
   defaultMetrics,
@@ -58,24 +68,53 @@ function invalidType(reply: FastifyReply, error: unknown) {
   throw error;
 }
 
-/** Proyectos de un workspace (HU-05). Cada ruta exige sesión, membresía y el permiso del rol */
+/**
+ * Proyectos de un workspace (HU-05). Cada ruta exige sesión y membresía; qué ve y qué puede hacer
+ * lo decide su matriz de permisos (ADR-0006)
+ */
 export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
   app.addHook('preHandler', requireAuth);
 
+  /** Sección del tipo pedido (o del tipo por omisión); null si el tipo no es válido */
+  async function behaviorOfType(workspaceId: string, requested: string | null) {
+    const typeId = await resolveProjectType(app.db, workspaceId, requested);
+    if (!typeId) return null;
+    const type = await app.db.projectType.findUnique({
+      where: { id: typeId },
+      select: { behavior: true },
+    });
+    return type?.behavior ?? null;
+  }
+
   app.get(
     '/workspaces/:workspaceId/projects',
-    { preHandler: requirePermission('project.read') },
-    async (request) => listProjects(app.db, request.membership!.workspaceId, metricsOf(request)),
+    { preHandler: requireMembership },
+    async (request) => {
+      const access = request.membership!;
+      return listProjects(
+        app.db,
+        access.workspaceId,
+        metricsOf(request),
+        projectVisibleWhere(access),
+      );
+    },
   );
 
   app.post(
     '/workspaces/:workspaceId/projects',
-    { preHandler: requirePermission('project.create') },
+    { preHandler: requireMembership },
     async (request, reply) => {
+      const access = request.membership!;
       const parsed = projectInputSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({ message: z.prettifyError(parsed.error) });
       }
+      // Crear en esa sección (proyectos, mantenimientos o actividades) según su matriz
+      const behavior: ProjectBehavior | null = await behaviorOfType(
+        access.workspaceId,
+        parsed.data.typeId,
+      );
+      if (behavior && !canCreateContainer(access, behavior)) return forbidden(reply);
       try {
         // La fecha local del usuario decide el mes del folio automático (HU-38)
         const project = await createProject(
@@ -94,15 +133,17 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
 
   app.get(
     '/workspaces/:workspaceId/projects/:projectId',
-    { preHandler: requirePermission('project.read') },
+    { preHandler: requireMembership },
     async (request, reply) => {
+      const access = request.membership!;
       const params = projectParamsSchema.safeParse(request.params);
       const project = params.success
         ? await getProject(
             app.db,
-            request.membership!.workspaceId,
+            access.workspaceId,
             params.data.projectId,
             metricsOf(request),
+            projectVisibleWhere(access),
           )
         : null;
       return project ?? projectNotFound(reply);
@@ -111,14 +152,26 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
 
   app.put(
     '/workspaces/:workspaceId/projects/:projectId',
-    { preHandler: requirePermission('project.update') },
+    { preHandler: requireMembership },
     async (request, reply) => {
+      const access = request.membership!;
       const params = projectParamsSchema.safeParse(request.params);
       if (!params.success) return projectNotFound(reply);
+      const container = await visibleContainer(app.db, access, params.data.projectId);
+      if (!container) return projectNotFound(reply);
+      if (!canUpdateContainer(access, container)) return forbidden(reply);
 
       const parsed = projectInputSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({ message: z.prettifyError(parsed.error) });
+      }
+      // Cambiarlo de sección (p. ej. de proyecto a mantenimiento) es como crearlo en la otra
+      const behavior =
+        parsed.data.typeId === null
+          ? container.behavior
+          : await behaviorOfType(access.workspaceId, parsed.data.typeId);
+      if (behavior && behavior !== container.behavior && !canCreateContainer(access, behavior)) {
+        return forbidden(reply);
       }
       try {
         const project = await updateProject(
@@ -139,9 +192,15 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
   // Dar de baja: va a la papelera (HU-15); el borrado definitivo solo se hace desde ahí
   app.delete(
     '/workspaces/:workspaceId/projects/:projectId',
-    { preHandler: requirePermission('project.delete') },
+    { preHandler: requireMembership },
     async (request, reply) => {
+      const access = request.membership!;
       const params = projectParamsSchema.safeParse(request.params);
+      const container = params.success
+        ? await visibleContainer(app.db, access, params.data.projectId)
+        : null;
+      if (!container) return projectNotFound(reply);
+      if (!canRemoveContainer(access, container)) return forbidden(reply);
       const deleted =
         params.success &&
         (await softDeleteProject(

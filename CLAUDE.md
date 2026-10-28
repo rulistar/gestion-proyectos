@@ -86,7 +86,11 @@ apps/
       auth/current-user.ts getCurrentUser: el usuario con sus workspaces (/auth/me, login, HU-01)
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
       workspaces/         GET/POST/PATCH /workspaces[/:id], /:id/members (PATCH rol, DELETE quitar; HU-25)
-      workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02)
+      workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02);
+                          request.membership = acceso con su matriz (ADR-0006). requirePermission solo para lo del Admin
+      workspaces/visibility.ts  filtro de visibilidad único (ADR-0006): projectVisibleWhere / taskVisibleWhere;
+                          toda consulta de proyectos o tareas lo usa
+      workspaces/facts.ts visibleContainer / visibleTask: datos para que las reglas de shared decidan (404 si no lo ve)
       moves/              mover entre espacios (HU-32): POST .../projects/:id/move y .../tasks/:id/move;
                           Admin en origen y destino (permissionIn de access.ts); traduce catálogos al destino
       people/             catálogo de personas (HU-34, ADR-0005): GET (project.read), POST (task.create), PATCH (member.manage);
@@ -115,6 +119,8 @@ apps/
 packages/
   shared/             esquemas Zod + tipos (z.infer) usados por web y api
     src/schemas/permissions.ts  catálogo de permisos por rol (roleHasPermission)
+    src/schemas/member-permissions.ts  matriz por persona (ADR-0006): plantillas y reglas puras
+                                (sectionCanView, canUpdateContainer, canUpdateTask…), con pruebas
     src/schemas/progress.ts     reglas de avance (summarizeTasks, daysRemainingLabel; HU-06), con pruebas
     src/schemas/project-filters.ts  filtros y orden de la lista de contenedores (HU-09), en la URL; con pruebas
     src/schemas/task-filters.ts     vista "Tareas": tareas del espacio, filtros y orden (HU-39); con pruebas

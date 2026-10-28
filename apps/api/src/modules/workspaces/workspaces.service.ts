@@ -1,8 +1,9 @@
-import type {
-  CreateWorkspaceRequest,
-  Member,
-  MembershipRole,
-  WorkspaceSummary,
+import {
+  PERMISSION_TEMPLATES,
+  type CreateWorkspaceRequest,
+  type Member,
+  type MembershipRole,
+  type WorkspaceSummary,
 } from '@gestion/shared';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
@@ -155,6 +156,7 @@ export async function createWorkspace(
         workspaceId: workspace.id,
         userId: actorId,
         role: 'ADMIN',
+        permissions: PERMISSION_TEMPLATES.ADMIN,
         ...auditCreate(actorId),
       },
     });
