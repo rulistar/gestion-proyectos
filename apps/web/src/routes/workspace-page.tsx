@@ -34,6 +34,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { nextSort } from '@/lib/sort';
+import { useIsMenuOpen } from '@/lib/use-menu-open';
 import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
 import { projectTypesQueryOptions, SECTIONS } from '@/lib/project-types';
 import { PROJECT_PRIORITIES, projectsQueryOptions, useCreateProject } from '@/lib/projects';
@@ -210,6 +211,9 @@ function ContainersTable({
   onSort: (column: ProjectSortKey) => void;
 }) {
   const today = todayIso();
+  // Actividades (HU-46): "Abiertas" solo cuando el menú está oculto y sobra espacio
+  const menuOpen = useIsMenuOpen();
+  const showOpen = behavior !== 'ON_DEMAND' || !menuOpen;
   /** Encabezado ordenable de una columna */
   const th = (column: ProjectSortKey, label: string) => (
     <SortTh column={column} sort={sort} dir={dir} onSort={onSort}>
@@ -237,9 +241,10 @@ function ContainersTable({
             </>
           ) : (
             <>
-              {th('open', 'Abiertas')}
+              {showOpen && th('open', 'Abiertas')}
               {th('overdue', 'Vencidas')}
               {behavior === 'ONGOING' && th('doneThisMonth', 'Hechas este mes')}
+              {behavior === 'ON_DEMAND' && th('endDate', 'Fin')}
             </>
           )}
         </tr>
@@ -289,7 +294,7 @@ function ContainersTable({
               </>
             ) : (
               <>
-                <Td className="tabular-nums">{project.progress.openTasks}</Td>
+                {showOpen && <Td className="tabular-nums">{project.progress.openTasks}</Td>}
                 <Td
                   className={
                     project.progress.overdueTasks > 0
@@ -301,6 +306,14 @@ function ContainersTable({
                 </Td>
                 {behavior === 'ONGOING' && (
                   <Td className="tabular-nums">{project.progress.doneThisMonth}</Td>
+                )}
+                {behavior === 'ON_DEMAND' && (
+                  <td className="py-1.5 whitespace-nowrap">
+                    {formatDate(project.endDate)}
+                    <span className="block text-xs text-muted-foreground">
+                      {daysRemainingLabel(project.endDate, today)}
+                    </span>
+                  </td>
                 )}
               </>
             )}
