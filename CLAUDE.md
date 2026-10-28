@@ -93,7 +93,7 @@ apps/
       workspaces/facts.ts visibleContainer / visibleTask: datos para que las reglas de shared decidan (404 si no lo ve)
       moves/              mover entre espacios (HU-32): POST .../projects/:id/move y .../tasks/:id/move;
                           Admin en origen y destino (permissionIn de access.ts); traduce catálogos al destino
-      people/             catálogo de personas (HU-34, ADR-0005): GET (project.read), POST (task.create), PATCH (member.manage);
+      people/             catálogo de personas (HU-34, ADR-0005): GET (project.read), POST (task.create), PATCH y DELETE (member.manage);
                           ensureMemberPerson al entrar un miembro; displayNames = alias que se muestra
       project-types/      catálogo de tipos de contenedor (HU-21, ADR-0004): GET (project.read), POST/PATCH (catalog.manage);
                           seedCatalog carga tipos de contenedor, de tarea y permitidos al crear un espacio

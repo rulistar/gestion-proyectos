@@ -87,27 +87,28 @@
 | 29 | HU-41 | Pantallas compactas: más información visible sin desplazarse | Interfaz | 2 | 🔴 | 5 |
 | 30 | HU-42 | Ocultar las opciones que el perfil no permite; solo el Admin del sistema crea espacios | Permisos | 1 | 🔴 | 5 |
 | 31 | HU-43 | "Sin folio" es el único folio que puede repetirse | Proyectos | 1 | 🔴 | 5 |
-| 32 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
-| 33 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
-| 34 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
-| 35 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
-| 36 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 37 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
-| 38 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
-| 39 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
-| 40 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 41 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 42 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 43 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
-| 44 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
-| 45 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 46 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 47 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 48 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 49 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 50 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 51 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 52 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 32 | HU-44 | Personas: borrar definitivamente a quien no se usa y ocultar las archivadas | Personas | 2 | 🔴 | 5 |
+| 33 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
+| 34 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
+| 35 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
+| 36 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 37 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
+| 38 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
+| 39 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
+| 40 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
+| 41 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 42 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 43 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 44 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
+| 45 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 46 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 47 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 48 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 49 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 50 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 51 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 52 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 53 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -474,6 +475,15 @@ _Como responsable, quiero capturar "Sin folio" en varios contenedores, para marc
 - [x] **"Sin folio" es el único folio que puede repetirse** en el espacio, al crear y al editar. Se reconoce sin importar mayúsculas ni espacios ("Sin Folio", "SIN FOLIO"); "Sin folio 2" sigue siendo un folio normal y no se repite.
 - [x] No consume número del folio automático. Cualquier otro folio repetido sigue dando 409.
 - [x] El formulario lo explica junto al campo Folio. Pruebas.
+
+#### HU-44 · Depurar el catálogo de personas (2 pts)
+
+_Como Admin, quiero borrar a las personas que di de baja y que nadie usa, y ocultar las archivadas, para que el catálogo no estorbe._ Pedido del PO (2026-10-28).
+
+- [x] Una persona **archivada** que no aparece en ninguna tarea (papelera incluida) ni en ningún rol de proyecto se puede **borrar definitivamente**, con confirmación. Solo el Admin.
+- [x] Si alguien la usa, o su cuenta sigue siendo miembro del espacio, el botón aparece deshabilitado y explica por qué (p. ej. "Aparece en 2 tarea(s)… reasígnalas primero"); la API responde 409.
+- [x] Las archivadas se **ocultan por defecto**; el interruptor "Mostrar archivadas (N)" las muestra.
+- [x] Debajo del nombre ya no se repite la cuenta vinculada: la muestra el combo. Pruebas.
 
 #### TEC-04 · Despliegue gratuito con HTTPS (5 pts)
 

@@ -5,9 +5,11 @@ import { requireAuth } from '../auth/session.js';
 import { forbidden, requireMembership, requirePermission } from '../workspaces/access.js';
 import {
   createPerson,
+  deletePerson,
   DuplicatePersonNameError,
   listPeople,
   NotAMemberError,
+  PersonNotDeletableError,
   updatePerson,
   UserAlreadyLinkedError,
 } from './people.service.js';
@@ -23,6 +25,12 @@ function peopleError(reply: FastifyReply, error: unknown) {
   if (error instanceof UserAlreadyLinkedError) {
     return reply.code(409).send({ message: 'Ese usuario ya está vinculado a otra persona' });
   }
+  if (error instanceof PersonNotDeletableError) {
+    return reply.code(409).send({
+      message:
+        'Solo se borra una persona archivada que no aparece en tareas ni proyectos y cuya cuenta ya no es miembro',
+    });
+  }
   if (error instanceof NotAMemberError) {
     return reply
       .code(400)
@@ -33,8 +41,8 @@ function peopleError(reply: FastifyReply, error: unknown) {
 
 /**
  * Catálogo de personas (HU-34, ADR-0005 §5): lo ve quien ve proyectos (para elegir personas);
- * dar de alta, quien crea tareas (alta rápida desde un formulario); renombrar, vincular y archivar,
- * el Admin
+ * dar de alta, quien crea tareas (alta rápida desde un formulario); renombrar, vincular, archivar y
+ * borrar definitivamente (HU-44), el Admin
  */
 export const peopleRoutes: FastifyPluginCallback = (app, _options, done) => {
   app.addHook('preHandler', requireAuth);
@@ -92,6 +100,26 @@ export const peopleRoutes: FastifyPluginCallback = (app, _options, done) => {
         return peopleError(reply, error);
       }
       return listPeople(app.db, request.membership!.workspaceId);
+    },
+  );
+
+  app.delete(
+    `${BASE}/:personId`,
+    { preHandler: requirePermission('member.manage') },
+    async (request, reply) => {
+      const params = personParamsSchema.safeParse(request.params);
+      if (!params.success) return reply.code(404).send({ message: 'Persona no encontrada' });
+      try {
+        const found = await deletePerson(
+          app.db,
+          request.membership!.workspaceId,
+          params.data.personId,
+        );
+        if (!found) return reply.code(404).send({ message: 'Persona no encontrada' });
+      } catch (error) {
+        return peopleError(reply, error);
+      }
+      return reply.code(204).send();
     },
   );
 

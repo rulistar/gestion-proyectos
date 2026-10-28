@@ -45,6 +45,10 @@ function patchPerson(cookies: Cookies, ws: string, personId: string, payload: ob
   return app.inject({ method: 'PATCH', url: `${peopleUrl(ws)}/${personId}`, cookies, payload });
 }
 
+function deletePerson(cookies: Cookies, ws: string, personId: string) {
+  return app.inject({ method: 'DELETE', url: `${peopleUrl(ws)}/${personId}`, cookies });
+}
+
 describe('catálogo de personas (HU-34)', () => {
   it('quien crea el espacio recibe su persona vinculada, con el nombre de su cuenta', async () => {
     const { ana, ws } = await setup();
@@ -56,6 +60,8 @@ describe('catálogo de personas (HU-34)', () => {
         userName: 'ana@example.com',
         hasAccess: true,
         archived: false,
+        taskCount: 0,
+        projectCount: 0,
       },
     ]);
   });
@@ -185,5 +191,64 @@ describe('catálogo de personas (HU-34)', () => {
     });
 
     expect((await people(ana.cookies, ws.id)).map((p) => p.name)).toContain('Nuevo Miembro');
+  });
+});
+
+describe('borrar definitivamente (HU-44)', () => {
+  it('una persona archivada y sin uso se borra; activa o de otro espacio, no', async () => {
+    const { ana, luis, ws } = await setup();
+    const laura = personSchema.parse((await addPerson(ana.cookies, ws.id, 'Laura')).json());
+    const other = await createWorkspace(db, ana.user.id, { name: 'Otro' });
+
+    expect((await deletePerson(ana.cookies, ws.id, laura.id)).statusCode).toBe(409);
+    await patchPerson(ana.cookies, ws.id, laura.id, { archived: true });
+    expect((await deletePerson(luis.cookies, ws.id, laura.id)).statusCode).toBe(403);
+    expect((await deletePerson(ana.cookies, other.id, laura.id)).statusCode).toBe(404);
+
+    expect((await deletePerson(ana.cookies, ws.id, laura.id)).statusCode).toBe(204);
+    expect((await people(ana.cookies, ws.id)).map((p) => p.name)).not.toContain('Laura');
+  });
+
+  it('no se borra si es Responsable de una tarea, aunque esté en la papelera, ni si tiene rol en un proyecto', async () => {
+    const { ana, ws } = await setup();
+    const laura = personSchema.parse((await addPerson(ana.cookies, ws.id, 'Laura')).json());
+    const pedro = personSchema.parse((await addPerson(ana.cookies, ws.id, 'Pedro')).json());
+    const projectsUrl = `/api/v1/workspaces/${ws.id}/projects`;
+    const project = await app.inject({
+      method: 'POST',
+      url: projectsUrl,
+      cookies: ana.cookies,
+      payload: { name: 'P', requesterId: pedro.id, projectManagerId: pedro.id },
+    });
+    const projectId = project.json<{ id: string }>().id;
+    const task = await app.inject({
+      method: 'POST',
+      url: `${projectsUrl}/${projectId}/tasks`,
+      cookies: ana.cookies,
+      payload: { title: 'T', responsiblePersonId: laura.id },
+    });
+    await app.inject({
+      method: 'DELETE',
+      url: `${projectsUrl}/${projectId}/tasks/${task.json<{ id: string }>().id}`,
+      cookies: ana.cookies,
+    });
+    for (const person of [laura, pedro]) {
+      await patchPerson(ana.cookies, ws.id, person.id, { archived: true });
+    }
+
+    const list = await people(ana.cookies, ws.id);
+    expect(list.find((p) => p.id === laura.id)).toMatchObject({ taskCount: 1, projectCount: 0 });
+    // Solicitante y PM del mismo proyecto: cuenta una vez
+    expect(list.find((p) => p.id === pedro.id)).toMatchObject({ taskCount: 0, projectCount: 1 });
+    expect((await deletePerson(ana.cookies, ws.id, laura.id)).statusCode).toBe(409);
+    expect((await deletePerson(ana.cookies, ws.id, pedro.id)).statusCode).toBe(409);
+  });
+
+  it('no se borra la persona de alguien que sigue siendo miembro', async () => {
+    const { ana, ws } = await setup();
+    const [anaPerson] = await people(ana.cookies, ws.id);
+    await patchPerson(ana.cookies, ws.id, anaPerson!.id, { archived: true });
+
+    expect((await deletePerson(ana.cookies, ws.id, anaPerson!.id)).statusCode).toBe(409);
   });
 });
