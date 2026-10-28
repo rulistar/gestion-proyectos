@@ -201,8 +201,6 @@ describe('métricas por comportamiento (ADR-0004 §2)', () => {
       openTasks: 2,
       overdueTasks: 1,
       doneThisMonth: 1,
-      // La vencida es la abierta más próxima; la Hecha no cuenta
-      nextDueDate: '2026-10-20',
     });
   });
 });

@@ -15,7 +15,6 @@ const progress = {
   openTasks: 0,
   overdueTasks: 0,
   doneThisMonth: 0,
-  nextDueDate: null,
 };
 
 const person = (name: string) => ({
@@ -93,23 +92,10 @@ describe('filterProjects (HU-09)', () => {
     expect(filterProjects(all, { q: 'portal clientes' })).toEqual([portal]);
   });
 
-  it('combina área, prioridad y "vence hasta"', () => {
+  it('combina área, prioridad y "fecha de fin hasta"', () => {
     expect(filterProjects(all, { area: 'Ventas' })).toEqual([portal]);
     expect(filterProjects(all, { priority: 'LOW' })).toEqual([erp]);
     expect(filterProjects(all, { endBy: '2026-11-30' })).toEqual([portal]);
-  });
-
-  it('"vence hasta" también encuentra contenedores con una tarea abierta que vence antes', () => {
-    // Termina el 14 de nov, pero tiene una tarea abierta que vence el 2 de nov
-    const linux = project({
-      name: 'Certificación Linux',
-      endDate: '2026-11-14',
-      progress: { ...progress, nextDueDate: '2026-11-02' },
-    });
-    // Mantenimiento sin fecha de fin
-    const mtto = project({ name: 'Mtto', progress: { ...progress, nextDueDate: '2026-11-05' } });
-    expect(filterProjects([linux, mtto, erp], { endBy: '2026-11-03' })).toEqual([linux]);
-    expect(filterProjects([linux, mtto, erp], { endBy: '2026-11-05' })).toEqual([linux, mtto]);
   });
 });
 
