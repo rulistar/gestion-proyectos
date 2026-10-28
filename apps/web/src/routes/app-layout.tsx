@@ -1,6 +1,8 @@
 import { Outlet, useNavigate } from '@tanstack/react-router';
-import { ChevronDown, LogOut } from 'lucide-react';
+import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { useEffect } from 'react';
 import { AppSidebar } from '@/components/app-sidebar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,14 +13,45 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useCurrentUser, useLogout } from '@/lib/auth';
 import { initials } from '@/lib/brand';
+import { useMenuOpen } from '@/lib/use-menu-open';
 
-/** Marco de todas las páginas con sesión (HU-28): menú lateral + barra superior + contenido */
+/**
+ * Marco de todas las páginas con sesión (HU-28): menú lateral + barra superior + contenido.
+ * El menú se oculta y se muestra con el botón de la barra o con Ctrl+B (HU-40), para dar más
+ * espacio a tablas y tableros.
+ */
 export function AppLayout() {
+  const menu = useMenuOpen();
+  const { toggle } = menu;
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+        event.preventDefault();
+        toggle();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggle]);
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <AppSidebar />
+      {menu.open && <AppSidebar />}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-end gap-3 border-b bg-card px-4 md:px-8">
+        <header className="flex h-16 items-center justify-between gap-3 border-b bg-card px-4 md:px-8">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={toggle}
+            aria-expanded={menu.open}
+            aria-label={menu.open ? 'Ocultar menú' : 'Mostrar menú'}
+            title={`${menu.open ? 'Ocultar' : 'Mostrar'} menú (Ctrl+B)`}
+          >
+            {menu.open ? <PanelLeftClose aria-hidden /> : <PanelLeftOpen aria-hidden />}
+            <span className="hidden sm:inline">{menu.open ? 'Ocultar menú' : 'Menú'}</span>
+          </Button>
           <UserMenu />
         </header>
         <main className="mx-auto w-full max-w-screen-2xl flex-1 p-4 md:px-8 md:py-7">
