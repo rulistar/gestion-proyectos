@@ -38,6 +38,7 @@
 | Datos del proyecto (2026-10-25) | Los proyectos llevan **Folio** (viene de otro sistema: opcional, editable, puede repetirse), **Descripción**, **Observaciones** (antes "Notas") y personas como **texto libre** (solo el nombre): Solicitante, Asignado a, Project manager, Gte. Consultoría y Business partner. Se hace ya (HU-31). **Mover** proyectos, mantenimientos y tareas **entre espacios**, solo Admin (HU-32, Sprint 4). |
 | Revisión del Sprint 4 (2026-10-27) | Se hizo lo pedido (36 pts). "Fin hasta" de la lista de proyectos es la fecha de fin del contenedor; las tareas se consultan en la vista **Tareas** (HU-39). Sprint 5: despliegue, fases, pestaña Lista (reducida a 2 pts), Gantt, Mi perfil, usuarios del sistema y visibilidad (34 pts); HU-23 y HU-17 pasan al Sprint 6. |
 | Crear espacios (2026-10-28) | **Solo el Admin del sistema crea espacios de trabajo**; los demás usuarios entran por invitación. La web oculta lo que el perfil no permite (HU-42); los ajustes por persona llegan con HU-17. |
+| Permisos por persona (2026-10-28) | Al invitar se configura a cada persona **por espacio**: qué ve (solo lo suyo, todo o una lista), qué crea, qué modifica y qué da de baja y restaura, por proyectos, mantenimientos, actividades y tareas. El rol queda como plantilla. "Mis tareas" = las que creé o donde soy Responsable. Una invitación puede incluir **varios espacios**. Va **antes del despliegue**; Gantt y pestaña Lista pasan al Sprint 6. Diseño en [ADR-0006](adr/ADR-0006-permisos-por-persona.md). |
 
 ## Requisitos no funcionales (aplican a todas las historias)
 
@@ -85,28 +86,27 @@
 | 28 | HU-40 | Menú lateral plegable para dar más espacio al contenido | Interfaz | 1 | 🔴 | 5 |
 | 29 | HU-41 | Pantallas compactas: más información visible sin desplazarse | Interfaz | 2 | 🔴 | 5 |
 | 30 | HU-42 | Ocultar las opciones que el perfil no permite; solo el Admin del sistema crea espacios | Permisos | 1 | 🔴 | 5 |
-| 31 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
-| 32 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
-| 33 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 5 |
-| 34 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 5 |
-| 35 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
-| 36 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 37 | HU-16 | Restringir qué proyectos ve cada usuario | Permisos | 5 | 🔴 | 5 |
+| 31 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
+| 32 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
+| 33 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
+| 34 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 35 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
+| 36 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
+| 37 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
 | 38 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
-| 39 | HU-17 | Permisos por usuario: matriz de acciones por miembro | Permisos | 8 | 🔴 | 6 |
-| 40 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 41 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 42 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 43 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
-| 44 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
-| 45 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 46 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 47 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 48 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 49 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 50 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 51 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 52 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 39 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 40 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 41 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 42 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
+| 43 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 44 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 45 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 46 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 47 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 48 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 49 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 50 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 51 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -488,7 +488,7 @@ _Como responsable de un proyecto, quiero agrupar sus tareas en fases (y subfases
 - [ ] El tipo de contenedor (ADR-0004) decide si usa fases: Proyecto sí; Mantenimiento y Actividades, no por defecto.
 - [ ] Cumple RNF-01 y RNF-05, con pruebas de permisos y de los cálculos (funciones puras en shared).
 
-#### HU-26 · Pestaña Lista del proyecto (2 pts)
+#### HU-26 · Pestaña Lista del proyecto (2 pts) — pasa al Sprint 6
 
 _Como miembro, quiero ver las tareas de un proyecto en lista, para manejar proyectos con muchas tareas._ Reducida por el PO (2026-10-27): reutiliza la vista Tareas (HU-39).
 
@@ -496,7 +496,7 @@ _Como miembro, quiero ver las tareas de un proyecto en lista, para manejar proye
 - [ ] Con fases (HU-07), las tareas se **agrupan por fase con sangría**, y se pueden plegar.
 - [ ] Clic en una tarea abre su edición, como en el tablero.
 
-#### HU-27 · Gantt (8 pts)
+#### HU-27 · Gantt (8 pts) — pasa al Sprint 6
 
 _Como responsable, quiero ver mis proyectos y tareas en un diagrama de Gantt, para comparar lo planeado contra lo real._
 
@@ -526,17 +526,29 @@ _Como Admin del sistema, quiero corregir correos y desactivar cuentas, para mant
 - [ ] Puede **desactivar o reactivar** una cuenta: una cuenta desactivada no inicia sesión y sus sesiones se cierran.
 - [ ] El Admin de un espacio no cambia correos: quita al miembro e invita el correo correcto.
 
-#### HU-16 · Visibilidad de proyectos (5 pts)
+#### HU-17 · Permisos por persona y por espacio (13 pts)
 
-_Como Admin, quiero restringir un proyecto a ciertos usuarios, para que los demás no lo vean._
+_Como Admin, quiero configurar a cada persona al invitarla (en qué espacios entra, qué ve y qué puede hacer), para que cada quien trabaje solo con lo que le corresponde._ Une HU-17 y HU-16. Diseño en [ADR-0006](adr/ADR-0006-permisos-por-persona.md).
 
-- [ ] Un proyecto puede marcarse como **restringido**, con una lista de usuarios autorizados. Los Admin ven todo.
-- [ ] Los demás no lo ven en ninguna vista: Proyectos, Tareas, Mi trabajo, búsqueda, Mover, papelera, Gantt ni exportación. Pedirlo por su ID da 404.
-- [ ] Un solo filtro de visibilidad en la API, con pruebas por endpoint.
+**HU-17a · Modelo y API (5 pts)**
+- [ ] Matriz por membresía (JSON validado con Zod) y lista "Estos…"; plantillas Admin, Miembro y Lector.
+- [ ] La migración conserva lo que hoy puede hacer cada miembro (ADR-0006 §5); quita `Project.visibility`.
+- [ ] Un solo filtro de visibilidad aplicado en listas, detalle, tareas del proyecto, vista Tareas, Mi trabajo, Mover y papelera: lo que no ve da 404; lo que ve pero no puede modificar da 403.
+- [ ] Contenedor visible en solo lectura si tengo una tarea en él.
+- [ ] Papelera: cada quien restaura lo que su permiso le permite; borrar definitivamente, solo Admin.
+- [ ] Pruebas por endpoint de "otro usuario no lo ve" y de cada opción de la matriz.
+
+**HU-17b · Pantalla de permisos (5 pts)**
+- [ ] En Miembros, "Permisos" abre la matriz de la persona: plantilla y ajustes por sección (Ver, Crear, Modificar, Dar de baja y restaurar) y la lista "Estos…".
+- [ ] Muestra "Miembro (ajustado)" cuando la matriz ya no coincide con la plantilla.
+- [ ] La web oculta lo que el usuario no puede hacer según su matriz (botones, secciones, papelera).
+
+**HU-17c · Invitación a varios espacios (3 pts)**
+- [ ] Una invitación incluye uno o varios espacios, cada uno con su plantilla y su matriz; quien invita debe ser Admin de cada uno.
+- [ ] Al aceptar, entra a todos con su persona del catálogo; las invitaciones pendientes de antes siguen funcionando.
 
 ### Sprints siguientes (criterios por detallar en su planificación)
 
-- **HU-17 · Permisos por usuario:** pantalla con la **matriz de permisos** de cada miembro (filas: ver, crear, editar, borrar, exportar... sobre proyectos y tareas; columnas: lo que da su rol y el ajuste personal). El Admin concede o quita acciones concretas, por ejemplo limitar las altas o las modificaciones.
 - **HU-13 · Exportar:** JSON (respaldo completo) y CSV con BOM UTF-8 (una fila por tarea, compatible con el formato del prototipo); respeta la visibilidad y excluye lo borrado. Sin dependencias nuevas.
 - **HU-14 · Importar:** JSON o CSV, incluidos los respaldos del prototipo; "Actualizar" busca coincidencias por ID o, si no hay, por nombre sin distinguir mayúsculas; "Reemplazar" pide doble confirmación y manda lo anterior a la papelera; fechas normalizadas a AAAA-MM-DD (ambiguas = día/mes/año).
 - **Integraciones (TEC-08 a HU-20):** diseño en ADR-0002 §7.
