@@ -4,8 +4,9 @@ import {
   roleHasPermission,
   type Member,
   type Person,
+  type ProjectPersonRole,
 } from '@gestion/shared';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { Archive, ArchiveRestore, Check, Pencil, Trash2, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
@@ -30,6 +31,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { initials } from '@/lib/brand';
 import {
   peopleQueryOptions,
+  personUsageQueryOptions,
   useCreatePerson,
   useDeletePerson,
   useUpdatePerson,
@@ -196,11 +198,15 @@ function PersonRow({
               )}
             </p>
             {/* En las archivadas, a la vista: por qué no se puede borrar (o que sí se puede) */}
-            {person.archived && (
-              <p className="text-xs text-muted-foreground">
-                {whyNotDeletable(person) ?? 'Sin uso: se puede borrar'}
-              </p>
-            )}
+            {person.archived &&
+              (person.taskCount > 0 || person.projectCount > 0 ? (
+                // Clic: dónde aparece, para ir a reasignarla (HU-45)
+                <PersonUsageDialog workspaceId={workspaceId} person={person} />
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {whyNotDeletable(person) ?? 'Sin uso: se puede borrar'}
+                </p>
+              ))}
           </div>
         )}
       </div>
@@ -369,5 +375,123 @@ function NewPersonCard({ workspaceId }: { workspaceId: string }) {
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+const PROJECT_ROLE_LABELS: Record<ProjectPersonRole, string> = {
+  requester: 'Solicitante',
+  assignedTo: 'Asignado a',
+  projectManager: 'Project manager',
+  consultingManager: 'Gte. Consultoría',
+  businessPartner: 'Business partner',
+};
+
+/** Dónde aparece una persona (HU-45): sus tareas y proyectos, con enlace para reasignarla */
+function PersonUsageDialog({ workspaceId, person }: { workspaceId: string; person: Person }) {
+  const [open, setOpen] = useState(false);
+  const { data: usage, isPending } = useQuery({
+    ...personUsageQueryOptions(workspaceId, person.id),
+    enabled: open,
+  });
+
+  const inTrash = (
+    <Link
+      to="/w/$workspaceId/papelera"
+      params={{ workspaceId }}
+      className="ml-auto shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold hover:underline"
+    >
+      En la papelera
+    </Link>
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="text-left text-xs text-primary underline-offset-2 hover:underline"
+        >
+          {whyNotDeletable(person)} · Ver dónde
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Dónde aparece {person.name}</DialogTitle>
+          <DialogDescription>
+            Abre cada proyecto para reasignar sus tareas o roles. Lo que está en la papelera también
+            cuenta: restáuralo y reasígnalo, o bórralo definitivamente.
+          </DialogDescription>
+        </DialogHeader>
+        {isPending || !usage ? (
+          <p className="text-sm text-muted-foreground">Cargando…</p>
+        ) : (
+          <div className="grid gap-4">
+            {usage.tasks.length > 0 && (
+              <section className="grid gap-1.5">
+                <h3 className="text-sm font-semibold">
+                  Responsable de {usage.tasks.length} tarea(s)
+                </h3>
+                <ul className="divide-y rounded-md border text-sm">
+                  {usage.tasks.map((task) => (
+                    <li key={task.id} className="flex items-center gap-2 px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{task.title}</p>
+                        <p className="truncate text-xs text-muted-foreground">{task.projectName}</p>
+                      </div>
+                      {task.deleted ? (
+                        inTrash
+                      ) : (
+                        <Link
+                          to="/w/$workspaceId/p/$projectId"
+                          params={{ workspaceId, projectId: task.projectId }}
+                          className="ml-auto shrink-0 text-xs font-medium text-primary hover:underline"
+                        >
+                          Abrir
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            {usage.projects.length > 0 && (
+              <section className="grid gap-1.5">
+                <h3 className="text-sm font-semibold">
+                  Con un rol en {usage.projects.length} proyecto(s)
+                </h3>
+                <ul className="divide-y rounded-md border text-sm">
+                  {usage.projects.map((project) => (
+                    <li key={project.id} className="flex items-center gap-2 px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">
+                          {project.folio && (
+                            <span className="text-muted-foreground">{project.folio} · </span>
+                          )}
+                          {project.name}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {project.roles.map((role) => PROJECT_ROLE_LABELS[role]).join(', ')}
+                        </p>
+                      </div>
+                      {project.deleted ? (
+                        inTrash
+                      ) : (
+                        <Link
+                          to="/w/$workspaceId/p/$projectId"
+                          params={{ workspaceId, projectId: project.id }}
+                          className="ml-auto shrink-0 text-xs font-medium text-primary hover:underline"
+                        >
+                          Abrir
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

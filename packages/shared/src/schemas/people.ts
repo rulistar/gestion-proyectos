@@ -58,3 +58,39 @@ export const updatePersonSchema = z
   .object({ name: personName, userId: z.uuid().nullable(), archived: z.boolean() })
   .partial();
 export type UpdatePersonInput = z.infer<typeof updatePersonSchema>;
+
+/** Rol de una persona en un proyecto (HU-36) */
+export const projectPersonRoleSchema = z.enum([
+  'requester',
+  'assignedTo',
+  'projectManager',
+  'consultingManager',
+  'businessPartner',
+]);
+export type ProjectPersonRole = z.infer<typeof projectPersonRoleSchema>;
+
+/**
+ * Respuesta de GET .../people/:personId/usage (HU-45): dónde aparece una persona, para reasignarla
+ * antes de borrarla. `deleted` = está en la papelera (o su proyecto lo está).
+ */
+export const personUsageSchema = z.object({
+  tasks: z.array(
+    z.object({
+      id: z.uuid(),
+      title: z.string(),
+      projectId: z.uuid(),
+      projectName: z.string(),
+      deleted: z.boolean(),
+    }),
+  ),
+  projects: z.array(
+    z.object({
+      id: z.uuid(),
+      name: z.string(),
+      folio: z.string().nullable(),
+      roles: z.array(projectPersonRoleSchema),
+      deleted: z.boolean(),
+    }),
+  ),
+});
+export type PersonUsage = z.infer<typeof personUsageSchema>;

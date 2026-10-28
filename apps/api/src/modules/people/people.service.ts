@@ -3,6 +3,8 @@ import {
   type CreatePersonInput,
   type Person,
   type PersonRef,
+  type PersonUsage,
+  type ProjectPersonRole,
   type UpdatePersonInput,
 } from '@gestion/shared';
 import type { Db, Tx } from '../../db/client.js';
@@ -215,6 +217,69 @@ export async function updatePerson(
     });
     return true;
   });
+}
+
+/**
+ * Dónde aparece una persona (HU-45): tareas donde es Responsable y proyectos donde tiene un rol,
+ * papelera incluida (también impiden borrarla). null si no es de ese espacio (→ 404).
+ */
+export async function personUsage(
+  db: Db,
+  workspaceId: string,
+  personId: string,
+): Promise<PersonUsage | null> {
+  const person = await db.person.findFirst({
+    where: { id: personId, workspaceId },
+    select: { id: true },
+  });
+  if (!person) return null;
+  const [tasks, projects] = await Promise.all([
+    db.task.findMany({
+      where: { workspaceId, responsiblePersonId: personId },
+      select: {
+        id: true,
+        title: true,
+        deletedAt: true,
+        project: { select: { id: true, name: true, deletedAt: true } },
+      },
+      orderBy: [{ project: { name: 'asc' } }, { title: 'asc' }],
+    }),
+    db.project.findMany({
+      where: {
+        workspaceId,
+        OR: PROJECT_ROLES.map((role) => ({ [role]: personId })),
+      },
+      select: {
+        id: true,
+        name: true,
+        folio: true,
+        deletedAt: true,
+        ...(Object.fromEntries(PROJECT_ROLES.map((role) => [role, true])) as Record<
+          (typeof PROJECT_ROLES)[number],
+          true
+        >),
+      },
+      orderBy: { name: 'asc' },
+    }),
+  ]);
+  return {
+    tasks: tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      projectId: task.project.id,
+      projectName: task.project.name,
+      deleted: task.deletedAt !== null || task.project.deletedAt !== null,
+    })),
+    projects: projects.map((project) => ({
+      id: project.id,
+      name: project.name,
+      folio: project.folio,
+      roles: PROJECT_ROLES.filter((role) => project[role] === personId).map(
+        (role) => role.replace(/Id$/, '') as ProjectPersonRole,
+      ),
+      deleted: project.deletedAt !== null,
+    })),
+  };
 }
 
 /**

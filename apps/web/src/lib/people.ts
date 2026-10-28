@@ -1,6 +1,7 @@
 import {
   personListSchema,
   personSchema,
+  personUsageSchema,
   type CreatePersonInput,
   type Person,
   type UpdatePersonInput,
@@ -19,6 +20,14 @@ export const peopleQueryOptions = (workspaceId: string) =>
   queryOptions({
     queryKey: ['workspaces', workspaceId, 'people'],
     queryFn: () => apiFetch(peoplePath(workspaceId), { schema: personListSchema }),
+  });
+
+/** Dónde aparece una persona (HU-45); se pide al abrir la ventana */
+export const personUsageQueryOptions = (workspaceId: string, personId: string) =>
+  queryOptions({
+    queryKey: ['workspaces', workspaceId, 'people', personId, 'usage'],
+    queryFn: () =>
+      apiFetch(`${peoplePath(workspaceId)}/${personId}/usage`, { schema: personUsageSchema }),
   });
 
 /** El nombre de una persona aparece en miembros, tareas y proyectos: se refresca el espacio */
