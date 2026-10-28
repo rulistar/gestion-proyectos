@@ -10,6 +10,7 @@ import { getRouteApi, Link } from '@tanstack/react-router';
 import { Archive, ArchiveRestore, Check, Pencil, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { AllowedTaskTypesDialog, TaskTypesCard } from '@/components/task-type-catalog';
@@ -58,14 +59,11 @@ export function CatalogPage() {
   }
 
   return (
-    <div className="grid gap-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
-        <p className="mt-1 text-muted-foreground">
-          Tipos de trabajo de {workspace.name}. El nombre es libre; el comportamiento decide qué se
-          mide y en qué sección del menú aparece.
-        </p>
-      </div>
+    <div className="grid gap-3">
+      <PageHeader
+        title="Configuración"
+        description={`Tipos de trabajo de ${workspace.name}. El nombre es libre; el comportamiento decide qué se mide y en qué sección del menú aparece.`}
+      />
 
       {BEHAVIORS.map((behavior) => {
         const group = types.filter((type) => type.behavior === behavior);

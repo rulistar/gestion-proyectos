@@ -9,6 +9,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { Check, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '@/components/progress-bar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrentUser } from '@/lib/auth';
@@ -53,24 +54,22 @@ export function MyWorkPage() {
   ].filter((group) => group.tasks.length > 0);
 
   return (
-    <div className="grid gap-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Hola, {firstName}</h1>
-        <p className="mt-1 text-muted-foreground">
-          Esto es lo que tienes pendiente en {workspace.name}.
-        </p>
-      </div>
+    <div className="grid gap-3">
+      <PageHeader
+        title={`Hola, ${firstName}`}
+        description={`Esto es lo que tienes pendiente en ${workspace.name}.`}
+      />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {kpis.map((kpi) => (
           <Card
             key={kpi.label}
-            className="gap-1 border-l-4 py-4"
+            className="gap-1 border-l-4 py-3"
             style={{ borderLeftColor: kpi.color }}
           >
             <CardContent>
               <p className="text-sm text-muted-foreground">{kpi.label}</p>
-              <p className="text-3xl font-bold tabular-nums">{kpi.value}</p>
+              <p className="text-2xl font-bold tabular-nums">{kpi.value}</p>
             </CardContent>
           </Card>
         ))}

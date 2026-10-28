@@ -10,6 +10,7 @@ import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { UserMinus } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { Button } from '@/components/ui/button';
@@ -78,11 +79,8 @@ export function MembersPage() {
   }
 
   return (
-    <div className="grid gap-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Miembros</h1>
-        <p className="mt-1 text-muted-foreground">{workspace.name}</p>
-      </div>
+    <div className="grid gap-3">
+      <PageHeader title="Miembros" description={workspace.name} />
 
       <Card>
         <CardHeader className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">

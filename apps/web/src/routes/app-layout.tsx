@@ -39,7 +39,7 @@ export function AppLayout() {
     <div className="flex min-h-screen flex-col md:flex-row">
       {menu.open && <AppSidebar />}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between gap-3 border-b bg-card px-4 md:px-8">
+        <header className="flex h-12 items-center justify-between gap-3 border-b bg-card px-3 md:px-6">
           <Button
             type="button"
             variant="ghost"
@@ -54,7 +54,7 @@ export function AppLayout() {
           </Button>
           <UserMenu />
         </header>
-        <main className="mx-auto w-full max-w-screen-2xl flex-1 p-4 md:px-8 md:py-7">
+        <main className="mx-auto w-full max-w-screen-2xl flex-1 p-3 md:px-6 md:py-4">
           <Outlet />
         </main>
       </div>
@@ -75,7 +75,7 @@ function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex min-h-11 items-center gap-2.5 rounded-lg px-2 outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50">
+      <DropdownMenuTrigger className="flex min-h-10 items-center gap-2.5 rounded-lg px-2 outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50">
         <span
           aria-hidden
           className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground"

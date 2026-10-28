@@ -3,6 +3,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { FolderKanban, ListChecks, RotateCcw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,14 +48,11 @@ export function TrashPage() {
   }
 
   return (
-    <div className="grid gap-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Papelera</h1>
-        <p className="mt-1 text-muted-foreground">
-          Lo dado de baja en {workspace.name}. Restáuralo si fue un error; bórralo definitivamente
-          si ya no lo necesitas.
-        </p>
-      </div>
+    <div className="grid gap-3">
+      <PageHeader
+        title="Papelera"
+        description={`Lo dado de baja en ${workspace.name}. Restáuralo si fue un error; bórralo definitivamente si ya no lo necesitas.`}
+      />
 
       <Card>
         <CardContent>

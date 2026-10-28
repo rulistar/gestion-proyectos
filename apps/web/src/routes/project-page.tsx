@@ -77,8 +77,8 @@ export function ProjectPage() {
     roleHasPermission(workspace.role, permission);
 
   return (
-    <div className="grid gap-5">
-      <header className="grid gap-3">
+    <div className="grid gap-3">
+      <header className="grid gap-2">
         <nav aria-label="Ruta" className="text-sm text-muted-foreground">
           <Link to={section.to} params={{ workspaceId }} className="hover:underline">
             {section.title}
@@ -92,7 +92,7 @@ export function ProjectPage() {
               {project.folio}
             </span>
           )}
-          <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
+          <h1 className="text-xl font-bold tracking-tight">{project.name}</h1>
           <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
             {project.type.name}
           </span>
@@ -119,18 +119,23 @@ export function ProjectPage() {
             )}
           </div>
         </div>
-        {project.description && (
-          <p className="max-w-4xl whitespace-pre-line text-muted-foreground">
-            {project.description}
-          </p>
-        )}
-        {(project.sprint || project.sprintActivities) && (
-          <div className="max-w-4xl rounded-lg border bg-card p-3 text-sm">
-            <p className="font-semibold">{project.sprint ?? 'Sprint'}</p>
-            {project.sprintActivities && (
-              <p className="mt-1 whitespace-pre-line text-muted-foreground">
-                {project.sprintActivities}
+        {/* Descripción y sprint lado a lado en pantallas anchas (HU-41) */}
+        {(project.description || project.sprint || project.sprintActivities) && (
+          <div className="grid items-start gap-2 lg:grid-cols-2">
+            {project.description && (
+              <p className="text-sm whitespace-pre-line text-muted-foreground">
+                {project.description}
               </p>
+            )}
+            {(project.sprint || project.sprintActivities) && (
+              <div className="rounded-lg border bg-card p-3 text-sm">
+                <p className="font-semibold">{project.sprint ?? 'Sprint'}</p>
+                {project.sprintActivities && (
+                  <p className="mt-1 whitespace-pre-line text-muted-foreground">
+                    {project.sprintActivities}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}
