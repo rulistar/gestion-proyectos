@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { FOLIO_PREFIXES, folioPeriod, formatFolio, parseFolioTemplate } from './folios.js';
+import {
+  FOLIO_PREFIXES,
+  folioPeriod,
+  formatFolio,
+  isRepeatableFolio,
+  parseFolioTemplate,
+} from './folios.js';
 
 describe('folios automáticos (HU-38)', () => {
   it('el periodo es AAMM de la fecha local', () => {
@@ -24,5 +30,14 @@ describe('folios automáticos (HU-38)', () => {
 
   it('pasado el 999 sigue creciendo', () => {
     expect(formatFolio('MT', '2610', 1000)).toBe('MT2610-1000');
+  });
+
+  it('"Sin folio" se reconoce sin importar mayúsculas ni espacios (HU-43)', () => {
+    for (const value of ['Sin folio', 'Sin Folio', ' SIN  FOLIO ']) {
+      expect(isRepeatableFolio(value)).toBe(true);
+    }
+    for (const value of ['Sin folio 2', 'Sinfolio', 'S/F']) {
+      expect(isRepeatableFolio(value)).toBe(false);
+    }
   });
 });

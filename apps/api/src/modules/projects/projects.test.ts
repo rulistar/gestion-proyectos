@@ -486,6 +486,20 @@ describe('folio sin duplicados y formato que se completa (HU-38)', () => {
     expect(response.json<{ message: string }>().message).toContain('sol-1');
   });
 
+  it('"Sin folio" es el único que puede repetirse y no consume número (HU-43)', async () => {
+    const { ana, ws } = await setup();
+    const a = await createOk(ana.cookies, ws.id, { name: 'A', folio: 'Sin folio' });
+    const b = await create(ana.cookies, ws.id, { name: 'B', folio: 'SIN FOLIO' });
+    const c = await createOk(ana.cookies, ws.id, { name: 'C' });
+
+    expect(a.folio).toBe('Sin folio');
+    expect(b.statusCode).toBe(201);
+    expect(c.folio).toMatch(/-001$/);
+    // Al editar, otro contenedor también puede pasar a "Sin folio"
+    const edit = await update(ana.cookies, ws.id, c.id, { name: 'C', folio: 'Sin Folio' });
+    expect(edit.statusCode).toBe(200);
+  });
+
   it('al editar se conserva el folio propio, pero no se toma el de otro', async () => {
     const { ana, ws } = await setup();
     const a = await createOk(ana.cookies, ws.id, { name: 'A', folio: 'SOL-1' });

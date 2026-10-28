@@ -2,6 +2,7 @@ import {
   FOLIO_PREFIXES,
   folioPeriod,
   formatFolio,
+  isRepeatableFolio,
   parseFolioTemplate,
   type ProjectBehavior,
 } from '@gestion/shared';
@@ -53,6 +54,7 @@ async function nextFolio(tx: Tx, workspaceId: string, prefix: string, period: st
  * - vacío al crear → el automático de su sección (PY, MT o ACT) y del mes del usuario;
  * - vacío al editar → vacío;
  * - solo el formato ("MT", "PY2611-") → se completa con el número vigente;
+ * - "Sin folio" → se respeta: es el único que puede repetirse (HU-43);
  * - cualquier otro → se respeta, si no lo tiene otro contenedor del espacio (o es el que ya tenía).
  */
 export async function resolveFolio(
@@ -78,6 +80,7 @@ export async function resolveFolio(
   if (template) {
     return nextFolio(tx, workspaceId, template.prefix, template.period ?? folioPeriod(today));
   }
+  if (isRepeatableFolio(requested)) return requested;
   // Conservar el folio que ya tenía no se valida: puede venir repetido de antes de HU-38
   if (current && current.folio?.toLowerCase() === requested.toLowerCase()) return requested;
   if (await folioTaken(tx, workspaceId, requested, current?.id)) {
