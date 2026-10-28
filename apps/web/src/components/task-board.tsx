@@ -362,8 +362,9 @@ interface EditTaskPanelProps {
 /**
  * Editar en una ventana: aparece al centro sin importar dónde esté la tarjeta. Antes era un panel
  * arriba del tablero y, con muchas tareas, se abría fuera de la vista y parecía no responder.
+ * También la usa la vista "Tareas" (HU-39).
  */
-function EditTaskPanel({
+export function EditTaskPanel({
   task,
   workspaceId,
   projectId,

@@ -4,6 +4,7 @@ import {
   type TaskInput,
   type TaskStatus,
   type TaskStatusUpdate,
+  workspaceTaskListSchema,
 } from '@gestion/shared';
 import { queryOptions, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
@@ -41,6 +42,14 @@ export const tasksQueryOptions = (workspaceId: string, projectId: string) =>
   queryOptions({
     queryKey: tasksKey(workspaceId, projectId),
     queryFn: () => apiFetch(tasksPath(workspaceId, projectId), { schema: taskListSchema }),
+  });
+
+/** Todas las tareas del espacio con su contenedor (HU-39); se refresca con cada cambio del espacio */
+export const workspaceTasksQueryOptions = (workspaceId: string) =>
+  queryOptions({
+    queryKey: ['workspaces', workspaceId, 'tasks'],
+    queryFn: () =>
+      apiFetch(`/workspaces/${workspaceId}/tasks`, { schema: workspaceTaskListSchema }),
   });
 
 export function useCreateTask(workspaceId: string, projectId: string) {

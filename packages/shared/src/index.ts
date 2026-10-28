@@ -10,6 +10,7 @@ export * from './schemas/progress.js';
 export * from './schemas/project-filters.js';
 export * from './schemas/project-types.js';
 export * from './schemas/projects.js';
+export * from './schemas/task-filters.js';
 export * from './schemas/task-types.js';
 export * from './schemas/tasks.js';
 export * from './schemas/trash.js';

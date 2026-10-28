@@ -14,13 +14,14 @@ import {
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { ProgressBar } from '@/components/progress-bar';
 import { ProjectFiltersBar } from '@/components/project-filters-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
+import { SortTh } from '@/components/sort-th';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -31,6 +32,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { nextSort } from '@/lib/sort';
 import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
 import { projectTypesQueryOptions, SECTIONS } from '@/lib/project-types';
 import { PROJECT_PRIORITIES, projectsQueryOptions, useCreateProject } from '@/lib/projects';
@@ -116,10 +118,8 @@ function ContainersPage({
   const visible = sortProjects(filterProjects(projects, filters), filters.sort, filters.dir);
   const hidden = projects.length - visible.length;
 
-  /** Clic en un encabezado: la misma columna invierte el orden; otra columna empieza ascendente */
   function sortBy(key: ProjectSortKey) {
-    const dir = filters.sort === key && filters.dir !== 'desc' ? 'desc' : 'asc';
-    onFilters({ ...filters, sort: key, dir });
+    onFilters({ ...filters, ...nextSort(filters, key) });
   }
 
   return (
@@ -188,43 +188,6 @@ function ContainersPage({
         )}
       </Card>
     </div>
-  );
-}
-
-/** Encabezado que ordena por su columna (HU-09); muestra la flecha del orden actual */
-function SortTh({
-  column,
-  sort,
-  dir,
-  onSort,
-  children,
-}: {
-  column: ProjectSortKey;
-  sort: ProjectSortKey | undefined;
-  dir: 'asc' | 'desc';
-  onSort: (column: ProjectSortKey) => void;
-  children: ReactNode;
-}) {
-  const active = sort === column;
-  return (
-    <th
-      className="py-2 pr-4 font-medium"
-      aria-sort={active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-    >
-      <button
-        type="button"
-        onClick={() => onSort(column)}
-        className={`inline-flex items-center gap-1 hover:text-foreground ${active ? 'text-foreground' : ''}`}
-      >
-        {children}
-        {active &&
-          (dir === 'asc' ? (
-            <ArrowUp aria-hidden className="size-3" />
-          ) : (
-            <ArrowDown aria-hidden className="size-3" />
-          ))}
-      </button>
-    </th>
   );
 }
 

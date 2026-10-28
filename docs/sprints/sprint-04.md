@@ -31,8 +31,9 @@ Responde a la revisión del Sprint 3: catálogo de personas con alias, tres resp
 |---|---|---|---|
 | 2026-10-26 | — | Quitar la columna Solicitante de Proyectos y Mantenimientos | — |
 | 2026-10-26 | HU-38 | Folios automáticos PY / MT / ACT + AAMM + contador mensual | 3 |
+| 2026-10-27 | HU-39 | Vista "Tareas": todas las tareas del espacio con filtros y orden | 5 |
 
-El compromiso queda en **31 puntos**.
+El compromiso queda en **36 puntos**.
 
 Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-4).
 

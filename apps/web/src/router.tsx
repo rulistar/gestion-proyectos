@@ -7,7 +7,7 @@ import {
   redirect,
 } from '@tanstack/react-router';
 import { ApiError } from '@/lib/api';
-import { projectFiltersSchema } from '@gestion/shared';
+import { projectFiltersSchema, taskFiltersSchema } from '@gestion/shared';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
 import { peopleQueryOptions } from '@/lib/people';
 import { weekStartIso } from '@/lib/dates';
@@ -15,7 +15,7 @@ import { myTasksQueryOptions } from '@/lib/my-work';
 import { projectTypesQueryOptions } from '@/lib/project-types';
 import { projectQueryOptions, projectsQueryOptions } from '@/lib/projects';
 import { taskTypesQueryOptions } from '@/lib/task-types';
-import { tasksQueryOptions } from '@/lib/tasks';
+import { tasksQueryOptions, workspaceTasksQueryOptions } from '@/lib/tasks';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
 import { AppLayout } from '@/routes/app-layout';
 import { ErrorPage } from '@/routes/error-page';
@@ -26,6 +26,7 @@ import { MembersPage } from '@/routes/members-page';
 import { MyWorkPage } from '@/routes/my-work-page';
 import { PeoplePage } from '@/routes/people-page';
 import { ProjectPage } from '@/routes/project-page';
+import { TasksPage } from '@/routes/tasks-page';
 import { TrashPage } from '@/routes/trash-page';
 import { CatalogPage } from '@/routes/catalog-page';
 import { ActivitiesPage, MaintenancePage, WorkspacePage } from '@/routes/workspace-page';
@@ -38,6 +39,7 @@ import { ActivitiesPage, MaintenancePage, WorkspacePage } from '@/routes/workspa
  *   /w/$workspaceId/p/$projectId un proyecto
  *   /w/$workspaceId/mantenimientos y /actividades: los contenedores de esos tipos (HU-21)
  *   /w/$workspaceId/mi-trabajo    mis tareas en ese workspace (HU-28b)
+ *   /w/$workspaceId/tareas        todas las tareas del espacio, con filtros en la URL (HU-39)
  *   /w/$workspaceId/configuracion tipos de contenedor (HU-21, solo Admin)
  *   /w/$workspaceId/miembros      y sus miembros e invitaciones
  *   /w/$workspaceId/personas      catálogo de personas (HU-34, solo Admin)
@@ -207,6 +209,22 @@ const myWorkRoute = createRoute({
   component: MyWorkPage,
 });
 
+const tasksRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/tareas',
+  validateSearch: taskFiltersSchema,
+  loader: ({ context, params }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(workspaceTasksQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(projectsQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(projectTypesQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(taskTypesQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(peopleQueryOptions(params.workspaceId)),
+    ]),
+  component: TasksPage,
+});
+
 const peopleRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId/personas',
@@ -250,6 +268,7 @@ const routeTree = rootRoute.addChildren([
     catalogRoute,
     projectRoute,
     myWorkRoute,
+    tasksRoute,
     membersRoute,
     peopleRoute,
     trashRoute,

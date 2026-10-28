@@ -39,14 +39,14 @@ export const projectFiltersSchema = z.object({
 });
 export type ProjectFilters = z.infer<typeof projectFiltersSchema>;
 
-/** ¿Hay algún filtro puesto? (para el botón "Limpiar filtros") */
-export function hasActiveFilters(filters: ProjectFilters): boolean {
+/** ¿Hay algún filtro puesto? (para el botón "Limpiar filtros"); sirve también para las tareas (HU-39) */
+export function hasActiveFilters(filters: Record<string, unknown>): boolean {
   const { sort: _sort, dir: _dir, ...rest } = filters;
   return Object.values(rest).some((value) => value !== undefined && value !== '');
 }
 
 /** Sin acentos ni mayúsculas: "Gómez" encuentra "gomez" */
-function normalize(text: string): string {
+export function normalize(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
@@ -126,19 +126,18 @@ function sortValue(project: Project, key: ProjectSortKey): string | number | nul
 const collator = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
 
 /**
- * Ordena por una columna (HU-09). Los vacíos (sin folio, sin fecha…) van siempre al final, sea
- * ascendente o descendente; con empate se conserva el orden original (más recientes primero).
+ * Ordena por el valor que da `valueOf`. Los vacíos (sin folio, sin fecha…) van siempre al final,
+ * sea ascendente o descendente; con empate se conserva el orden original. También lo usan las tareas (HU-39).
  */
-export function sortProjects(
-  projects: readonly Project[],
-  key: ProjectSortKey | undefined,
+export function sortByValue<T>(
+  items: readonly T[],
+  valueOf: (item: T) => string | number | null,
   dir: 'asc' | 'desc' = 'asc',
-): Project[] {
-  if (!key) return [...projects];
+): T[] {
   const sign = dir === 'asc' ? 1 : -1;
-  return [...projects].sort((a, b) => {
-    const left = sortValue(a, key);
-    const right = sortValue(b, key);
+  return [...items].sort((a, b) => {
+    const left = valueOf(a);
+    const right = valueOf(b);
     if (left === null || left === '') return right === null || right === '' ? 0 : 1;
     if (right === null || right === '') return -1;
     const order =
@@ -147,4 +146,14 @@ export function sortProjects(
         : collator.compare(String(left), String(right));
     return order * sign;
   });
+}
+
+/** Ordena por una columna (HU-09); sin columna, el orden original (más recientes primero) */
+export function sortProjects(
+  projects: readonly Project[],
+  key: ProjectSortKey | undefined,
+  dir: 'asc' | 'desc' = 'asc',
+): Project[] {
+  if (!key) return [...projects];
+  return sortByValue(projects, (project) => sortValue(project, key), dir);
 }
