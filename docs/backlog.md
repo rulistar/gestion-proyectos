@@ -598,8 +598,8 @@ _Como Admin, quiero configurar a cada persona al invitarla (en qué espacios ent
 - [x] La web oculta lo que el usuario no puede hacer según su matriz: Nuevo proyecto/mantenimiento/actividad por sección, Editar datos, Dar de baja, Nueva tarea y editar o dar de baja cada tarea. La Papelera aparece para quien puede dar de baja algo; "Borrar definitivamente" sigue siendo solo del Admin.
 
 **HU-17c · Invitación a varios espacios (3 pts)**
-- [ ] Una invitación incluye uno o varios espacios, cada uno con su plantilla y su matriz; quien invita debe ser Admin de cada uno.
-- [ ] Al aceptar, entra a todos con su persona del catálogo; las invitaciones pendientes de antes siguen funcionando.
+- [x] Una invitación incluye uno o varios espacios, cada uno con su plantilla y su matriz (y su lista "Estos…"); quien invita debe ser Admin de cada uno (403 si no). En "Invitar": plantilla y "Permisos" por espacio, y "+ Agregar otro espacio".
+- [x] Al aceptar, entra a todos con su persona del catálogo; las invitaciones pendientes de antes siguen funcionando (la migración las convierte en invitaciones de un espacio). La invitación aparece como pendiente en cada espacio y se revoca entera desde cualquiera; ya miembro o con otra invitación pendiente en alguno de los espacios da 409 con su nombre.
 
 ### Sprints siguientes (criterios por detallar en su planificación)
 

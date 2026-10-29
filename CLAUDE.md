@@ -110,7 +110,8 @@ apps/
                           Responsable = persona del catálogo (HU-35, ADR-0005);
                           GET /workspaces/:id/my-tasks = mis tareas (HU-28b); GET /workspaces/:id/tasks = todas (HU-39)
       trash/              papelera, solo Admin (HU-15): GET /trash, POST /trash/:kind/:id/restore, DELETE /trash/:kind/:id
-      invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez
+      invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez.
+                          Una invitación puede incluir otros espacios (InvitationGrant, HU-17c): Admin de cada uno
       invitations/accept.* públicas: POST /invitations/preview|register|accept (HU-01); token en el cuerpo
     src/db/dates.ts     columnas date ↔ "AAAA-MM-DD" (siempre en UTC)
       setup/              createFirstAdmin: primer Admin + workspace "workpers" (TEC-07)

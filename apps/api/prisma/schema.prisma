@@ -293,6 +293,7 @@ model User {
   invitationsUpdated      Invitation[]              @relation("InvitationUpdatedBy")
   invitationsRevoked      Invitation[]              @relation("InvitationRevokedBy")
   invitationsAccepted     Invitation[]              @relation("InvitationAcceptedBy")
+  invitationGrantsCreated InvitationGrant[]         @relation("InvitationGrantCreatedBy")
   projectTaskTypesCreated ProjectTaskType[]         @relation("ProjectTaskTypeCreatedBy")
   projectAccessCreated    MembershipProjectAccess[] @relation("MembershipProjectAccessCreatedBy")
   people                  Person[]                  @relation("PersonUser")
@@ -341,15 +342,16 @@ model Workspace {
   updatedBy   User?     @relation("WorkspaceUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
   deletedBy   User?     @relation("WorkspaceDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
 
-  memberships   Membership[]
-  projects      Project[]
-  projectTypes  ProjectType[]
-  taskTypes     TaskType[]
-  taskOrigins   TaskOrigin[]
-  folioCounters FolioCounter[]
-  people        Person[]
-  tasks         Task[]
-  invitations   Invitation[]
+  memberships      Membership[]
+  projects         Project[]
+  projectTypes     ProjectType[]
+  taskTypes        TaskType[]
+  taskOrigins      TaskOrigin[]
+  folioCounters    FolioCounter[]
+  people           Person[]
+  tasks            Task[]
+  invitations      Invitation[]
+  invitationGrants InvitationGrant[]
 
   @@map("workspaces")
 }
@@ -521,6 +523,31 @@ model Invitation {
   createdBy   User?    @relation("InvitationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy   User?    @relation("InvitationUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
 
+  /// Espacios a los que entra al aceptar (HU-17c, ADR-0006 §4); incluye el de workspaceId
+  grants InvitationGrant[]
+
   @@index([workspaceId, email])
   @@map("invitations")
+}
+
+/// Un espacio de una invitación (HU-17c, ADR-0006 §4): con su plantilla, su matriz y su lista
+/// "Estos…". Al aceptar se convierte en una membresía. Quien invita es Admin de cada espacio.
+model InvitationGrant {
+  invitationId       String         @map("invitation_id") @db.Uuid
+  invitation         Invitation     @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  workspaceId        String         @map("workspace_id") @db.Uuid
+  workspace          Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  role               MembershipRole
+  /// Matriz (JSON validado con memberPermissionsSchema de shared)
+  permissions        Json
+  /// Contenedores de "Estos…"; al aceptar se guardan los que sigan existiendo en el espacio
+  selectedProjectIds String[]       @map("selected_project_ids") @db.Uuid
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdBy   User?    @relation("InvitationGrantCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@id([invitationId, workspaceId])
+  @@index([workspaceId])
+  @@map("invitation_grants")
 }

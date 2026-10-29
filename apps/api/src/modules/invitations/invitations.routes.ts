@@ -5,8 +5,10 @@ import { requireAuth } from '../auth/session.js';
 import { requirePermission } from '../workspaces/access.js';
 import {
   createInvitation,
+  InvalidInvitationGrantError,
   InvitationConflictError,
   listPendingInvitations,
+  NotAdminOfWorkspaceError,
   revokeInvitation,
 } from './invitations.service.js';
 
@@ -14,7 +16,10 @@ const invitationParamsSchema = z.object({ invitationId: z.uuid() });
 
 const BASE = '/workspaces/:workspaceId/invitations';
 
-/** Invitaciones de un workspace (HU-04): solo quien tiene `member.manage` (el Admin) */
+/**
+ * Invitaciones de un workspace (HU-04): solo quien tiene `member.manage` (el Admin). Una invitación
+ * puede incluir otros espacios donde quien invita también es Admin (HU-17c)
+ */
 export const invitationsRoutes: FastifyPluginCallback = (app, _options, done) => {
   app.addHook('preHandler', requireAuth);
   const onlyManagers = { preHandler: requirePermission('member.manage') };
@@ -39,6 +44,14 @@ export const invitationsRoutes: FastifyPluginCallback = (app, _options, done) =>
     } catch (error) {
       if (error instanceof InvitationConflictError) {
         return reply.code(409).send({ message: error.message });
+      }
+      if (error instanceof InvalidInvitationGrantError) {
+        return reply.code(400).send({ message: error.message });
+      }
+      if (error instanceof NotAdminOfWorkspaceError) {
+        return reply
+          .code(403)
+          .send({ message: 'Solo puedes invitar a los espacios donde eres Admin' });
       }
       throw error;
     }

@@ -52,12 +52,25 @@ export function InvitationPage() {
   }
 
   const invitation = preview.data;
-  const intro = (
-    <>
-      Te invitan a <strong>{invitation.workspaceName}</strong> como{' '}
-      <strong>{ROLE_LABELS[invitation.role]}</strong>.
-    </>
-  );
+  // Una invitación puede incluir varios espacios, cada uno con su rol (HU-17c)
+  const intro =
+    invitation.workspaces.length > 1 ? (
+      <>
+        Te invitan a {invitation.workspaces.length} espacios:{' '}
+        {invitation.workspaces.map((workspace, index) => (
+          <span key={workspace.name}>
+            {index > 0 && ', '}
+            <strong>{workspace.name}</strong> como {ROLE_LABELS[workspace.role]}
+          </span>
+        ))}
+        .
+      </>
+    ) : (
+      <>
+        Te invitan a <strong>{invitation.workspaceName}</strong> como{' '}
+        <strong>{ROLE_LABELS[invitation.role]}</strong>.
+      </>
+    );
 
   if (!invitation.hasAccount) {
     return (
