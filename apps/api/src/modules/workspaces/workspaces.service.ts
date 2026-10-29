@@ -2,12 +2,13 @@ import {
   PERMISSION_TEMPLATES,
   type CreateWorkspaceRequest,
   type Member,
+  type MemberPermissions,
   type MembershipRole,
   type ProjectBehavior,
   type UpdateMemberPermissions,
   type WorkspaceSummary,
 } from '@gestion/shared';
-import type { Db } from '../../db/client.js';
+import type { Db, Tx } from '../../db/client.js';
 import { parsePermissions } from './access.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { displayNames, ensureMemberPerson } from '../people/people.service.js';
@@ -126,38 +127,69 @@ async function changeMembership(
       return;
     }
 
-    // El Admin puede todo: su matriz es la plantilla y no usa "Estos…"
-    const permissions = change.role === 'ADMIN' ? PERMISSION_TEMPLATES.ADMIN : change.permissions;
-    const selectedSections = (
-      Object.entries(permissions.sections) as [ProjectBehavior, { view: string }][]
-    )
-      .filter(([, section]) => section.view === 'SELECTED')
-      .map(([behavior]) => behavior);
-    const requested = [...new Set(change.selectedProjectIds)];
-    const projects = await tx.project.findMany({
-      where: { id: { in: requested }, workspaceId, ...notDeleted },
-      select: { id: true, type: { select: { behavior: true } } },
-    });
-    if (projects.length !== requested.length) throw new InvalidSelectedProjectsError();
-    // Solo se guardan los de secciones que ven "Estos…"; el resto no tendría efecto
-    const selected = projects
-      .filter((project) => selectedSections.includes(project.type.behavior))
-      .map((project) => project.id);
+    const permissions = effectivePermissions(change.role, change.permissions);
+    const { selected, missing } = await selectedInSections(
+      tx,
+      workspaceId,
+      permissions,
+      change.selectedProjectIds,
+    );
+    if (missing > 0) throw new InvalidSelectedProjectsError();
 
     await tx.membership.update({
       where: { id: membership.id },
       data: { role: change.role, permissions, ...auditUpdate(actorId) },
     });
     await tx.membershipProjectAccess.deleteMany({ where: { membershipId: membership.id } });
-    if (selected.length > 0) {
-      await tx.membershipProjectAccess.createMany({
-        data: selected.map((projectId) => ({
-          membershipId: membership.id,
-          projectId,
-          createdById: actorId,
-        })),
-      });
-    }
+    await addProjectAccess(tx, membership.id, selected, actorId);
+  });
+}
+
+/** El Admin puede todo: su matriz es siempre la plantilla (ADR-0006 §2) */
+export function effectivePermissions(
+  role: MembershipRole,
+  permissions: MemberPermissions | undefined,
+): MemberPermissions {
+  return role === 'ADMIN' || !permissions ? PERMISSION_TEMPLATES[role] : permissions;
+}
+
+/**
+ * Contenedores de "Estos…" que se guardan: los pedidos que son del espacio, no están en la
+ * papelera y pertenecen a una sección que ve "Estos…" (los demás no tendrían efecto). `missing`
+ * cuenta los pedidos que no son del espacio o están en la papelera.
+ */
+export async function selectedInSections(
+  tx: Db | Tx,
+  workspaceId: string,
+  permissions: MemberPermissions,
+  ids: readonly string[],
+): Promise<{ selected: string[]; missing: number }> {
+  const sections = (Object.keys(permissions.sections) as ProjectBehavior[]).filter(
+    (behavior) => permissions.sections[behavior].view === 'SELECTED',
+  );
+  const requested = [...new Set(ids)];
+  const projects = await tx.project.findMany({
+    where: { id: { in: requested }, workspaceId, ...notDeleted },
+    select: { id: true, type: { select: { behavior: true } } },
+  });
+  return {
+    selected: projects
+      .filter((project) => sections.includes(project.type.behavior))
+      .map((project) => project.id),
+    missing: requested.length - projects.length,
+  };
+}
+
+/** Guarda la lista "Estos…" de una membresía */
+export async function addProjectAccess(
+  tx: Tx,
+  membershipId: string,
+  projectIds: readonly string[],
+  actorId: string,
+) {
+  if (projectIds.length === 0) return;
+  await tx.membershipProjectAccess.createMany({
+    data: projectIds.map((projectId) => ({ membershipId, projectId, createdById: actorId })),
   });
 }
 

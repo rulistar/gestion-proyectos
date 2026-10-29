@@ -1,6 +1,9 @@
 import {
   acceptInvitationResponseSchema,
+  invitationListSchema,
   invitationPreviewSchema,
+  PERMISSION_TEMPLATES,
+  type MemberPermissions,
   type MembershipRole,
 } from '@gestion/shared';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
@@ -51,6 +54,7 @@ describe('POST /invitations/preview', () => {
       workspaceName: 'Equipo',
       email: 'luis@example.com',
       role: 'VIEWER',
+      workspaces: [{ name: 'Equipo', role: 'VIEWER' }],
       hasAccount: false,
     });
   });
@@ -211,5 +215,151 @@ describe('límite de intentos', () => {
     for (let i = 0; i < 6; i++) statuses.push((await post('preview', { token: fake })).statusCode);
 
     expect(statuses).toEqual([404, 404, 404, 404, 404, 429]);
+  });
+});
+
+describe('invitación a varios espacios (HU-17c)', () => {
+  const copyOf = (permissions: MemberPermissions) =>
+    JSON.parse(JSON.stringify(permissions)) as MemberPermissions;
+
+  /** Ana es Admin de "Equipo" y de "Ventas"; en "Ajeno" solo es Lectora */
+  async function threeWorkspaces() {
+    const ana = await userWithSession(db, 'ana@example.com');
+    const otro = await userWithSession(db, 'otro@example.com');
+    const ws = await createWorkspace(db, ana.user.id, { name: 'Equipo' });
+    const ventas = await createWorkspace(db, ana.user.id, { name: 'Ventas' });
+    const ajeno = await createWorkspace(db, otro.user.id, { name: 'Ajeno' });
+    await addMember(db, ajeno.id, ana.user.id, 'VIEWER');
+    return { ana, ws, ventas, ajeno };
+  }
+
+  function invite(cookies: Record<string, string>, ws: string, payload: object) {
+    return app.inject({
+      method: 'POST',
+      url: `/api/v1/workspaces/${ws}/invitations`,
+      cookies,
+      payload,
+    });
+  }
+
+  it('al aceptar entra a cada espacio con su plantilla, su matriz y su lista "Estos…"', async () => {
+    const { ana, ws, ventas } = await threeWorkspaces();
+    const project = await app.inject({
+      method: 'POST',
+      url: `/api/v1/workspaces/${ventas.id}/projects`,
+      cookies: ana.cookies,
+      payload: { name: 'Cuenta grande' },
+    });
+    const projectId = project.json<{ id: string }>().id;
+    const adjusted = copyOf(PERMISSION_TEMPLATES.MEMBER);
+    adjusted.sections.WITH_END.view = 'SELECTED';
+
+    const created = await invite(ana.cookies, ws.id, {
+      email: 'luis@example.com',
+      role: 'VIEWER',
+      otherWorkspaces: [
+        {
+          workspaceId: ventas.id,
+          role: 'MEMBER',
+          permissions: adjusted,
+          selectedProjectIds: [projectId],
+        },
+      ],
+    });
+    expect(created.statusCode).toBe(201);
+    const { token } = created.json<{ token: string }>();
+
+    const preview = invitationPreviewSchema.parse((await post('preview', { token })).json());
+    expect(preview.workspaces).toEqual([
+      { name: 'Equipo', role: 'VIEWER' },
+      { name: 'Ventas', role: 'MEMBER' },
+    ]);
+    const accepted = await register(token);
+    expect(accepted.statusCode).toBe(200);
+
+    const luis = await db.user.findUniqueOrThrow({ where: { email: 'luis@example.com' } });
+    const memberships = await db.membership.findMany({
+      where: { userId: luis.id },
+      select: {
+        workspaceId: true,
+        role: true,
+        permissions: true,
+        projectAccess: { select: { projectId: true } },
+      },
+    });
+    expect(memberships.find((m) => m.workspaceId === ws.id)).toMatchObject({
+      role: 'VIEWER',
+      permissions: PERMISSION_TEMPLATES.VIEWER,
+      projectAccess: [],
+    });
+    expect(memberships.find((m) => m.workspaceId === ventas.id)).toMatchObject({
+      role: 'MEMBER',
+      permissions: adjusted,
+      projectAccess: [{ projectId }],
+    });
+    // Y tiene su persona en el catálogo de ambos
+    expect(await db.person.count({ where: { userId: luis.id } })).toBe(2);
+  });
+
+  it('solo a espacios donde quien invita es Admin (403); espacio repetido, 400', async () => {
+    const { ana, ws, ajeno } = await threeWorkspaces();
+
+    const notAdmin = await invite(ana.cookies, ws.id, {
+      email: 'luis@example.com',
+      role: 'MEMBER',
+      otherWorkspaces: [{ workspaceId: ajeno.id, role: 'VIEWER' }],
+    });
+    const repeated = await invite(ana.cookies, ws.id, {
+      email: 'luis@example.com',
+      role: 'MEMBER',
+      otherWorkspaces: [{ workspaceId: ws.id, role: 'VIEWER' }],
+    });
+
+    expect(notAdmin.statusCode).toBe(403);
+    expect(repeated.statusCode).toBe(400);
+    expect(await db.invitation.count()).toBe(0);
+  });
+
+  it('ya miembro o con invitación pendiente en cualquiera de los espacios: 409 con su nombre', async () => {
+    const { ana, ws, ventas } = await threeWorkspaces();
+    await invite(ana.cookies, ventas.id, { email: 'luis@example.com', role: 'MEMBER' });
+
+    const response = await invite(ana.cookies, ws.id, {
+      email: 'luis@example.com',
+      role: 'MEMBER',
+      otherWorkspaces: [{ workspaceId: ventas.id, role: 'MEMBER' }],
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json<{ message: string }>().message).toContain('Ventas');
+  });
+
+  it('se ve como pendiente en cada espacio y se revoca entera desde cualquiera', async () => {
+    const { ana, ws, ventas } = await threeWorkspaces();
+    const created = await invite(ana.cookies, ws.id, {
+      email: 'luis@example.com',
+      role: 'MEMBER',
+      otherWorkspaces: [{ workspaceId: ventas.id, role: 'VIEWER' }],
+    });
+    const { invitation } = created.json<{ invitation: { id: string } }>();
+    const listUrl = `/api/v1/workspaces/${ventas.id}/invitations`;
+
+    const inVentas = invitationListSchema.parse(
+      (await app.inject({ url: listUrl, cookies: ana.cookies })).json(),
+    );
+    expect(inVentas[0]).toMatchObject({ role: 'VIEWER' });
+    expect(inVentas[0]?.workspaces.map((w) => w.name)).toEqual(['Equipo', 'Ventas']);
+
+    const revoked = await app.inject({
+      method: 'DELETE',
+      url: `${listUrl}/${invitation.id}`,
+      cookies: ana.cookies,
+    });
+    expect(revoked.statusCode).toBe(204);
+    const inEquipo = await app.inject({
+      url: `/api/v1/workspaces/${ws.id}/invitations`,
+      cookies: ana.cookies,
+    });
+    expect(inEquipo.json()).toEqual([]);
   });
 });

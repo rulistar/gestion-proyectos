@@ -7,7 +7,7 @@ import {
 } from '@gestion/shared';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { UserMinus } from 'lucide-react';
+import { ShieldCheck, UserMinus, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
@@ -35,8 +35,9 @@ import {
 } from '@/lib/invitations';
 import { useCurrentUser } from '@/lib/auth';
 import { initials } from '@/lib/brand';
+import { templateMatrix, type MatrixValue } from '@/lib/matrix';
 import { useSchemaForm } from '@/lib/use-schema-form';
-import { PermissionsDialog } from '@/components/permissions-dialog';
+import { MatrixEditor, MatrixHint, PermissionsDialog } from '@/components/permissions-dialog';
 import {
   membersQueryOptions,
   ROLE_LABELS,
@@ -98,7 +99,7 @@ export function MembersPage() {
         </CardContent>
       </Card>
 
-      <InviteCard workspaceId={workspaceId} />
+      <InviteCard workspaceId={workspaceId} workspaceName={workspace.name} />
       <PendingInvitationsCard workspaceId={workspaceId} />
     </div>
   );
@@ -209,17 +210,67 @@ function MemberRow({ workspaceId, member }: { workspaceId: string; member: Membe
   );
 }
 
-function InviteCard({ workspaceId }: { workspaceId: string }) {
+/** Un espacio de la invitación con lo que recibirá en él (HU-17c) */
+interface GrantDraft {
+  workspaceId: string;
+  name: string;
+  value: MatrixValue;
+}
+
+/**
+ * Invitar (HU-04) a este espacio y, si se quiere, a otros donde también soy Admin (HU-17c), cada
+ * uno con su plantilla y sus permisos
+ */
+function InviteCard({
+  workspaceId,
+  workspaceName,
+}: {
+  workspaceId: string;
+  workspaceName: string;
+}) {
+  const me = useCurrentUser();
   const createInvitation = useCreateInvitation(workspaceId);
   const [link, setLink] = useState<{ email: string; url: string }>();
-  const form = useSchemaForm(createInvitationRequestSchema, ['email', 'role'], (data, formEl) =>
-    createInvitation.mutate(data, {
-      onSuccess: ({ invitation, token }) => {
-        setLink({ email: invitation.email, url: invitationLink(token) });
-        formEl.reset();
-      },
-    }),
+  const initialGrants = (): GrantDraft[] => [
+    { workspaceId, name: workspaceName, value: templateMatrix('MEMBER') },
+  ];
+  const [grants, setGrants] = useState<GrantDraft[]>(initialGrants);
+  // Otros espacios donde soy Admin y que aún no están en la invitación
+  const addable = me.workspaces.filter(
+    (w) => w.role === 'ADMIN' && !grants.some((grant) => grant.workspaceId === w.id),
   );
+  const form = useSchemaForm(
+    createInvitationRequestSchema.pick({ email: true }),
+    ['email'],
+    ({ email }, formEl) => {
+      const [first, ...others] = grants.map((grant) => ({
+        workspaceId: grant.workspaceId,
+        role: grant.value.role,
+        permissions: grant.value.permissions,
+        selectedProjectIds: [...grant.value.selected],
+      }));
+      createInvitation.mutate(
+        {
+          email,
+          role: first!.role,
+          permissions: first!.permissions,
+          selectedProjectIds: first!.selectedProjectIds,
+          otherWorkspaces: others,
+        },
+        {
+          onSuccess: ({ invitation, token }) => {
+            setLink({ email: invitation.email, url: invitationLink(token) });
+            formEl.reset();
+            setGrants(initialGrants());
+          },
+        },
+      );
+    },
+  );
+
+  function updateGrant(index: number, value: MatrixValue) {
+    setGrants((current) => current.map((grant, i) => (i === index ? { ...grant, value } : grant)));
+  }
 
   return (
     <Card>
@@ -227,34 +278,98 @@ function InviteCard({ workspaceId }: { workspaceId: string }) {
         <CardTitle>Invitar a alguien</CardTitle>
         <CardDescription>
           Se genera un enlace de un solo uso, válido {INVITATION_TTL_HOURS} horas. Envíalo tú por
-          correo, WhatsApp o el medio que prefieras.
+          correo, WhatsApp o el medio que prefieras. Puede entrar a varios espacios a la vez, con
+          permisos distintos en cada uno.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         <form onSubmit={form.onSubmit} noValidate>
-          <fieldset
-            disabled={createInvitation.isPending}
-            className="grid gap-4 sm:grid-cols-[1fr_12rem]"
-          >
-            <div className="grid gap-2">
+          <fieldset disabled={createInvitation.isPending} className="grid gap-4">
+            <div className="grid gap-2 sm:max-w-md">
               <Label htmlFor={form.idOf('email')}>Correo</Label>
               <Input {...form.field('email')} type="email" autoComplete="off" />
               <FieldError {...form.errorProps('email')} />
             </div>
+
             <div className="grid gap-2">
-              <Label htmlFor={form.idOf('role')}>Rol</Label>
-              <NativeSelect
-                {...form.field('role')}
-                defaultValue={'MEMBER' satisfies MembershipRole}
-              >
-                {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
+              <span className="text-sm font-medium">Espacios y permisos</span>
+              <ul className="divide-y rounded-md border">
+                {grants.map((grant, index) => (
+                  <li
+                    key={grant.workspaceId}
+                    className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium">{grant.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {roleLabel(grant.value.role, grant.value.permissions)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <NativeSelect
+                        aria-label={`Plantilla en ${grant.name}`}
+                        value={grant.value.role}
+                        onChange={(event) =>
+                          updateGrant(index, templateMatrix(event.target.value as MembershipRole))
+                        }
+                        className="h-8 w-32"
+                      >
+                        {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                      <GrantPermissionsDialog
+                        grant={grant}
+                        onSave={(value) => updateGrant(index, value)}
+                      />
+                      {index > 0 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Quitar ${grant.name} de la invitación`}
+                          onClick={() =>
+                            setGrants((current) => current.filter((_, i) => i !== index))
+                          }
+                        >
+                          <X aria-hidden />
+                        </Button>
+                      )}
+                    </div>
+                  </li>
                 ))}
-              </NativeSelect>
-              <FieldError {...form.errorProps('role')} />
+              </ul>
+              {addable.length > 0 && (
+                <NativeSelect
+                  aria-label="Agregar otro espacio"
+                  value=""
+                  onChange={(event) => {
+                    const added = addable.find((w) => w.id === event.target.value);
+                    if (added) {
+                      setGrants((current) => [
+                        ...current,
+                        {
+                          workspaceId: added.id,
+                          name: added.name,
+                          value: templateMatrix('MEMBER'),
+                        },
+                      ]);
+                    }
+                  }}
+                  className="h-8 w-64"
+                >
+                  <option value="">+ Agregar otro espacio…</option>
+                  {addable.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              )}
             </div>
+
             <FormActions
               submitLabel="Generar enlace"
               isPending={createInvitation.isPending}
@@ -266,6 +381,55 @@ function InviteCard({ workspaceId }: { workspaceId: string }) {
         {link && <InvitationLinkBox email={link.email} url={link.url} />}
       </CardContent>
     </Card>
+  );
+}
+
+/** Ajustar la matriz de un espacio de la invitación; se aplica al guardar (o se descarta) */
+function GrantPermissionsDialog({
+  grant,
+  onSave,
+}: {
+  grant: GrantDraft;
+  onSave: (value: MatrixValue) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(grant.value);
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // Al abrir, parte de lo que ya tiene la invitación
+        if (next) setDraft(grant.value);
+        setOpen(next);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button type="button" size="sm" variant="outline" aria-label={`Permisos en ${grant.name}`}>
+          <ShieldCheck aria-hidden />
+          Permisos
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Permisos en {grant.name}</DialogTitle>
+          <MatrixHint />
+        </DialogHeader>
+        <MatrixEditor workspaceId={grant.workspaceId} value={draft} onChange={setDraft} />
+        <div className="flex justify-end gap-2">
+          <DialogClose asChild>
+            <Button type="button" variant="ghost">
+              Cancelar
+            </Button>
+          </DialogClose>
+          <DialogClose asChild>
+            <Button type="button" onClick={() => onSave(draft)}>
+              Aplicar
+            </Button>
+          </DialogClose>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -323,8 +487,12 @@ function PendingInvitationsCard({ workspaceId }: { workspaceId: string }) {
                 <div>
                   <p className="font-medium">{invitation.email}</p>
                   <p className="text-sm text-muted-foreground">
-                    {ROLE_LABELS[invitation.role]} · caduca el{' '}
-                    {dateTimeFormat.format(new Date(invitation.expiresAt))}
+                    {invitation.workspaces.length > 1
+                      ? invitation.workspaces
+                          .map((w) => `${w.name} (${ROLE_LABELS[w.role]})`)
+                          .join(', ')
+                      : ROLE_LABELS[invitation.role]}{' '}
+                    · caduca el {dateTimeFormat.format(new Date(invitation.expiresAt))}
                   </p>
                 </div>
                 <Button

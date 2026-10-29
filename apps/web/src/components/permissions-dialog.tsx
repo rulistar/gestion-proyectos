@@ -1,7 +1,5 @@
 import {
-  PERMISSION_TEMPLATES,
   type Member,
-  type MemberPermissions,
   type MembershipRole,
   type ProjectBehavior,
   type SectionPermissions,
@@ -23,6 +21,7 @@ import {
 import { NativeSelect } from '@/components/ui/native-select';
 import { projectsQueryOptions } from '@/lib/projects';
 import { SECTIONS } from '@/lib/project-types';
+import { copyPermissions, templateMatrix, type MatrixValue } from '@/lib/matrix';
 import { ROLE_LABELS, roleLabel, useChangeMemberPermissions } from '@/lib/workspaces';
 
 const BEHAVIORS: ProjectBehavior[] = ['WITH_END', 'ONGOING', 'ON_DEMAND'];
@@ -56,18 +55,6 @@ const TASK_REMOVE: Record<TaskPermissions['remove'], string> = {
   MINE: 'Las suyas',
   EDITABLE: 'Las que modifica',
 };
-
-/** Copia sin referencias compartidas: en las plantillas, las tres secciones son el mismo objeto */
-function copyOf(permissions: MemberPermissions): MemberPermissions {
-  return {
-    sections: {
-      WITH_END: { ...permissions.sections.WITH_END },
-      ONGOING: { ...permissions.sections.ONGOING },
-      ON_DEMAND: { ...permissions.sections.ON_DEMAND },
-    },
-    tasks: { ...permissions.tasks },
-  };
-}
 
 function Choice<T extends string>({
   label,
@@ -155,46 +142,19 @@ function PermissionsForm({
   onDone: () => void;
 }) {
   const save = useChangeMemberPermissions(workspaceId);
-  const { data: projects = [] } = useQuery(projectsQueryOptions(workspaceId));
-  const [role, setRole] = useState(member.role);
-  const [permissions, setPermissions] = useState(() => copyOf(member.matrix.permissions));
-  const [selected, setSelected] = useState<ReadonlySet<string>>(
-    () => new Set(member.matrix.selectedProjectIds),
-  );
-  const isAdmin = role === 'ADMIN';
-
-  function applyTemplate(next: MembershipRole) {
-    setRole(next);
-    setPermissions(copyOf(PERMISSION_TEMPLATES[next]));
-  }
-
-  function setSection(behavior: ProjectBehavior, change: Partial<SectionPermissions>) {
-    setPermissions((current) => ({
-      ...current,
-      sections: { ...current.sections, [behavior]: { ...current.sections[behavior], ...change } },
-    }));
-  }
-
-  function setTasks(change: Partial<TaskPermissions>) {
-    setPermissions((current) => ({ ...current, tasks: { ...current.tasks, ...change } }));
-  }
-
-  function toggleProject(id: string, checked: boolean) {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (checked) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  }
+  const [value, setValue] = useState<MatrixValue>(() => ({
+    role: member.role,
+    permissions: copyPermissions(member.matrix.permissions),
+    selected: new Set(member.matrix.selectedProjectIds),
+  }));
 
   function handleSave() {
     save.mutate(
       {
         userId: member.userId,
-        role,
-        permissions,
-        selectedProjectIds: [...selected],
+        role: value.role,
+        permissions: value.permissions,
+        selectedProjectIds: [...value.selected],
       },
       {
         onSuccess: () => {
@@ -206,26 +166,99 @@ function PermissionsForm({
     );
   }
 
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Permisos de {member.name}</DialogTitle>
+        <MatrixHint />
+      </DialogHeader>
+      <MatrixEditor
+        workspaceId={workspaceId}
+        value={value}
+        onChange={setValue}
+        disabled={save.isPending}
+      />
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onClick={onDone} disabled={save.isPending}>
+          Cancelar
+        </Button>
+        <Button onClick={handleSave} disabled={save.isPending}>
+          Guardar permisos
+        </Button>
+      </div>
+    </>
+  );
+}
+
+/** Qué significan "los suyos" y "las suyas" */
+export function MatrixHint() {
+  return (
+    <DialogDescription>
+      Elige una plantilla y ajústala casilla por casilla. «Los suyos» son los que creó; «las suyas»,
+      las tareas que creó o donde es Responsable. Lo que creó siempre lo ve.
+    </DialogDescription>
+  );
+}
+
+/**
+ * Editor de plantilla + matriz + lista "Estos…" de un espacio (HU-17b; también al invitar, HU-17c).
+ * Controlado: recibe el valor y avisa cada cambio.
+ */
+export function MatrixEditor({
+  workspaceId,
+  value,
+  onChange,
+  disabled = false,
+}: {
+  workspaceId: string;
+  value: MatrixValue;
+  onChange: (value: MatrixValue) => void;
+  disabled?: boolean;
+}) {
+  const { data: projects = [] } = useQuery(projectsQueryOptions(workspaceId));
+  const { role, permissions, selected } = value;
+  const isAdmin = role === 'ADMIN';
+
+  function setSection(behavior: ProjectBehavior, change: Partial<SectionPermissions>) {
+    onChange({
+      ...value,
+      permissions: {
+        ...permissions,
+        sections: {
+          ...permissions.sections,
+          [behavior]: { ...permissions.sections[behavior], ...change },
+        },
+      },
+    });
+  }
+
+  function setTasks(change: Partial<TaskPermissions>) {
+    onChange({
+      ...value,
+      permissions: { ...permissions, tasks: { ...permissions.tasks, ...change } },
+    });
+  }
+
+  function toggleProject(id: string, checked: boolean) {
+    const next = new Set(selected);
+    if (checked) next.add(id);
+    else next.delete(id);
+    onChange({ ...value, selected: next });
+  }
+
   const selectedSections = BEHAVIORS.filter(
     (behavior) => !isAdmin && permissions.sections[behavior].view === 'SELECTED',
   );
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Permisos de {member.name}</DialogTitle>
-        <DialogDescription>
-          Elige una plantilla y ajústala casilla por casilla. «Los suyos» son los que creó; «las
-          suyas», las tareas que creó o donde es Responsable. Lo que creó siempre lo ve.
-        </DialogDescription>
-      </DialogHeader>
-
+    <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-sm font-medium">
           Plantilla
           <NativeSelect
             value={role}
-            onChange={(event) => applyTemplate(event.target.value as MembershipRole)}
+            disabled={disabled}
+            onChange={(event) => onChange(templateMatrix(event.target.value as MembershipRole))}
             className="h-8 w-36"
           >
             {Object.entries(ROLE_LABELS).map(([value, label]) => (
@@ -268,7 +301,7 @@ function PermissionsForm({
                         label={`${title}: ver`}
                         value={section.view}
                         options={SECTION_VIEW}
-                        disabled={save.isPending}
+                        disabled={disabled}
                         onChange={(view) => setSection(behavior, { view })}
                       />
                     </td>
@@ -277,7 +310,7 @@ function PermissionsForm({
                         type="checkbox"
                         aria-label={`${title}: crear`}
                         checked={section.create}
-                        disabled={save.isPending}
+                        disabled={disabled}
                         onChange={(event) => setSection(behavior, { create: event.target.checked })}
                         className="size-4 accent-primary"
                       />
@@ -287,7 +320,7 @@ function PermissionsForm({
                         label={`${title}: modificar`}
                         value={section.update}
                         options={SECTION_UPDATE}
-                        disabled={save.isPending}
+                        disabled={disabled}
                         onChange={(update) => setSection(behavior, { update })}
                       />
                     </td>
@@ -296,7 +329,7 @@ function PermissionsForm({
                         label={`${title}: dar de baja y restaurar`}
                         value={section.remove}
                         options={SECTION_REMOVE}
-                        disabled={save.isPending}
+                        disabled={disabled}
                         onChange={(remove) => setSection(behavior, { remove })}
                       />
                     </td>
@@ -309,7 +342,7 @@ function PermissionsForm({
                     label="Tareas: ver"
                     value={permissions.tasks.view}
                     options={TASK_VIEW}
-                    disabled={save.isPending}
+                    disabled={disabled}
                     onChange={(view) => setTasks({ view })}
                   />
                 </td>
@@ -318,7 +351,7 @@ function PermissionsForm({
                     type="checkbox"
                     aria-label="Tareas: crear"
                     checked={permissions.tasks.create}
-                    disabled={save.isPending}
+                    disabled={disabled}
                     onChange={(event) => setTasks({ create: event.target.checked })}
                     className="size-4 accent-primary"
                   />
@@ -328,7 +361,7 @@ function PermissionsForm({
                     label="Tareas: modificar"
                     value={permissions.tasks.update}
                     options={TASK_UPDATE}
-                    disabled={save.isPending}
+                    disabled={disabled}
                     onChange={(update) => setTasks({ update })}
                   />
                 </td>
@@ -337,7 +370,7 @@ function PermissionsForm({
                     label="Tareas: dar de baja y restaurar"
                     value={permissions.tasks.remove}
                     options={TASK_REMOVE}
-                    disabled={save.isPending}
+                    disabled={disabled}
                     onChange={(remove) => setTasks({ remove })}
                   />
                 </td>
@@ -364,7 +397,7 @@ function PermissionsForm({
                     <input
                       type="checkbox"
                       checked={selected.has(project.id)}
-                      disabled={save.isPending}
+                      disabled={disabled}
                       onChange={(event) => toggleProject(project.id, event.target.checked)}
                       className="size-4 accent-primary"
                     />
@@ -381,15 +414,6 @@ function PermissionsForm({
           </fieldset>
         );
       })}
-
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={onDone} disabled={save.isPending}>
-          Cancelar
-        </Button>
-        <Button onClick={handleSave} disabled={save.isPending}>
-          Guardar permisos
-        </Button>
-      </div>
-    </>
+    </div>
   );
 }
