@@ -1,5 +1,6 @@
 import {
   INVITATION_TTL_HOURS,
+  memberPermissionsSchema,
   type CreateInvitationRequest,
   type CreateInvitationResponse,
   type Invitation,
@@ -103,7 +104,10 @@ export async function createInvitation(
         `Ya hay una invitación pendiente para ese correo en "${workspace.name}"; revócala para generar otra`,
       );
     }
-    const permissions = effectivePermissions(grant.role, grant.permissions);
+    const permissions = effectivePermissions(
+      grant.role,
+      grant.permissions && memberPermissionsSchema.parse(grant.permissions),
+    );
     const { selected, missing } = await selectedInSections(
       db,
       grant.workspaceId,

@@ -451,6 +451,27 @@ export function MatrixEditor({
               </Row>
             </tbody>
           </table>
+          <label className="mt-3 flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={permissions.workOnly}
+              disabled={disabled}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  permissions: { ...permissions, workOnly: event.target.checked },
+                })
+              }
+              className="mt-0.5 size-4 accent-primary"
+            />
+            <span>
+              <span className="font-medium">Solo trabajo</span>
+              <span className="block text-xs text-muted-foreground">
+                No ve los proyectos, mantenimientos y actividades personales ni sus tareas, salvo
+                los que creó o donde es Responsable.
+              </span>
+            </span>
+          </label>
         </div>
       )}
 

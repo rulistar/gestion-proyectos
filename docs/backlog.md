@@ -95,29 +95,30 @@
 | 37 | HU-49 | Contenedores de trabajo o personales (ocultar campos del trabajo, N/A al dar de alta) | Proyectos | 2 | 🔴 | 5 |
 | 38 | HU-49b | Personales: campos de trabajo ocultos por omisión; menú oculto en contenedores | Proyectos | 1 | 🔴 | 5 |
 | 39 | HU-52 | Ver el trabajo de otras personas (filtro en Mi trabajo y permiso por persona) | Permisos | 3 | 🔴 | 5 |
-| 40 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
-| 41 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
-| 42 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
-| 43 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
-| 44 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 45 | HU-51 | Fusionar personas duplicadas | Personas | 3 | 🟡 | 6 |
-| 46 | HU-50 | Catálogo de personas compartido entre espacios (diseño por confirmar) | Personas | 5 | 🟡 | 6 |
-| 47 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
-| 48 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
-| 49 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
-| 50 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 51 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 52 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 53 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
-| 54 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
-| 55 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 56 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 57 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 58 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 59 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 60 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 61 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 62 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 40 | HU-53 | Lector solo de trabajo; Miembro ve las tareas de lo que ve | Permisos | 2 | 🔴 | 5 |
+| 41 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
+| 42 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
+| 43 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
+| 44 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 45 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
+| 46 | HU-51 | Fusionar personas duplicadas | Personas | 3 | 🟡 | 6 |
+| 47 | HU-50 | Catálogo de personas compartido entre espacios (diseño por confirmar) | Personas | 5 | 🟡 | 6 |
+| 48 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
+| 49 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
+| 50 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
+| 51 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 52 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 53 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 54 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
+| 55 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 56 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 57 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 58 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 59 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 60 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 61 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 62 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 63 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -550,6 +551,14 @@ _Como Admin, quiero ver el trabajo de todos y decidir de quién puede ver el tra
 - [x] En Miembros → Permisos, la sección **«Puede ver el trabajo de»** elige personas del catálogo (con o sin cuenta). Ej.: Ana (Miembro, «las suyas») con Luis marcado ve las tareas donde Luis es Responsable; no ve las de Pedro.
 - [x] Es **solo lectura**: Ana no modifica ni da de baja las tareas de Luis. Ve también, en solo lectura, los contenedores donde trabaja Luis; dentro de ellos solo las tareas de Luis (y las suyas).
 - [x] La API lo aplica en todas las vistas (Tareas, tableros, proyectos, Mi trabajo); de alguien que no sigue, Mi trabajo da 404.
+
+#### HU-53 · Lector solo de trabajo; Miembro ve las tareas de lo que ve (2 pts)
+
+_Como Admin, quiero que un Lector vea solo lo de trabajo y que un Miembro vea todas las tareas de los contenedores a los que tiene acceso, para dar contexto sin exponer lo personal._ Pedido del PO (2026-10-29).
+
+- [x] La matriz tiene la casilla **«Solo trabajo»**; la plantilla Lector la trae marcada. Ej.: en Monex el Lector ve «Certificación Linux» (Trabajo) con sus tareas; «Gimnasio» (Personal) da 404 y sus tareas no aparecen. Lo que creó o donde es Responsable sí lo ve.
+- [x] La plantilla Miembro ve **todas las tareas de los contenedores que ve**, también donde solo tiene una tarea asignada. Ej.: prueba4 ve todas las tareas de «Certificación Linux», pero solo modifica las que creó o donde es Responsable (las suyas).
+- [x] La migración actualiza a los Lectores y Miembros que tenían la plantilla sin ajustes (también en invitaciones pendientes); los «(ajustado)» se quedan igual.
 
 #### HU-50 · Catálogo de personas compartido entre espacios (5 pts)
 

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { ProjectBehavior } from './project-types.js';
+import type { ProjectScope } from './projects.js';
 import type { MembershipRole } from './workspaces.js';
 
 /**
@@ -38,6 +39,11 @@ export const memberPermissionsSchema = z.object({
     ON_DEMAND: sectionPermissionsSchema,
   }),
   tasks: taskPermissionsSchema,
+  /**
+   * Solo trabajo (HU-53): no ve los contenedores Personales (HU-49) ni sus tareas, salvo lo suyo.
+   * Las matrices guardadas antes de HU-53 no lo traen: se leen como `false`
+   */
+  workOnly: z.boolean().default(false),
 });
 export type MemberPermissions = z.infer<typeof memberPermissionsSchema>;
 
@@ -46,21 +52,25 @@ function allSections(section: SectionPermissions): MemberPermissions['sections']
 }
 
 /**
- * Plantillas (ADR-0006 §2). Miembro es el valor por defecto del PO: ve sus tareas, crea tareas
- * y modifica las suyas, pero no lo que hizo otro usuario.
+ * Plantillas (ADR-0006 §2). Miembro es el valor por defecto del PO: ve las tareas de los
+ * contenedores a los que tiene acceso, crea tareas y modifica las suyas, pero no lo que hizo otro
+ * usuario (HU-53). Lector ve todo lo de trabajo, sin modificar nada (HU-53).
  */
 export const PERMISSION_TEMPLATES: Record<MembershipRole, MemberPermissions> = {
   ADMIN: {
     sections: allSections({ view: 'ALL', create: true, update: 'VISIBLE', remove: 'EDITABLE' }),
     tasks: { view: 'VISIBLE', create: true, update: 'VISIBLE', remove: 'EDITABLE' },
+    workOnly: false,
   },
   MEMBER: {
     sections: allSections({ view: 'OWN', create: false, update: 'OWN', remove: 'NONE' }),
-    tasks: { view: 'MINE', create: true, update: 'MINE', remove: 'NONE' },
+    tasks: { view: 'VISIBLE', create: true, update: 'MINE', remove: 'NONE' },
+    workOnly: false,
   },
   VIEWER: {
     sections: allSections({ view: 'ALL', create: false, update: 'NONE', remove: 'NONE' }),
     tasks: { view: 'VISIBLE', create: false, update: 'NONE', remove: 'NONE' },
+    workOnly: true,
   },
 };
 
@@ -82,6 +92,7 @@ export interface ContainerFacts {
   id: string;
   createdById: string | null;
   behavior: ProjectBehavior;
+  scope: ProjectScope;
 }
 
 /** Lo que hace falta de una tarea para decidir */
@@ -89,15 +100,22 @@ export interface TaskFacts {
   createdById: string | null;
   responsiblePersonId: string | null;
   project: ContainerFacts;
+  /** ¿El contenedor tiene una tarea mía? Entonces lo ve, en solo lectura (HU-53) */
+  inMyContainer?: boolean;
 }
 
 const isAdmin = (access: MemberAccess) => access.role === 'ADMIN';
+
+/** ¿Es Personal y la persona solo ve lo de trabajo? (HU-53) */
+const hiddenScope = (access: MemberAccess, project: ContainerFacts) =>
+  access.permissions.workOnly && project.scope === 'PERSONAL';
 
 /** ¿Lo ve por las reglas de su sección? (sin contar el acceso de solo lectura por tener una tarea) */
 export function sectionCanView(access: MemberAccess, project: ContainerFacts): boolean {
   if (isAdmin(access)) return true;
   // Lo que uno creó siempre lo ve
   if (project.createdById === access.userId) return true;
+  if (hiddenScope(access, project)) return false;
   const { view } = access.permissions.sections[project.behavior];
   if (view === 'ALL') return true;
   return view === 'SELECTED' && access.selectedProjectIds.includes(project.id);
@@ -140,14 +158,25 @@ export function isWatchedTask(
   );
 }
 
-/** La ve por su matriz: es suya o, si su permiso lo dice, está en un contenedor que ve */
+/**
+ * La ve por su matriz: es suya o, si su permiso lo dice, está en un contenedor que ve, también
+ * si lo ve solo por tener una tarea ahí (HU-53; con «Solo trabajo», no si es Personal)
+ */
 function matrixCanViewTask(access: MemberAccess, task: TaskFacts): boolean {
   if (isMyTask(access, task)) return true;
-  return access.permissions.tasks.view === 'VISIBLE' && sectionCanView(access, task.project);
+  if (access.permissions.tasks.view !== 'VISIBLE') return false;
+  return (
+    sectionCanView(access, task.project) ||
+    (task.inMyContainer === true && !hiddenScope(access, task.project))
+  );
 }
 
 export function canViewTask(access: MemberAccess, task: TaskFacts): boolean {
-  return isAdmin(access) || matrixCanViewTask(access, task) || isWatchedTask(access, task);
+  return (
+    isAdmin(access) ||
+    matrixCanViewTask(access, task) ||
+    (isWatchedTask(access, task) && !hiddenScope(access, task.project))
+  );
 }
 
 /** Ver el trabajo de otra persona (HU-52) no da permiso de modificarlo */
@@ -187,7 +216,9 @@ export function matchesTemplate(role: MembershipRole, permissions: MemberPermiss
   return (
     (['WITH_END', 'ONGOING', 'ON_DEMAND'] as const).every((behavior) =>
       same(permissions.sections[behavior], template.sections[behavior]),
-    ) && same(permissions.tasks, template.tasks)
+    ) &&
+    same(permissions.tasks, template.tasks) &&
+    permissions.workOnly === template.workOnly
   );
 }
 

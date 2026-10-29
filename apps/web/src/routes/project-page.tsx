@@ -213,8 +213,8 @@ export function ProjectPage() {
               projectId={projectId}
               tasks={tasks}
               people={people}
-              canEdit={(task) => canUpdateTask(access, taskFacts(task, facts))}
-              canDelete={(task) => canRemoveTask(access, taskFacts(task, facts))}
+              canEdit={(task) => canUpdateTask(access, taskFacts(task, facts, hasMyTask))}
+              canDelete={(task) => canRemoveTask(access, taskFacts(task, facts, hasMyTask))}
               taskTypeOptions={taskTypeOptions}
             />
           ) : (

@@ -16,6 +16,7 @@ export function copyPermissions(permissions: MemberPermissions): MemberPermissio
       ON_DEMAND: { ...permissions.sections.ON_DEMAND },
     },
     tasks: { ...permissions.tasks },
+    workOnly: permissions.workOnly,
   };
 }
 
