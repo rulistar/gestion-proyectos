@@ -8,7 +8,7 @@ import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
-import { PROJECT_PRIORITIES, PROJECT_STATUSES } from '@/lib/projects';
+import { PROJECT_PRIORITIES, PROJECT_SCOPES, PROJECT_STATUSES } from '@/lib/projects';
 
 /** Valores distintos de un campo de texto, para ofrecerlos en su filtro (HU-09) */
 function distinct(projects: Project[], pick: (project: Project) => string | null) {
@@ -72,6 +72,19 @@ export function ProjectFiltersBar({
           ))}
         </NativeSelect>
       )}
+      <NativeSelect
+        aria-label="Ámbito"
+        className="h-9 w-40"
+        value={filters.scope ?? ''}
+        onChange={(event) => set('scope', event.target.value as ProjectFilters['scope'] & string)}
+      >
+        <option value="">Trabajo y personal</option>
+        {Object.entries(PROJECT_SCOPES).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </NativeSelect>
       <NativeSelect
         aria-label="Estado"
         className="h-9 w-40"

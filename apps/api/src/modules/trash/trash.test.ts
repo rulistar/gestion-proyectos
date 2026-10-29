@@ -32,6 +32,7 @@ const emptyProject = {
   projectManagerId: null,
   consultingManagerId: null,
   businessPartnerId: null,
+  scope: 'WORK',
   area: null,
   classification: null,
   status: 'NOT_STARTED',

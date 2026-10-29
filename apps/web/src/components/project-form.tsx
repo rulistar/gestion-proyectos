@@ -2,10 +2,12 @@ import {
   FOLIO_PREFIXES,
   folioPeriod,
   formatFolio,
+  NOT_APPLICABLE,
   projectInputSchema,
   REPEATABLE_FOLIO,
   type Project,
   type ProjectInput,
+  type ProjectScope,
   type Person,
   type ProjectType,
   type TaskType,
@@ -15,14 +17,21 @@ import { useState, type ReactNode } from 'react';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { QuickAddPerson } from '@/components/quick-add-person';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { todayIso } from '@/lib/dates';
 import { selectablePeople } from '@/lib/people';
-import { PROJECT_PRIORITIES, PROJECT_STATUSES } from '@/lib/projects';
+import {
+  PROJECT_PRIORITIES,
+  PROJECT_SCOPES,
+  PROJECT_STATUSES,
+  useWorkFields,
+} from '@/lib/projects';
 import { useSchemaForm } from '@/lib/use-schema-form';
+import { cn } from '@/lib/utils';
 
 const FIELDS = [
   'typeId',
@@ -34,6 +43,7 @@ const FIELDS = [
   'projectManagerId',
   'consultingManagerId',
   'businessPartnerId',
+  'scope',
   'area',
   'classification',
   'status',
@@ -46,13 +56,16 @@ const FIELDS = [
   'taskTypeIds',
 ] as const;
 
-/** Personas del proyecto (HU-36): se eligen del catálogo; pueden no tener cuenta */
+/**
+ * Personas del proyecto (HU-36): se eligen del catálogo; pueden no tener cuenta. `work` = solo
+ * aplica al trabajo: en un personal muestra "N/A" y se puede ocultar (HU-49)
+ */
 const PEOPLE = [
-  { field: 'requesterId', key: 'requester', label: 'Solicitante' },
-  { field: 'assignedToId', key: 'assignedTo', label: 'Asignado a' },
-  { field: 'projectManagerId', key: 'projectManager', label: 'Project manager' },
-  { field: 'consultingManagerId', key: 'consultingManager', label: 'Gte. Consultoría' },
-  { field: 'businessPartnerId', key: 'businessPartner', label: 'Business partner' },
+  { field: 'requesterId', key: 'requester', label: 'Solicitante', work: false },
+  { field: 'assignedToId', key: 'assignedTo', label: 'Asignado a', work: false },
+  { field: 'projectManagerId', key: 'projectManager', label: 'Project manager', work: true },
+  { field: 'consultingManagerId', key: 'consultingManager', label: 'Gte. Consultoría', work: true },
+  { field: 'businessPartnerId', key: 'businessPartner', label: 'Business partner', work: true },
 ] as const;
 
 function SectionTitle({ children }: { children: ReactNode }) {
@@ -165,25 +178,51 @@ export function ProjectForm({
   // Ejemplo del folio que recibirá si se deja vacío (HU-38): prefijo de la sección y mes actual
   const behavior = types[0]?.behavior ?? 'WITH_END';
   const folioExample = formatFolio(FOLIO_PREFIXES[behavior], folioPeriod(todayIso()), 1);
+  // Trabajo o personal (HU-49): en un personal, los campos del trabajo se pueden ocultar. Se
+  // ocultan con CSS (no se quitan) para que al guardar conserven su valor
+  const [scope, setScope] = useState<ProjectScope>(project?.scope ?? 'WORK');
+  const workFields = useWorkFields();
+  const personal = scope === 'PERSONAL';
+  const hideWork = personal && !workFields.open;
+  // Al dar de alta un personal, el sprint empieza en "N/A"
+  const sprintDefault = (value: string | null | undefined) =>
+    project ? (value ?? '') : personal ? NOT_APPLICABLE : '';
 
   return (
     <form onSubmit={form.onSubmit} noValidate>
       <fieldset disabled={readOnly || isPending} className="grid gap-4 sm:grid-cols-2">
-        <div className="grid gap-2">
-          <Label htmlFor={form.idOf('typeId')}>Tipo</Label>
-          <NativeSelect
-            {...form.field('typeId')}
-            value={typeId}
-            onChange={(event) => setTypeId(event.target.value)}
-          >
-            {types.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.name}
-                {type.archived ? ' (archivado)' : ''}
-              </option>
-            ))}
-          </NativeSelect>
-          <FieldError {...form.errorProps('typeId')} />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2">
+            <Label htmlFor={form.idOf('typeId')}>Tipo</Label>
+            <NativeSelect
+              {...form.field('typeId')}
+              value={typeId}
+              onChange={(event) => setTypeId(event.target.value)}
+            >
+              {types.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                  {type.archived ? ' (archivado)' : ''}
+                </option>
+              ))}
+            </NativeSelect>
+            <FieldError {...form.errorProps('typeId')} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor={form.idOf('scope')}>Ámbito</Label>
+            <NativeSelect
+              {...form.field('scope')}
+              value={scope}
+              onChange={(event) => setScope(event.target.value as ProjectScope)}
+            >
+              {Object.entries(PROJECT_SCOPES).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </NativeSelect>
+            <FieldError {...form.errorProps('scope')} />
+          </div>
         </div>
         <div className="grid gap-2">
           <Label htmlFor={form.idOf('folio')}>Folio</Label>
@@ -219,13 +258,21 @@ export function ProjectForm({
         </div>
 
         <SectionTitle>Personas</SectionTitle>
-        {PEOPLE.map(({ field, key, label }) => {
+        {personal && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground sm:col-span-2">
+            Es personal: Project manager, Gte. Consultoría, Business partner y el sprint no aplican.
+            <Button type="button" size="sm" variant="outline" onClick={workFields.toggle}>
+              {workFields.open ? 'Ocultar campos de trabajo' : 'Mostrar campos de trabajo'}
+            </Button>
+          </div>
+        )}
+        {PEOPLE.map(({ field, key, label, work }) => {
           const current = project?.[key] ?? null;
           return (
-            <div key={field} className="grid gap-2">
+            <div key={field} className={cn('grid gap-2', work && hideWork && 'hidden')}>
               <Label htmlFor={form.idOf(field)}>{label}</Label>
               <NativeSelect {...form.field(field)} defaultValue={current?.id ?? ''}>
-                <option value="">—</option>
+                <option value="">{work && personal ? NOT_APPLICABLE : '—'}</option>
                 {selectablePeople(people, current?.id).map((person) => (
                   <option key={person.id} value={person.id}>
                     {person.name}
@@ -251,22 +298,26 @@ export function ProjectForm({
           error={form.errorProps('taskTypeIds')}
         />
 
-        <SectionTitle>Sprint</SectionTitle>
-        <div className="grid gap-2">
+        <div className={cn('contents', hideWork && 'hidden')}>
+          <SectionTitle>Sprint</SectionTitle>
+        </div>
+        <div className={cn('grid gap-2', hideWork && 'hidden')}>
           <Label htmlFor={form.idOf('sprint')}>Sprint</Label>
           <Input
             {...form.field('sprint')}
-            defaultValue={project?.sprint ?? ''}
+            key={`sprint-${scope}`}
+            defaultValue={sprintDefault(project?.sprint)}
             maxLength={60}
             placeholder="Por ejemplo: Sprint 4"
           />
           <FieldError {...form.errorProps('sprint')} />
         </div>
-        <div className="grid gap-2 sm:col-span-2">
+        <div className={cn('grid gap-2 sm:col-span-2', hideWork && 'hidden')}>
           <Label htmlFor={form.idOf('sprintActivities')}>Actividades del sprint</Label>
           <Textarea
             {...form.field('sprintActivities')}
-            defaultValue={project?.sprintActivities ?? ''}
+            key={`sprintActivities-${scope}`}
+            defaultValue={sprintDefault(project?.sprintActivities)}
             maxLength={4000}
             placeholder="Qué se hará en este sprint"
           />
