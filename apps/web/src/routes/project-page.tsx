@@ -6,6 +6,7 @@ import {
   canUpdateTask,
   daysRemainingLabel,
   isMyTask,
+  NOT_APPLICABLE,
   roleHasPermission,
   type Person,
   type Project,
@@ -39,9 +40,11 @@ import { containerFacts, taskFacts, useAccess } from '@/lib/access';
 import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
 import {
   PROJECT_PRIORITIES,
+  PROJECT_SCOPES,
   projectQueryOptions,
   useDeleteProject,
   useUpdateProject,
+  useWorkFields,
 } from '@/lib/projects';
 import { projectTypesQueryOptions, SECTIONS, selectableTypes } from '@/lib/project-types';
 import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
@@ -86,6 +89,10 @@ export function ProjectPage() {
   const canUpdate = canUpdateContainer(access, facts);
   // Si lo veo solo por tener una tarea en él, también puedo agregarle tareas
   const hasMyTask = tasks.some((task) => isMyTask(access, taskFacts(task, facts)));
+  // Personal (HU-49): los campos del trabajo se pueden ocultar
+  const personal = project.scope === 'PERSONAL';
+  const workFields = useWorkFields();
+  const showSprint = !personal || workFields.open;
 
   return (
     <div className="grid gap-3">
@@ -107,11 +114,21 @@ export function ProjectPage() {
           <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
             {project.type.name}
           </span>
+          {personal && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+              {PROJECT_SCOPES.PERSONAL}
+            </span>
+          )}
           <ProjectStatusBadge status={project.status} />
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
             Prioridad {PROJECT_PRIORITIES[project.priority].toLowerCase()}
           </span>
           <div className="ml-auto flex flex-wrap gap-2">
+            {personal && (
+              <Button variant="ghost" size="sm" onClick={workFields.toggle}>
+                {workFields.open ? 'Ocultar campos de trabajo' : 'Mostrar campos de trabajo'}
+              </Button>
+            )}
             {roleHasPermission(workspace.role, 'project.move') && (
               <MoveProjectDialog workspaceId={workspaceId} project={project} />
             )}
@@ -131,14 +148,14 @@ export function ProjectPage() {
           </div>
         </div>
         {/* Descripción y sprint lado a lado en pantallas anchas (HU-41) */}
-        {(project.description || project.sprint || project.sprintActivities) && (
+        {(project.description || (showSprint && (project.sprint || project.sprintActivities))) && (
           <div className="grid items-start gap-2 lg:grid-cols-2">
             {project.description && (
               <p className="text-sm whitespace-pre-line text-muted-foreground">
                 {project.description}
               </p>
             )}
-            {(project.sprint || project.sprintActivities) && (
+            {showSprint && (project.sprint || project.sprintActivities) && (
               <div className="rounded-lg border bg-card p-3 text-sm">
                 <p className="font-semibold">{project.sprint ?? 'Sprint'}</p>
                 {project.sprintActivities && (
@@ -199,7 +216,7 @@ export function ProjectPage() {
               taskTypeOptions={taskTypeOptions}
             />
           ) : (
-            <ProjectDetails project={project} />
+            <ProjectDetails project={project} showWork={showSprint} />
           )}
         </div>
       </div>
@@ -345,22 +362,31 @@ function deviationLabel(endDate: string | null, finishedAt: string | null) {
 }
 
 /** Pestaña "Datos del proyecto": todo lo capturado, solo lectura (se edita en la ventana) */
-function ProjectDetails({ project }: { project: Project }) {
+function ProjectDetails({ project, showWork }: { project: Project; showWork: boolean }) {
+  // En un personal (HU-49), las personas del trabajo vacías dicen "N/A" y se pueden ocultar
+  const personal = project.scope === 'PERSONAL';
+  const workPerson = (person: { name: string } | null) =>
+    person?.name ?? (personal ? NOT_APPLICABLE : undefined);
   const sections = [
     {
       title: 'Personas',
       rows: [
         ['Solicitante', project.requester?.name],
         ['Asignado a', project.assignedTo?.name],
-        ['Project manager', project.projectManager?.name],
-        ['Gte. Consultoría', project.consultingManager?.name],
-        ['Business partner', project.businessPartner?.name],
+        ...(showWork
+          ? [
+              ['Project manager', workPerson(project.projectManager)],
+              ['Gte. Consultoría', workPerson(project.consultingManager)],
+              ['Business partner', workPerson(project.businessPartner)],
+            ]
+          : []),
       ],
     },
     {
       title: 'Planeación',
       rows: [
         ['Tipo', project.type.name],
+        ['Ámbito', PROJECT_SCOPES[project.scope]],
         ['Folio', project.folio],
         ['Área', project.area],
         ['Clasificación', project.classification],
@@ -397,14 +423,16 @@ function ProjectDetails({ project }: { project: Project }) {
           </CardContent>
         </Card>
       ))}
-      <Card className="lg:col-span-3">
-        <CardContent className="grid gap-2">
-          <h2 className="font-semibold">{project.sprint ?? 'Sprint'}</h2>
-          <p className="text-sm whitespace-pre-line text-muted-foreground">
-            {project.sprintActivities ?? 'Sin actividades del sprint.'}
-          </p>
-        </CardContent>
-      </Card>
+      {showWork && (
+        <Card className="lg:col-span-3">
+          <CardContent className="grid gap-2">
+            <h2 className="font-semibold">{project.sprint ?? 'Sprint'}</h2>
+            <p className="text-sm whitespace-pre-line text-muted-foreground">
+              {project.sprintActivities ?? 'Sin actividades del sprint.'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
       <Card className="lg:col-span-3">
         <CardContent className="grid gap-2">
           <h2 className="font-semibold">Observaciones</h2>

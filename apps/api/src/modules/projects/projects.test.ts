@@ -100,6 +100,7 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
       projectManager: null,
       consultingManager: null,
       businessPartner: null,
+      scope: 'WORK',
       area: 'Estudio',
       classification: null,
       status: 'NOT_STARTED',
@@ -122,6 +123,28 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
         doneThisMonth: 0,
       },
     });
+  });
+
+  it('un personal se da de alta con "N/A" en el sprint y sin personas del trabajo (HU-49)', async () => {
+    const { ana, ws } = await setup();
+
+    const project = await createOk(ana.cookies, ws.id, { name: 'Mudanza', scope: 'PERSONAL' });
+
+    expect(project).toMatchObject({
+      scope: 'PERSONAL',
+      sprint: 'N/A',
+      sprintActivities: 'N/A',
+      projectManager: null,
+      consultingManager: null,
+      businessPartner: null,
+    });
+    // Al editar ya no se rellena: si se borra el sprint, queda vacío
+    const response = await update(ana.cookies, ws.id, project.id, {
+      name: 'Mudanza',
+      scope: 'PERSONAL',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(projectSchema.parse(response.json())).toMatchObject({ scope: 'PERSONAL', sprint: null });
   });
 
   it('registra quién lo creó (RNF-01)', async () => {

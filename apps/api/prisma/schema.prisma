@@ -163,6 +163,14 @@ enum ProjectStatus {
   @@map("project_status")
 }
 
+/// De trabajo o personal (HU-49): en los personales sobran PM, Gte. consultoría, BP y sprint
+enum ProjectScope {
+  WORK
+  PERSONAL
+
+  @@map("project_scope")
+}
+
 enum ProjectPriority {
   HIGH
   MEDIUM
@@ -409,6 +417,7 @@ model Project {
   consultingManager   Person?         @relation("ProjectConsultingManager", fields: [consultingManagerId], references: [id], onDelete: Restrict)
   businessPartnerId   String?         @map("business_partner_id") @db.Uuid
   businessPartner     Person?         @relation("ProjectBusinessPartner", fields: [businessPartnerId], references: [id], onDelete: Restrict)
+  scope               ProjectScope    @default(WORK)
   /// Texto libre (antes "Plataforma"): Personal, Trabajo, Estudio...
   area                String?
   classification      String?

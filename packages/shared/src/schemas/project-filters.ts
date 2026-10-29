@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { projectPrioritySchema, projectStatusSchema, type Project } from './projects.js';
+import {
+  projectPrioritySchema,
+  projectScopeSchema,
+  projectStatusSchema,
+  type Project,
+} from './projects.js';
 
 /** Columnas por las que se puede ordenar la lista de contenedores (HU-09) */
 export const projectSortKeySchema = z.enum([
@@ -26,6 +31,8 @@ export type ProjectSortKey = z.infer<typeof projectSortKeySchema>;
 export const projectFiltersSchema = z.object({
   q: z.string().trim().max(100).optional().catch(undefined),
   typeId: z.uuid().optional().catch(undefined),
+  /** De trabajo o personales (HU-49) */
+  scope: projectScopeSchema.optional().catch(undefined),
   area: z.string().trim().max(80).optional().catch(undefined),
   classification: z.string().trim().max(80).optional().catch(undefined),
   status: projectStatusSchema.optional().catch(undefined),
@@ -61,6 +68,7 @@ export function filterProjects(projects: readonly Project[], filters: ProjectFil
   return projects.filter((project) => {
     if (!filters.showClosed && !filters.status && CLOSED.has(project.status)) return false;
     if (filters.typeId && project.type.id !== filters.typeId) return false;
+    if (filters.scope && project.scope !== filters.scope) return false;
     if (filters.status && project.status !== filters.status) return false;
     if (filters.priority && project.priority !== filters.priority) return false;
     if (filters.area && project.area !== filters.area) return false;

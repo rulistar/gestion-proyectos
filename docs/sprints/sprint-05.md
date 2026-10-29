@@ -53,7 +53,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 
 - **HU-16 se une a HU-17** (la opción "Estos…" de la matriz).
 - **Pasan al Sprint 6:** Gantt (HU-27, 8 pts) y pestaña Lista (HU-26, 2 pts).
-- Con las adiciones (HU-40 a HU-48: 13 pts), el compromiso queda en **45 puntos**.
+- Con las adiciones (HU-40 a HU-49: 15 pts), el compromiso queda en **47 puntos**.
 
 **Lo que el PO pida a mitad del sprint** se anota aquí el mismo día, con sus puntos:
 
@@ -68,8 +68,9 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-5).
 | 2026-10-28 | HU-46 | Actividades: fecha fin; Abiertas solo con el menú oculto | 1 |
 | 2026-10-28 | HU-47 | Origen de la tarea (catálogo, detalle y filtro) | 3 |
 | 2026-10-28 | HU-48 | Mi trabajo: ocultar el panel lateral; tareas en un renglón | 1 |
+| 2026-10-28 | HU-49 | Contenedores de trabajo o personales | 2 |
 
-El compromiso queda en **47 puntos** (45 después de la replaneación de abajo).
+El compromiso queda en **49 puntos** (47 después de la replaneación de abajo).
 
 ## Guion de demostración (se arma al planificar, acuerdo del Sprint 3)
 

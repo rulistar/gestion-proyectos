@@ -19,6 +19,13 @@ export const projectStatusSchema = z.enum([
 ]);
 export type ProjectStatus = z.infer<typeof projectStatusSchema>;
 
+/** De trabajo o personal (HU-49) */
+export const projectScopeSchema = z.enum(['WORK', 'PERSONAL']);
+export type ProjectScope = z.infer<typeof projectScopeSchema>;
+
+/** Lo que se pone en los campos que no aplican a un contenedor personal (HU-49) */
+export const NOT_APPLICABLE = 'N/A';
+
 export const projectPrioritySchema = z.enum(['HIGH', 'MEDIUM', 'LOW']);
 export type ProjectPriority = z.infer<typeof projectPrioritySchema>;
 
@@ -37,6 +44,8 @@ export const projectInputSchema = z
     projectManagerId: optionalId,
     consultingManagerId: optionalId,
     businessPartnerId: optionalId,
+    /** De trabajo o personal (HU-49) */
+    scope: projectScopeSchema.default('WORK'),
     area: optionalText(80),
     classification: optionalText(80),
     status: projectStatusSchema.default('NOT_STARTED'),
@@ -77,6 +86,7 @@ export const projectSchema = z.object({
   projectManager: personRefSchema.nullable(),
   consultingManager: personRefSchema.nullable(),
   businessPartner: personRefSchema.nullable(),
+  scope: projectScopeSchema,
   area: z.string().nullable(),
   classification: z.string().nullable(),
   status: projectStatusSchema,
@@ -94,6 +104,21 @@ export const projectSchema = z.object({
   progress: projectProgressSchema,
 });
 export type Project = z.infer<typeof projectSchema>;
+
+/**
+ * Al dar de alta un contenedor personal (HU-49), el sprint y sus actividades vacíos quedan en
+ * "N/A". Las personas (PM, Gte. consultoría, BP) se quedan sin nadie: la pantalla muestra "N/A".
+ */
+export function withPersonalDefaults<
+  T extends Pick<ProjectInput, 'scope' | 'sprint' | 'sprintActivities'>,
+>(input: T): T {
+  if (input.scope !== 'PERSONAL') return input;
+  return {
+    ...input,
+    sprint: input.sprint ?? NOT_APPLICABLE,
+    sprintActivities: input.sprintActivities ?? NOT_APPLICABLE,
+  };
+}
 
 /** Respuesta de GET /workspaces/:workspaceId/projects */
 export const projectListSchema = z.array(projectSchema);

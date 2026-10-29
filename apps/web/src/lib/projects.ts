@@ -3,11 +3,13 @@ import {
   projectSchema,
   type ProjectInput,
   type ProjectPriority,
+  type ProjectScope,
   type ProjectStatus,
 } from '@gestion/shared';
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
 import { monthStartIso, todayIso } from './dates';
+import { useSavedToggle } from './use-menu-open';
 
 /** Etiquetas y colores del prototipo "Gestor de cursos" (ADR-0002 §1.1) */
 export const PROJECT_STATUSES: Record<ProjectStatus, { label: string; color: string }> = {
@@ -23,6 +25,20 @@ export const PROJECT_PRIORITIES: Record<ProjectPriority, string> = {
   MEDIUM: 'Media',
   LOW: 'Baja',
 };
+
+/** De trabajo o personal (HU-49) */
+export const PROJECT_SCOPES: Record<ProjectScope, string> = {
+  WORK: 'Trabajo',
+  PERSONAL: 'Personal',
+};
+
+/**
+ * Mostrar u ocultar, en los contenedores personales, los campos que solo usa el trabajo: PM,
+ * Gte. consultoría, BP, sprint y sus actividades (HU-49). Cada navegador lo recuerda.
+ */
+export function useWorkFields() {
+  return useSavedToggle('campos-trabajo-visibles');
+}
 
 const projectsKey = (workspaceId: string) => ['workspaces', workspaceId, 'projects'];
 

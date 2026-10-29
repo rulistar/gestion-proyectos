@@ -1,6 +1,7 @@
 import {
   countTaskActivity,
   summarizeTasks,
+  withPersonalDefaults,
   type Project,
   type ProjectInput,
   type ProjectStatus,
@@ -134,6 +135,7 @@ const projectSelect = {
   projectManager: personSelect,
   consultingManager: personSelect,
   businessPartner: personSelect,
+  scope: true,
   area: true,
   classification: true,
   status: true,
@@ -305,7 +307,8 @@ export async function createProject(
     return tx.project.create({
       data: {
         workspaceId,
-        ...toData({ ...input, folio }, typeId),
+        // Un personal se da de alta con "N/A" en el sprint (HU-49)
+        ...toData({ ...withPersonalDefaults(input), folio }, typeId),
         ...realDatesFor(input.status, null),
         ...auditCreate(actorId),
         allowedTaskTypes: {

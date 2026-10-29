@@ -39,6 +39,7 @@ function project(overrides: Partial<Project>): Project {
     projectManager: null,
     consultingManager: null,
     businessPartner: null,
+    scope: 'WORK',
     area: null,
     classification: null,
     status: 'IN_PROGRESS',
@@ -97,6 +98,12 @@ describe('filterProjects (HU-09)', () => {
     expect(filterProjects(all, { area: 'Ventas' })).toEqual([portal]);
     expect(filterProjects(all, { priority: 'LOW' })).toEqual([erp]);
     expect(filterProjects(all, { endBy: '2026-11-30' })).toEqual([portal]);
+  });
+
+  it('por ámbito (HU-49): "Personal" encuentra los personales y no los de trabajo', () => {
+    const mudanza = project({ name: 'Mudanza', scope: 'PERSONAL' });
+    expect(filterProjects([...all, mudanza], { scope: 'PERSONAL' })).toEqual([mudanza]);
+    expect(filterProjects([...all, mudanza], { scope: 'WORK' })).toEqual([portal, erp]);
   });
 });
 
