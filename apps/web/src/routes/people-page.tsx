@@ -8,7 +8,7 @@ import {
 } from '@gestion/shared';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import { Archive, ArchiveRestore, Check, Pencil, Trash2, X } from 'lucide-react';
+import { Archive, ArchiveRestore, Check, Merge, Pencil, Trash2, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
@@ -34,6 +34,7 @@ import {
   personUsageQueryOptions,
   useCreatePerson,
   useDeletePerson,
+  useMergePerson,
   useUpdatePerson,
 } from '@/lib/people';
 import { useSchemaForm } from '@/lib/use-schema-form';
@@ -106,6 +107,7 @@ export function PeoplePage() {
                 key={person.id}
                 workspaceId={workspaceId}
                 person={person}
+                people={active}
                 members={members.filter(
                   (m) => m.userId === person.userId || !linkedUsers.has(m.userId),
                 )}
@@ -123,10 +125,13 @@ export function PeoplePage() {
 function PersonRow({
   workspaceId,
   person,
+  people,
   members,
 }: {
   workspaceId: string;
   person: Person;
+  /** Personas activas del catálogo, para fusionar (HU-51) */
+  people: Person[];
   /** Miembros que se le pueden vincular (sin persona, o el que ya tiene) */
   members: Member[];
 }) {
@@ -260,9 +265,109 @@ function PersonRow({
           {person.archived ? <ArchiveRestore aria-hidden /> : <Archive aria-hidden />}
           {person.archived ? 'Reactivar' : 'Archivar'}
         </Button>
+        <MergePersonDialog workspaceId={workspaceId} person={person} people={people} />
         {person.archived && <DeletePersonButton workspaceId={workspaceId} person={person} />}
       </div>
     </li>
+  );
+}
+
+/**
+ * Fusionar una persona duplicada en otra (HU-51). Ej.: «Raúl Paredes» (sin cuenta) en «Rul»
+ * (con cuenta): sus tareas y roles pasan a «Rul» y «Raúl Paredes» se borra
+ */
+function MergePersonDialog({
+  workspaceId,
+  person,
+  people,
+}: {
+  workspaceId: string;
+  person: Person;
+  people: Person[];
+}) {
+  const merge = useMergePerson(workspaceId);
+  const [open, setOpen] = useState(false);
+  const [intoId, setIntoId] = useState('');
+  // Dos personas con cuenta son usuarios distintos: no se ofrecen
+  const options = people.filter(
+    (other) => other.id !== person.id && !(person.userId && other.userId),
+  );
+  const into = options.find((other) => other.id === intoId);
+  const moves = [`${person.taskCount} tarea(s)`, `${person.projectCount} proyecto(s)`].join(' y ');
+
+  function handleMerge() {
+    if (!into) return;
+    merge.mutate(
+      { personId: person.id, intoId: into.id },
+      {
+        onSuccess: (result) => {
+          toast.success(
+            `"${person.name}" se fusionó en "${into.name}": ${result.tasks} tarea(s) y ${result.projects} proyecto(s)`,
+          );
+          setOpen(false);
+        },
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        setIntoId('');
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" title="Es la misma que otra persona del catálogo">
+          <Merge aria-hidden />
+          Fusionar
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Fusionar a {person.name} con…</DialogTitle>
+          <DialogDescription>
+            Elige la persona que se queda. Recibe {moves} de {person.name} (papelera incluida)
+            {person.userId ? ' y su cuenta' : ''}; después {person.name} se borra del catálogo. No
+            se puede deshacer.
+          </DialogDescription>
+        </DialogHeader>
+        {options.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No hay otra persona activa con la que se pueda fusionar.
+          </p>
+        ) : (
+          <label className="grid gap-2 text-sm font-medium">
+            Se queda
+            <NativeSelect value={intoId} onChange={(event) => setIntoId(event.target.value)}>
+              <option value="">Elige una persona…</option>
+              {options.map((other) => (
+                <option key={other.id} value={other.id}>
+                  {other.name}
+                  {other.userName ? ` (${other.userName})` : ''}
+                </option>
+              ))}
+            </NativeSelect>
+          </label>
+        )}
+        {into && (
+          <p className="rounded-md bg-muted p-3 text-sm">
+            Se pasan {moves} de <strong>{person.name}</strong> a <strong>{into.name}</strong>, y{' '}
+            {person.name} se borra.
+          </p>
+        )}
+        <div className="flex justify-end gap-2">
+          <DialogClose asChild>
+            <Button variant="ghost">Cancelar</Button>
+          </DialogClose>
+          <Button variant="destructive" disabled={!into || merge.isPending} onClick={handleMerge}>
+            Fusionar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

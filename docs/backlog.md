@@ -96,12 +96,12 @@
 | 38 | HU-49b | Personales: campos de trabajo ocultos por omisión; menú oculto en contenedores | Proyectos | 1 | 🔴 | 5 |
 | 39 | HU-52 | Ver el trabajo de otras personas (filtro en Mi trabajo y permiso por persona) | Permisos | 3 | 🔴 | 5 |
 | 40 | HU-53 | Lector solo de trabajo; Miembro ve las tareas de lo que ve | Permisos | 2 | 🔴 | 5 |
-| 41 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
-| 42 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
-| 43 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
-| 44 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
-| 45 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 46 | HU-51 | Fusionar personas duplicadas | Personas | 3 | 🟡 | 6 |
+| 41 | HU-51 | Fusionar personas duplicadas | Personas | 3 | 🔴 | 5 |
+| 42 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
+| 43 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
+| 44 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
+| 45 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 46 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
 | 47 | HU-50 | Catálogo de personas compartido entre espacios (diseño por confirmar) | Personas | 5 | 🟡 | 6 |
 | 48 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
 | 49 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
@@ -572,9 +572,10 @@ _Como Admin, quiero que una persona dada de alta en un espacio aparezca en otros
 
 _Como Admin, quiero fusionar dos personas que son la misma, para que sus tareas y proyectos queden en una sola y se vean en Mi trabajo._ Pedido del PO (2026-10-29), tras encontrar «Rul» (con cuenta) y «Raúl Paredes» (sin cuenta) en Monex.
 
-- [ ] En Personas, «Fusionar con…» pasa a la persona elegida todas las tareas (también las de la papelera) y los roles en proyectos (Solicitante, Asignado, PM, Gte. Consultoría, BP) de la duplicada, y la borra.
-- [ ] Si las dos tienen cuenta vinculada, no se permite (son usuarios distintos).
-- [ ] Solo el Admin; se pide confirmación diciendo cuántas tareas y proyectos se pasan.
+- [x] En Personas, «Fusionar» pasa a la persona elegida todas las tareas (también las de la papelera) y los roles en proyectos (Solicitante, Asignado, PM, Gte. Consultoría, BP) de la duplicada, y la borra. Ej.: «Raúl Paredes» (sin cuenta) fusionada en «Rul» (con cuenta): sus 10 tareas aparecen en Mi trabajo de adminrul.
+- [x] Si la duplicada tiene cuenta y la otra no, la cuenta pasa a la que se queda. Si las dos tienen cuenta, no se permite (son usuarios distintos); tampoco con una archivada.
+- [x] Quien podía ver el trabajo de la duplicada (HU-52) ve el de la que se queda.
+- [x] Solo el Admin; se pide confirmación diciendo cuántas tareas y proyectos se pasan.
 
 #### TEC-04 · Despliegue gratuito con HTTPS (5 pts)
 

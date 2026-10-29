@@ -1,5 +1,6 @@
 import {
   memberListSchema,
+  mergePersonResultSchema,
   personListSchema,
   personSchema,
   personUsageSchema,
@@ -317,5 +318,106 @@ describe('dónde se usa (HU-45)', () => {
       cookies: ana.cookies,
     });
     expect(foreign.statusCode).toBe(404);
+  });
+});
+
+function mergePerson(cookies: Cookies, ws: string, personId: string, intoId: string) {
+  return app.inject({
+    method: 'POST',
+    url: `${peopleUrl(ws)}/${personId}/merge`,
+    cookies,
+    payload: { intoId },
+  });
+}
+
+describe('fusionar personas (HU-51)', () => {
+  it('«Raúl» (sin cuenta) en la persona de Ana: pasan sus tareas, papelera incluida, y sus roles', async () => {
+    const { ana, luis, ws } = await setup();
+    const raul = personSchema.parse((await addPerson(ana.cookies, ws.id, 'Raúl')).json());
+    const anaPerson = (await people(ana.cookies, ws.id)).find((p) => p.userId === ana.user.id)!;
+    const projectsUrl = `/api/v1/workspaces/${ws.id}/projects`;
+    const project = await app.inject({
+      method: 'POST',
+      url: projectsUrl,
+      cookies: ana.cookies,
+      payload: { name: 'Portal', requesterId: raul.id, projectManagerId: raul.id },
+    });
+    const projectId = project.json<{ id: string }>().id;
+    const tasksUrl = `${projectsUrl}/${projectId}/tasks`;
+    const ids: string[] = [];
+    for (const title of ['Diseño', 'Pruebas']) {
+      const task = await app.inject({
+        method: 'POST',
+        url: tasksUrl,
+        cookies: ana.cookies,
+        payload: { title, responsiblePersonId: raul.id },
+      });
+      ids.push(task.json<{ id: string }>().id);
+    }
+    await app.inject({ method: 'DELETE', url: `${tasksUrl}/${ids[1]}`, cookies: ana.cookies });
+    // Luis veía el trabajo de Raúl (HU-52)
+    const luisMembership = await db.membership.findFirstOrThrow({
+      where: { workspaceId: ws.id, userId: luis.user.id },
+    });
+    await db.membershipPersonAccess.create({
+      data: { membershipId: luisMembership.id, personId: raul.id, createdById: ana.user.id },
+    });
+
+    expect((await mergePerson(luis.cookies, ws.id, raul.id, anaPerson.id)).statusCode).toBe(403);
+    const response = await mergePerson(ana.cookies, ws.id, raul.id, anaPerson.id);
+
+    expect(response.statusCode).toBe(200);
+    expect(mergePersonResultSchema.parse(response.json())).toEqual({ tasks: 2, projects: 1 });
+    const list = await people(ana.cookies, ws.id);
+    expect(list.map((p) => p.name)).not.toContain('Raúl');
+    expect(list.find((p) => p.id === anaPerson.id)).toMatchObject({
+      taskCount: 2,
+      projectCount: 1,
+    });
+    const portal = await db.project.findUniqueOrThrow({ where: { id: projectId } });
+    expect([portal.requesterId, portal.projectManagerId]).toEqual([anaPerson.id, anaPerson.id]);
+    const watched = await db.membershipPersonAccess.findMany({
+      where: { membershipId: luisMembership.id },
+    });
+    expect(watched.map((w) => w.personId)).toEqual([anaPerson.id]);
+  });
+
+  it('si la duplicada tiene cuenta, la cuenta pasa a la que se queda', async () => {
+    const { ana, luis, ws } = await setup();
+    const conCuenta = personSchema.parse((await addPerson(ana.cookies, ws.id, 'Luis P')).json());
+    await patchPerson(ana.cookies, ws.id, conCuenta.id, { userId: luis.user.id });
+    const sinCuenta = personSchema.parse((await addPerson(ana.cookies, ws.id, 'Luis')).json());
+
+    expect((await mergePerson(ana.cookies, ws.id, conCuenta.id, sinCuenta.id)).statusCode).toBe(
+      200,
+    );
+
+    const list = await people(ana.cookies, ws.id);
+    expect(list.find((p) => p.id === sinCuenta.id)?.userId).toBe(luis.user.id);
+    expect(list.some((p) => p.id === conCuenta.id)).toBe(false);
+  });
+
+  it('no fusiona dos con cuenta, consigo misma, con una archivada ni de otro espacio', async () => {
+    const { ana, luis, ws } = await setup();
+    const anaPerson = (await people(ana.cookies, ws.id)).find((p) => p.userId === ana.user.id)!;
+    const luisPerson = personSchema.parse((await addPerson(ana.cookies, ws.id, 'Luis')).json());
+    await patchPerson(ana.cookies, ws.id, luisPerson.id, { userId: luis.user.id });
+    const archivada = personSchema.parse((await addPerson(ana.cookies, ws.id, 'Vieja')).json());
+    await patchPerson(ana.cookies, ws.id, archivada.id, { archived: true });
+    const other = await createWorkspace(db, ana.user.id, { name: 'Otro' });
+
+    expect((await mergePerson(ana.cookies, ws.id, luisPerson.id, anaPerson.id)).statusCode).toBe(
+      409,
+    );
+    expect((await mergePerson(ana.cookies, ws.id, luisPerson.id, luisPerson.id)).statusCode).toBe(
+      400,
+    );
+    expect((await mergePerson(ana.cookies, ws.id, luisPerson.id, archivada.id)).statusCode).toBe(
+      400,
+    );
+    expect((await mergePerson(ana.cookies, other.id, luisPerson.id, anaPerson.id)).statusCode).toBe(
+      404,
+    );
+    expect((await people(ana.cookies, ws.id)).some((p) => p.id === luisPerson.id)).toBe(true);
   });
 });

@@ -1,13 +1,16 @@
-import { createPersonSchema, updatePersonSchema } from '@gestion/shared';
+import { createPersonSchema, mergePersonSchema, updatePersonSchema } from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyPluginCallback, FastifyReply } from 'fastify';
 import { requireAuth } from '../auth/session.js';
 import { forbidden, requireMembership, requirePermission } from '../workspaces/access.js';
 import {
+  BothLinkedError,
   createPerson,
   deletePerson,
   DuplicatePersonNameError,
+  InvalidMergeTargetError,
   listPeople,
+  mergePerson,
   NotAMemberError,
   PersonNotDeletableError,
   personUsage,
@@ -31,6 +34,16 @@ function peopleError(reply: FastifyReply, error: unknown) {
       message:
         'Solo se borra una persona archivada que no aparece en tareas ni proyectos y cuya cuenta ya no es miembro',
     });
+  }
+  if (error instanceof BothLinkedError) {
+    return reply.code(409).send({
+      message: 'Las dos personas tienen cuenta: son usuarios distintos y no se fusionan',
+    });
+  }
+  if (error instanceof InvalidMergeTargetError) {
+    return reply
+      .code(400)
+      .send({ message: 'Elige otra persona activa del espacio para conservar' });
   }
   if (error instanceof NotAMemberError) {
     return reply
@@ -118,6 +131,33 @@ export const peopleRoutes: FastifyPluginCallback = (app, _options, done) => {
       );
       if (!usage) return reply.code(404).send({ message: 'Persona no encontrada' });
       return usage;
+    },
+  );
+
+  // Fusionar una persona duplicada en otra (HU-51)
+  app.post(
+    `${BASE}/:personId/merge`,
+    { preHandler: requirePermission('member.manage') },
+    async (request, reply) => {
+      const params = personParamsSchema.safeParse(request.params);
+      if (!params.success) return reply.code(404).send({ message: 'Persona no encontrada' });
+      const parsed = mergePersonSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ message: z.prettifyError(parsed.error) });
+      }
+      try {
+        const result = await mergePerson(
+          app.db,
+          request.auth!.userId,
+          request.membership!.workspaceId,
+          params.data.personId,
+          parsed.data.intoId,
+        );
+        if (!result) return reply.code(404).send({ message: 'Persona no encontrada' });
+        return result;
+      } catch (error) {
+        return peopleError(reply, error);
+      }
     },
   );
 
