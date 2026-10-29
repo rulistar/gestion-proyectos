@@ -73,6 +73,8 @@ export interface MemberAccess {
   permissions: MemberPermissions;
   /** Contenedores de la lista "Estos…" */
   selectedProjectIds: readonly string[];
+  /** Personas cuyo trabajo puede ver, en solo lectura (HU-52) */
+  watchedPersonIds: readonly string[];
 }
 
 /** Lo que hace falta de un contenedor para decidir */
@@ -128,16 +130,32 @@ export function isMyTask(access: MemberAccess, task: Omit<TaskFacts, 'project'>)
   );
 }
 
-export function canViewTask(access: MemberAccess, task: TaskFacts): boolean {
-  if (isAdmin(access) || isMyTask(access, task)) return true;
+/** ¿Su Responsable es una persona cuyo trabajo puede ver? (HU-52; solo lectura) */
+export function isWatchedTask(
+  access: MemberAccess,
+  task: Pick<TaskFacts, 'responsiblePersonId'>,
+): boolean {
+  return (
+    task.responsiblePersonId !== null && access.watchedPersonIds.includes(task.responsiblePersonId)
+  );
+}
+
+/** La ve por su matriz: es suya o, si su permiso lo dice, está en un contenedor que ve */
+function matrixCanViewTask(access: MemberAccess, task: TaskFacts): boolean {
+  if (isMyTask(access, task)) return true;
   return access.permissions.tasks.view === 'VISIBLE' && sectionCanView(access, task.project);
 }
 
+export function canViewTask(access: MemberAccess, task: TaskFacts): boolean {
+  return isAdmin(access) || matrixCanViewTask(access, task) || isWatchedTask(access, task);
+}
+
+/** Ver el trabajo de otra persona (HU-52) no da permiso de modificarlo */
 export function canUpdateTask(access: MemberAccess, task: TaskFacts): boolean {
   if (isAdmin(access)) return true;
   const { update } = access.permissions.tasks;
   if (update === 'MINE') return isMyTask(access, task);
-  return update === 'VISIBLE' && canViewTask(access, task);
+  return update === 'VISIBLE' && matrixCanViewTask(access, task);
 }
 
 export function canRemoveTask(access: MemberAccess, task: TaskFacts): boolean {
@@ -188,4 +206,5 @@ export const memberAccessSchema = z.object({
   personId: z.uuid().nullable(),
   permissions: memberPermissionsSchema,
   selectedProjectIds: z.array(z.uuid()),
+  watchedPersonIds: z.array(z.uuid()),
 });

@@ -41,7 +41,12 @@ export const memberSchema = z.object({
   role: membershipRoleSchema,
   /** Su matriz (HU-17b): solo la recibe quien gestiona miembros; para los demás, null */
   matrix: z
-    .object({ permissions: memberPermissionsSchema, selectedProjectIds: z.array(z.uuid()) })
+    .object({
+      permissions: memberPermissionsSchema,
+      selectedProjectIds: z.array(z.uuid()),
+      /** Personas cuyo trabajo puede ver (HU-52) */
+      watchedPersonIds: z.array(z.uuid()),
+    })
     .nullable(),
 });
 export type Member = z.infer<typeof memberSchema>;
@@ -62,5 +67,7 @@ export const updateMemberPermissionsSchema = z.object({
   permissions: memberPermissionsSchema,
   /** Contenedores de "Estos…"; solo se guardan los de secciones que ven "Estos…" */
   selectedProjectIds: z.array(z.uuid()).max(1000),
+  /** Personas del catálogo cuyo trabajo puede ver, en solo lectura (HU-52) */
+  watchedPersonIds: z.array(z.uuid()).max(1000).default([]),
 });
 export type UpdateMemberPermissions = z.infer<typeof updateMemberPermissionsSchema>;

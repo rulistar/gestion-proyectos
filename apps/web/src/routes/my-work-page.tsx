@@ -1,12 +1,20 @@
-import { daysRemainingLabel, groupMyWork, type MyTask, type Project } from '@gestion/shared';
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  ALL_PEOPLE,
+  daysRemainingLabel,
+  groupMyWork,
+  type MyTask,
+  type Project,
+} from '@gestion/shared';
+import { keepPreviousData, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { Check, PanelRightClose, PanelRightOpen, Wrench } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '@/components/progress-bar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useAccess } from '@/lib/access';
 import { useCurrentUser } from '@/lib/auth';
 import { todayIso, weekStartIso } from '@/lib/dates';
@@ -29,16 +37,38 @@ export function MyWorkPage() {
   const today = todayIso();
   const weekStart = weekStartIso();
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
-  const { data: tasks } = useSuspenseQuery(myTasksQueryOptions(workspaceId, weekStart));
+  // De quién se ve el trabajo (HU-52): por omisión, de todos los que puedo ver
+  const [person, setPerson] = useState(ALL_PEOPLE);
+  // Al cambiar de persona se conserva la lista anterior mientras llega la nueva
+  const { data: tasks = [] } = useQuery({
+    ...myTasksQueryOptions(workspaceId, weekStart, person),
+    placeholderData: keepPreviousData,
+  });
   const { data: projects } = useSuspenseQuery(projectsQueryOptions(workspaceId));
-  // Aquí todas son mías (soy el Responsable): basta con poder modificar "las mías" (ADR-0006)
+  // Las mías (soy el Responsable): basta con poder modificar "las mías" (ADR-0006). Las de otra
+  // persona que sigo solo se ven (HU-52); el Admin puede con todas
   const access = useAccess(workspaceId);
-  const canUpdate = access.role === 'ADMIN' || access.permissions.tasks.update !== 'NONE';
+  const isAdmin = access.role === 'ADMIN';
+  const canUpdate = (task: MyTask) =>
+    isAdmin ||
+    (task.responsible?.id === access.personId && access.permissions.tasks.update !== 'NONE');
   const work = groupMyWork(tasks, today, weekStart);
   // El saludo usa el nombre de mi persona en este espacio (alias, HU-34), si lo tiene
   const { data: people = [] } = useQuery(peopleQueryOptions(workspaceId));
   const myName = people.find((person) => person.userId === me.id)?.name ?? me.name;
   const firstName = myName.split(' ')[0];
+  // A quiénes puedo ver además de mí (HU-52): el Admin, a todos; los demás, a quienes sigue
+  const others = people.filter(
+    (p) => p.userId !== me.id && (isAdmin ? !p.archived : access.watchedPersonIds.includes(p.id)),
+  );
+  const canPick = isAdmin || access.watchedPersonIds.length > 0;
+  const onlyMine = !canPick || person === access.personId;
+  const whose =
+    person === ALL_PEOPLE
+      ? isAdmin
+        ? 'todas las personas'
+        : 'ti y las personas que sigues'
+      : (others.find((p) => p.id === person)?.name ?? 'ti');
   // Panel de proyectos activos y mantenimientos (HU-48): se oculta para dar espacio a las tareas
   const panel = useSavedToggle('mi-trabajo-panel-visible');
 
@@ -59,8 +89,30 @@ export function MyWorkPage() {
     <div className="grid gap-3">
       <PageHeader
         title={`Hola, ${firstName}`}
-        description={`Esto es lo que tienes pendiente en ${workspace.name}.`}
+        description={
+          onlyMine
+            ? `Esto es lo que tienes pendiente en ${workspace.name}.`
+            : `Lo pendiente de ${whose} en ${workspace.name}.`
+        }
       >
+        {canPick && (
+          <NativeSelect
+            aria-label="Ver el trabajo de"
+            value={person}
+            onChange={(event) => setPerson(event.target.value)}
+            className="h-8 w-56"
+          >
+            <option value={ALL_PEOPLE}>
+              {isAdmin ? 'Todas las personas' : 'Yo y a quienes sigo'}
+            </option>
+            {access.personId && <option value={access.personId}>Yo</option>}
+            {others.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </NativeSelect>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -92,9 +144,11 @@ export function MyWorkPage() {
       <div className={cn('grid items-start gap-4', panel.open && 'lg:grid-cols-[1fr_20rem]')}>
         <Card>
           <CardHeader>
-            <CardTitle>Mis tareas</CardTitle>
+            <CardTitle>{onlyMine ? 'Mis tareas' : 'Tareas'}</CardTitle>
             <CardDescription>
-              Las que tienes asignadas en todos los proyectos, por fecha de fin
+              {onlyMine
+                ? 'Las que tienes asignadas en todos los proyectos, por fecha de fin'
+                : `Las de ${whose}, por fecha de fin`}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-5">
@@ -115,8 +169,9 @@ export function MyWorkPage() {
                         workspaceId={workspaceId}
                         task={task}
                         today={today}
-                        canUpdate={canUpdate}
+                        canUpdate={canUpdate(task)}
                         compact={!panel.open}
+                        showResponsible={!onlyMine}
                       />
                     ))}
                   </ul>
@@ -143,6 +198,7 @@ function MyTaskRow({
   today,
   canUpdate,
   compact,
+  showResponsible,
 }: {
   workspaceId: string;
   task: MyTask;
@@ -150,6 +206,8 @@ function MyTaskRow({
   canUpdate: boolean;
   /** Con el panel oculto (HU-48): título y descripción en un solo renglón */
   compact: boolean;
+  /** Viendo el trabajo de otros (HU-52): de quién es cada tarea */
+  showResponsible: boolean;
 }) {
   const move = useMoveTask(workspaceId, task.projectId, task.id);
   const due = dueInfo(task.endDate, today);
@@ -192,6 +250,7 @@ function MyTaskRow({
             {task.projectName}
           </Link>
           {task.status !== 'PENDING' && ` · ${TASK_STATUSES[task.status]}`}
+          {showResponsible && ` · ${task.responsible?.name ?? 'Sin responsable'}`}
         </p>
       </div>
       <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${due.className}`}>

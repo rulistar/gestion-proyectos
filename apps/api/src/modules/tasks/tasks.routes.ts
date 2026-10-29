@@ -96,7 +96,8 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
     return facts && { facts, params: params.data };
   }
 
-  // Mi trabajo (HU-28b): las tareas asignadas a quien pregunta, de todos los proyectos del espacio
+  // Mi trabajo (HU-28b): las tareas asignadas a quien pregunta (o a quien sigue, HU-52), de todos
+  // los proyectos del espacio
   app.get(
     '/workspaces/:workspaceId/my-tasks',
     { preHandler: requireMembership },
@@ -108,7 +109,9 @@ export const tasksRoutes: FastifyPluginCallback = (app, _options, done) => {
       const doneSince = query.data.doneSince
         ? new Date(query.data.doneSince)
         : new Date(Date.now() - WEEK_MS);
-      return listMyTasks(app.db, request.membership!.workspaceId, request.auth!.userId, doneSince);
+      // De otra persona (HU-52): solo si su trabajo lo puedo ver; si no, 404 (no revela nada)
+      const tasks = await listMyTasks(app.db, request.membership!, doneSince, query.data.person);
+      return tasks ?? reply.code(404).send({ message: 'Persona no encontrada' });
     },
   );
 

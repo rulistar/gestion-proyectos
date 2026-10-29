@@ -26,6 +26,7 @@ function access(permissions: MemberPermissions, extra: Partial<MemberAccess> = {
     role: 'MEMBER',
     permissions,
     selectedProjectIds: [],
+    watchedPersonIds: [],
     ...extra,
   };
 }
@@ -149,5 +150,34 @@ describe('pantalla de permisos (HU-17b)', () => {
     expect(canUseTrash(access(PERMISSION_TEMPLATES.VIEWER))).toBe(false);
     expect(canUseTrash(access(removesTasks))).toBe(true);
     expect(canUseTrash(access(PERMISSION_TEMPLATES.VIEWER, { role: 'ADMIN' }))).toBe(true);
+  });
+});
+
+describe('ver el trabajo de otra persona (HU-52)', () => {
+  // Solo ve sus tareas por su matriz: lo de Luis lo ve por seguirlo
+  const soloLasMias = {
+    sections: PERMISSION_TEMPLATES.VIEWER.sections,
+    tasks: { ...PERMISSION_TEMPLATES.VIEWER.tasks, view: 'MINE' as const },
+  };
+  const lector = access(soloLasMias, { watchedPersonIds: ['luis'] });
+  const deLuis = { createdById: 'otro', responsiblePersonId: 'luis', project: theirs };
+  const dePedro = { createdById: 'otro', responsiblePersonId: 'pedro', project: theirs };
+
+  it('ve las tareas donde Luis es Responsable, pero no las de Pedro', () => {
+    expect(canViewTask(lector, deLuis)).toBe(true);
+    expect(canViewTask(lector, dePedro)).toBe(false);
+  });
+
+  it('solo las ve: no las modifica ni las da de baja, aunque su permiso sea "las que ve"', () => {
+    const miembro = access(
+      {
+        sections: PERMISSION_TEMPLATES.MEMBER.sections,
+        tasks: { view: 'MINE', create: true, update: 'VISIBLE', remove: 'EDITABLE' },
+      },
+      { watchedPersonIds: ['luis'] },
+    );
+    expect(canViewTask(miembro, deLuis)).toBe(true);
+    expect(canUpdateTask(miembro, deLuis)).toBe(false);
+    expect(canRemoveTask(miembro, deLuis)).toBe(false);
   });
 });

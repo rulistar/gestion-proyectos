@@ -179,7 +179,11 @@ describe('GET /workspaces/:workspaceId/members', () => {
         name: 'ana@example.com',
         email: 'ana@example.com',
         role: 'ADMIN',
-        matrix: { permissions: PERMISSION_TEMPLATES.ADMIN, selectedProjectIds: [] },
+        matrix: {
+          permissions: PERMISSION_TEMPLATES.ADMIN,
+          selectedProjectIds: [],
+          watchedPersonIds: [],
+        },
       },
     ]);
   });

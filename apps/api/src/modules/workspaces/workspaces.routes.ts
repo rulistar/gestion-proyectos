@@ -1,5 +1,6 @@
 import {
   createWorkspaceRequestSchema,
+  memberAccessSchema,
   roleHasPermission,
   updateMemberPermissionsSchema,
   updateMemberRoleRequestSchema,
@@ -13,6 +14,7 @@ import {
   changeMemberRole,
   createWorkspace,
   InvalidSelectedProjectsError,
+  InvalidWatchedPeopleError,
   LastAdminError,
   listMembers,
   listWorkspacesForUser,
@@ -30,6 +32,9 @@ function sendMemberError(reply: FastifyReply, error: unknown) {
   }
   if (error instanceof InvalidSelectedProjectsError) {
     return reply.code(400).send({ message: 'Hay contenedores de "Estos…" que no son del espacio' });
+  }
+  if (error instanceof InvalidWatchedPeopleError) {
+    return reply.code(400).send({ message: 'Hay personas que no son del catálogo del espacio' });
   }
   if (error instanceof LastAdminError) {
     return reply.code(409).send({
@@ -49,13 +54,12 @@ export const workspacesRoutes: FastifyPluginCallback = (app, _options, done) => 
 
   // Un workspace del que soy miembro, con mi rol y mi matriz (ADR-0006; 404 si no lo soy)
   app.get('/workspaces/:workspaceId', { preHandler: requireMembership }, async (request) => {
-    const { workspaceId, role, userId, personId, permissions, selectedProjectIds } =
-      request.membership!;
+    const { workspaceId, role, ...access } = request.membership!;
     const workspace = await app.db.workspace.findUniqueOrThrow({
       where: { id: workspaceId },
       select: { id: true, name: true },
     });
-    return { ...workspace, role, access: { userId, personId, permissions, selectedProjectIds } };
+    return { ...workspace, role, access: memberAccessSchema.parse(access) };
   });
 
   app.get(

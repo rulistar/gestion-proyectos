@@ -1,4 +1,5 @@
 import {
+  ALL_PEOPLE,
   statusNeedsReason,
   type MyTask,
   type Task,
@@ -13,6 +14,7 @@ import { fromIsoDate, toIsoDate } from '../../db/dates.js';
 import { personSelect, toPersonRef, type PersonRow } from '../people/people.service.js';
 import { resolveTaskOrigin } from '../task-origins/task-origins.service.js';
 import { resolveTaskType } from '../task-types/task-types.service.js';
+import type { WorkspaceAccess } from '../workspaces/access.js';
 
 /** El tipo pedido no existe, está archivado o no lo admite el tipo del proyecto (→ 400) */
 export class InvalidTaskTypeError extends Error {}
@@ -123,19 +125,34 @@ export async function listTasks(
  * Mis tareas en el workspace (HU-28b): donde mi persona del espacio es la Responsable, de proyectos
  * que no están en la papelera. Las abiertas y las Hechas desde `doneSince` (para "hechas esta
  * semana"); las canceladas no se piden.
+ *
+ * `person` (HU-52): ver el trabajo de otra persona que puedo ver, o `all` = yo y las que sigo. El
+ * Admin ve el de cualquiera, y con `all` todas las tareas (también las que no tienen Responsable).
+ * null = esa persona no la puedo ver (→ 404).
  */
 export async function listMyTasks(
   db: Db,
-  workspaceId: string,
-  userId: string,
+  access: WorkspaceAccess,
   doneSince: Date,
-): Promise<MyTask[]> {
-  const me = await db.person.findFirst({ where: { workspaceId, userId }, select: { id: true } });
-  if (!me) return [];
+  person?: string,
+): Promise<MyTask[] | null> {
+  const isAdmin = access.role === 'ADMIN';
+  const mine = access.personId ? [access.personId] : [];
+  const canSee = [...mine, ...access.watchedPersonIds];
+  let responsible: Prisma.TaskWhereInput;
+  if (person === undefined) {
+    if (!access.personId) return [];
+    responsible = { responsiblePersonId: access.personId };
+  } else if (person === ALL_PEOPLE) {
+    responsible = isAdmin ? {} : { responsiblePersonId: { in: canSee } };
+  } else {
+    if (!isAdmin && !canSee.includes(person)) return null;
+    responsible = { responsiblePersonId: person };
+  }
   const rows = await db.task.findMany({
     where: {
-      workspaceId,
-      responsiblePersonId: me.id,
+      workspaceId: access.workspaceId,
+      ...responsible,
       ...notDeleted,
       project: notDeleted,
       OR: [
