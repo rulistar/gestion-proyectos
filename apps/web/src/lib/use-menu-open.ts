@@ -29,9 +29,28 @@ export function useSavedToggle(key: string) {
   return { open, toggle };
 }
 
-/** Menú lateral visible u oculto (HU-40) */
-export function useMenuOpen() {
-  return useSavedToggle('menu-lateral-visible');
+/**
+ * Páginas de contenedores (HU-49b): las listas de proyectos, mantenimientos y actividades, y la
+ * ficha de uno. Ahí el menú empieza oculto para dar espacio a la tabla o al tablero.
+ */
+const CONTAINER_PAGE = /^\/w\/[^/]+(\/(mantenimientos|actividades|p\/[^/]+))?\/?$/;
+
+/**
+ * Menú lateral visible u oculto (HU-40). En las páginas de contenedores empieza oculto cada vez
+ * que se entra (HU-49b); en las demás se usa lo que el navegador recuerda.
+ */
+export function useMenuOpen(pathname: string) {
+  const saved = useSavedToggle('menu-lateral-visible');
+  const onContainerPage = CONTAINER_PAGE.test(pathname);
+  // Abierto a mano en una página de contenedores: vale solo mientras no se cambie de página
+  const [openedOn, setOpenedOn] = useState<string>();
+  const containerOpen = openedOn === pathname;
+  const { toggle: toggleSaved } = saved;
+  const toggle = useCallback(() => {
+    if (onContainerPage) setOpenedOn((current) => (current === pathname ? undefined : pathname));
+    else toggleSaved();
+  }, [onContainerPage, pathname, toggleSaved]);
+  return { open: onContainerPage ? containerOpen : saved.open, toggle };
 }
 
 /** Si el menú lateral está visible, para las páginas que aprovechan el espacio extra (HU-46) */
