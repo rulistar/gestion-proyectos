@@ -148,14 +148,16 @@ export function ProjectPage() {
           </div>
         </div>
         {/* Descripción y sprint lado a lado en pantallas anchas (HU-41) */}
-        {(project.description || (showSprint && (project.sprint || project.sprintActivities))) && (
+        {(project.description ||
+          (personal ? workFields.open : project.sprint || project.sprintActivities)) && (
           <div className="grid items-start gap-2 lg:grid-cols-2">
             {project.description && (
               <p className="text-sm whitespace-pre-line text-muted-foreground">
                 {project.description}
               </p>
             )}
-            {showSprint && (project.sprint || project.sprintActivities) && (
+            {personal && workFields.open && <PersonalWorkFields project={project} />}
+            {!personal && (project.sprint || project.sprintActivities) && (
               <div className="rounded-lg border bg-card p-3 text-sm">
                 <p className="font-semibold">{project.sprint ?? 'Sprint'}</p>
                 {project.sprintActivities && (
@@ -344,6 +346,30 @@ function Kpi({
   );
 }
 
+/**
+ * Campos del trabajo de un personal (HU-49b), cuando se piden ver: cada valor con su nombre, para
+ * que un "N/A" diga de qué campo es
+ */
+function PersonalWorkFields({ project }: { project: Project }) {
+  const rows = [
+    ['Project manager', project.projectManager?.name],
+    ['Gte. Consultoría', project.consultingManager?.name],
+    ['Business partner', project.businessPartner?.name],
+    ['Sprint', project.sprint],
+    ['Actividades del sprint', project.sprintActivities],
+  ];
+  return (
+    <dl className="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-1 rounded-lg border bg-card p-3 text-sm">
+      {rows.map(([label, value]) => (
+        <div key={label} className="contents">
+          <dt className="text-muted-foreground">{label}</dt>
+          <dd className="whitespace-pre-line">{value || NOT_APPLICABLE}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 /** Fecha real (un instante) como fecha local: "18 nov 2026" */
 function formatInstant(iso: string) {
   const date = new Date(iso);
@@ -426,9 +452,16 @@ function ProjectDetails({ project, showWork }: { project: Project; showWork: boo
       {showWork && (
         <Card className="lg:col-span-3">
           <CardContent className="grid gap-2">
-            <h2 className="font-semibold">{project.sprint ?? 'Sprint'}</h2>
+            {/* En un personal, con su nombre: "Sprint: N/A" (HU-49b) */}
+            <h2 className="font-semibold">
+              {personal
+                ? `Sprint: ${project.sprint ?? NOT_APPLICABLE}`
+                : (project.sprint ?? 'Sprint')}
+            </h2>
             <p className="text-sm whitespace-pre-line text-muted-foreground">
-              {project.sprintActivities ?? 'Sin actividades del sprint.'}
+              {personal
+                ? `Actividades del sprint: ${project.sprintActivities ?? NOT_APPLICABLE}`
+                : (project.sprintActivities ?? 'Sin actividades del sprint.')}
             </p>
           </CardContent>
         </Card>

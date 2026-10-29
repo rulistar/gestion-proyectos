@@ -9,7 +9,7 @@ import {
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
 import { monthStartIso, todayIso } from './dates';
-import { useSavedToggle } from './use-menu-open';
+import { useCallback, useState } from 'react';
 
 /** Etiquetas y colores del prototipo "Gestor de cursos" (ADR-0002 §1.1) */
 export const PROJECT_STATUSES: Record<ProjectStatus, { label: string; color: string }> = {
@@ -34,10 +34,12 @@ export const PROJECT_SCOPES: Record<ProjectScope, string> = {
 
 /**
  * Mostrar u ocultar, en los contenedores personales, los campos que solo usa el trabajo: PM,
- * Gte. consultoría, BP, sprint y sus actividades (HU-49). Cada navegador lo recuerda.
+ * Gte. consultoría, BP, sprint y sus actividades (HU-49). Empiezan ocultos cada vez (HU-49b).
  */
 export function useWorkFields() {
-  return useSavedToggle('campos-trabajo-visibles');
+  const [open, setOpen] = useState(false);
+  const toggle = useCallback(() => setOpen((current) => !current), []);
+  return { open, toggle };
 }
 
 const projectsKey = (workspaceId: string) => ['workspaces', workspaceId, 'projects'];

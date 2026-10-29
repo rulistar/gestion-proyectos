@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from '@tanstack/react-router';
+import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useEffect } from 'react';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -21,7 +21,8 @@ import { MenuOpenContext, useMenuOpen } from '@/lib/use-menu-open';
  * espacio a tablas y tableros.
  */
 export function AppLayout() {
-  const menu = useMenuOpen();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const menu = useMenuOpen(pathname);
   const { toggle } = menu;
 
   useEffect(() => {

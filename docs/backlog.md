@@ -93,27 +93,28 @@
 | 35 | HU-47 | Origen de la tarea: catálogo en Configuración, detalle y filtro | Tareas | 3 | 🔴 | 5 |
 | 36 | HU-48 | Mi trabajo: ocultar el panel de proyectos y mantenimientos | Vistas | 1 | 🔴 | 5 |
 | 37 | HU-49 | Contenedores de trabajo o personales (ocultar campos del trabajo, N/A al dar de alta) | Proyectos | 2 | 🔴 | 5 |
-| 38 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
-| 39 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
-| 40 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
-| 41 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
-| 42 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 43 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
-| 44 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
-| 45 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
-| 46 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 47 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 48 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 49 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
-| 50 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
-| 51 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 52 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 53 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 54 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 55 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 56 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 57 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 58 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 38 | HU-49b | Personales: campos de trabajo ocultos por omisión; menú oculto en contenedores | Proyectos | 1 | 🔴 | 5 |
+| 39 | HU-17 | Permisos por persona y por espacio: qué ve, crea, modifica y da de baja (incluye HU-16; invitación a varios espacios) | Permisos | 13 | 🔴 | 5 |
+| 40 | TEC-04 | Despliegue gratuito en la nube con HTTPS | Plataforma | 5 | 🔴 | 5 |
+| 41 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
+| 42 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
+| 43 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
+| 44 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
+| 45 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
+| 46 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
+| 47 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 48 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 49 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 50 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
+| 51 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 52 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 53 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 54 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 55 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 56 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 57 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 58 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 59 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -529,6 +530,14 @@ _Como usuario, quiero marcar si un proyecto, mantenimiento o actividad es de tra
 - [x] Al dar de alta uno personal, Sprint y Actividades del sprint empiezan en **N/A**. Project manager, Gte. Consultoría y Business partner quedan sin persona y la pantalla muestra **N/A** (no se crea una persona falsa en el catálogo).
 - [x] Botón **Ocultar / Mostrar campos de trabajo** en los personales (ficha y formulario): oculta esos 5 campos; el navegador recuerda la elección. Los de trabajo los siguen mostrando. Ocultos conservan su valor al guardar.
 - [x] Filtro **Ámbito** en las listas. Ej.: «Personal» encuentra «Mudanza» (personal) y no encuentra «Portal de clientes» (trabajo).
+
+#### HU-49b · Personales: campos de trabajo ocultos y menú oculto en contenedores (1 pt)
+
+_Ajuste de HU-49 pedido por el PO (2026-10-29), tras probarla._
+
+- [x] En un personal, los campos de trabajo (PM, Gte. Consultoría, BP, Sprint y Actividades del sprint) empiezan **ocultos** cada vez, en la ficha y en el formulario; «Mostrar campos de trabajo» los despliega.
+- [x] Desplegados, cada «N/A» dice de qué campo es (p. ej. «Project manager: N/A», «Sprint: N/A»), también en «Datos del proyecto».
+- [x] En Proyectos, Mantenimientos, Actividades y la ficha de un contenedor, el **menú lateral empieza oculto**; el botón «Menú» (o Ctrl+B) lo muestra. En las demás páginas se usa lo que recuerda el navegador.
 
 #### TEC-04 · Despliegue gratuito con HTTPS (5 pts)
 
