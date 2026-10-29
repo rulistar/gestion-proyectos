@@ -1,4 +1,5 @@
 import {
+  mergePersonResultSchema,
   personListSchema,
   personSchema,
   personUsageSchema,
@@ -59,6 +60,20 @@ export function useDeletePerson(workspaceId: string) {
   return useMutation({
     mutationFn: (personId: string) =>
       apiFetch(`${peoplePath(workspaceId)}/${personId}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] }),
+  });
+}
+
+/** Fusionar una persona duplicada en otra (HU-51): sus tareas y proyectos cambian de persona */
+export function useMergePerson(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ personId, intoId }: { personId: string; intoId: string }) =>
+      apiFetch(`${peoplePath(workspaceId)}/${personId}/merge`, {
+        method: 'POST',
+        body: { intoId },
+        schema: mergePersonResultSchema,
+      }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] }),
   });
 }

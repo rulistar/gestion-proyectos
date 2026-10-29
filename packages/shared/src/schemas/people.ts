@@ -94,3 +94,14 @@ export const personUsageSchema = z.object({
   ),
 });
 export type PersonUsage = z.infer<typeof personUsageSchema>;
+
+/** Cuerpo de POST .../people/:personId/merge (HU-51): la persona que se queda */
+export const mergePersonSchema = z.object({ intoId: z.uuid() });
+export type MergePersonInput = z.infer<typeof mergePersonSchema>;
+
+/** Respuesta de la fusión: cuántas tareas y proyectos pasaron a la persona que se queda */
+export const mergePersonResultSchema = z.object({
+  tasks: z.number().int(),
+  projects: z.number().int(),
+});
+export type MergePersonResult = z.infer<typeof mergePersonResultSchema>;

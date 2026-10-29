@@ -1,6 +1,7 @@
 import {
   canDeletePerson,
   type CreatePersonInput,
+  type MergePersonResult,
   type Person,
   type PersonRef,
   type PersonUsage,
@@ -18,6 +19,10 @@ export class UserAlreadyLinkedError extends Error {}
 export class NotAMemberError extends Error {}
 /** Solo se borra una persona archivada, sin uso y sin cuenta con acceso (HU-44, → 409) */
 export class PersonNotDeletableError extends Error {}
+/** Fusionar (HU-51): no se fusiona consigo misma ni con una archivada (→ 400) */
+export class InvalidMergeTargetError extends Error {}
+/** Fusionar (HU-51): las dos tienen cuenta, son usuarios distintos (→ 409) */
+export class BothLinkedError extends Error {}
 
 const activePerson = { archivedAt: null } as const;
 
@@ -326,4 +331,74 @@ export async function displayNames(
     select: { userId: true, name: true },
   });
   return new Map(people.map((person) => [person.userId!, person.name]));
+}
+
+/**
+ * Fusiona una persona duplicada en otra (HU-51): la que se queda (`intoId`) recibe sus tareas
+ * (papelera incluida), sus roles en proyectos, quién puede ver su trabajo (HU-52) y, si la
+ * duplicada tenía cuenta, la cuenta. Después la duplicada se borra. null si alguna no es del espacio
+ */
+export async function mergePerson(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  personId: string,
+  intoId: string,
+): Promise<MergePersonResult | null> {
+  if (personId === intoId) throw new InvalidMergeTargetError();
+  return db.$transaction(async (tx) => {
+    const people = await tx.person.findMany({
+      where: { id: { in: [personId, intoId] }, workspaceId },
+      select: { id: true, userId: true, archivedAt: true },
+    });
+    const from = people.find((person) => person.id === personId);
+    const into = people.find((person) => person.id === intoId);
+    if (!from || !into) return null;
+    if (into.archivedAt) throw new InvalidMergeTargetError();
+    if (from.userId && into.userId) throw new BothLinkedError();
+
+    const tasks = await tx.task.updateMany({
+      where: { workspaceId, responsiblePersonId: personId },
+      data: { responsiblePersonId: intoId, ...auditUpdate(actorId) },
+    });
+    const projects = await tx.project.count({
+      where: { workspaceId, OR: PROJECT_ROLES.map((role) => ({ [role]: personId })) },
+    });
+    for (const role of PROJECT_ROLES) {
+      await tx.project.updateMany({
+        where: { workspaceId, [role]: personId },
+        data: { [role]: intoId, ...auditUpdate(actorId) },
+      });
+    }
+
+    // La cuenta pasa a la que se queda; se suelta antes por el índice único (espacio, usuario)
+    const userId = into.userId ?? from.userId;
+    if (from.userId) {
+      await tx.person.update({ where: { id: personId }, data: { userId: null } });
+      await tx.person.update({
+        where: { id: intoId },
+        data: { userId: from.userId, ...auditUpdate(actorId) },
+      });
+    }
+
+    // Quien veía el trabajo de la duplicada ve el de la que se queda (salvo que sea él mismo)
+    const watchers = await tx.membershipPersonAccess.findMany({
+      where: { personId },
+      select: { membershipId: true, createdById: true, membership: { select: { userId: true } } },
+    });
+    const toAdd = watchers.filter((watcher) => watcher.membership.userId !== userId);
+    if (toAdd.length > 0) {
+      await tx.membershipPersonAccess.createMany({
+        data: toAdd.map(({ membershipId, createdById }) => ({
+          membershipId,
+          personId: intoId,
+          createdById,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    await tx.person.delete({ where: { id: personId } });
+    return { tasks: tasks.count, projects };
+  });
 }
