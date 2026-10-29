@@ -405,6 +405,7 @@ describe('pantalla de permisos (HU-17b)', () => {
     expect((await matrixOf(ana.cookies, ws.id, juan.user.id)).matrix).toEqual({
       permissions,
       selectedProjectIds: [proyecto],
+      watchedPersonIds: [],
     });
     // Y la API ya lo aplica: Juan ve el proyecto elegido
     const list = await app.inject({
@@ -471,5 +472,122 @@ describe('pantalla de permisos (HU-17b)', () => {
     expect(asJuan.statusCode).toBe(403);
     expect(foreign.statusCode).toBe(400);
     expect(invalid.statusCode).toBe(400);
+  });
+});
+
+describe('ver el trabajo de otra persona (HU-52)', () => {
+  const permissionsUrl = (ws: string, userId: string) =>
+    `/api/v1/workspaces/${ws}/members/${userId}/permissions`;
+  const myTasksUrl = (ws: string, person?: string) =>
+    `${base(ws)}/my-tasks${person ? `?person=${person}` : ''}`;
+
+  /**
+   * Además del espacio de `setup`: Luis (persona sin cuenta) con una tarea en ERP, y Ana permite a
+   * Juan (plantilla Miembro: solo lo suyo) ver el trabajo de Luis
+   */
+  async function watching() {
+    const data = await setup();
+    const { ana, juan, ws, erp } = data;
+    const luis = await db.person.create({
+      data: { workspaceId: ws.id, name: 'Luis', ...auditCreate(null) },
+    });
+    const pedro = await db.person.create({
+      data: { workspaceId: ws.id, name: 'Pedro', ...auditCreate(null) },
+    });
+    const luisTask = await createTask(db, ana.user.id, ws.id, erp.id, {
+      ...emptyTask,
+      title: 'De Luis',
+      responsiblePersonId: luis.id,
+    });
+    const saved = await app.inject({
+      method: 'PUT',
+      url: permissionsUrl(ws.id, juan.user.id),
+      cookies: ana.cookies,
+      payload: {
+        role: 'MEMBER',
+        permissions: MEMBER,
+        selectedProjectIds: [],
+        watchedPersonIds: [luis.id],
+      },
+    });
+    expect(saved.statusCode).toBe(204);
+    return { ...data, luis, pedro, luisTask };
+  }
+
+  async function myTaskTitles(cookies: Cookies, ws: string, person?: string) {
+    const response = await get(cookies, myTasksUrl(ws, person));
+    expect(response.statusCode).toBe(200);
+    return taskListSchema
+      .parse(response.json())
+      .map((t) => t.title)
+      .sort();
+  }
+
+  it('se guarda en sus permisos y la API lo aplica: ve la tarea de Luis y su contenedor', async () => {
+    const { ana, juan, ws, erp, luis } = await watching();
+
+    const members = await get(ana.cookies, `${base(ws.id)}/members`);
+    const juanMember = memberListSchema
+      .parse(members.json())
+      .find((m) => m.userId === juan.user.id);
+    expect(juanMember?.matrix?.watchedPersonIds).toEqual([luis.id]);
+
+    // ERP lo ve en solo lectura porque ahí trabaja Luis; de ERP solo ve la tarea de Luis
+    expect(await projectNames(juan.cookies, ws.id)).toEqual(['ERP', 'Portal']);
+    const tasks = await get(juan.cookies, tasksUrl(ws.id, erp.id));
+    expect(taskListSchema.parse(tasks.json()).map((t) => t.title)).toEqual(['De Luis']);
+  });
+
+  it('solo la ve: no la modifica ni la da de baja', async () => {
+    const { juan, ws, erp, luisTask } = await watching();
+    const taskUrl = `${tasksUrl(ws.id, erp.id)}/${luisTask.id}`;
+
+    const edit = await send(juan.cookies, 'PUT', taskUrl, { ...emptyTask, title: 'Cambiada' });
+    const remove = await send(juan.cookies, 'DELETE', taskUrl);
+
+    expect(edit.statusCode).toBe(403);
+    expect(remove.statusCode).toBe(403);
+  });
+
+  it('Mi trabajo: lo suyo, lo de Luis o ambos; de alguien que no sigue, 404', async () => {
+    const { juan, ws, luis, pedro } = await watching();
+
+    expect(await myTaskTitles(juan.cookies, ws.id)).toEqual(['Asignada a Juan']);
+    expect(await myTaskTitles(juan.cookies, ws.id, luis.id)).toEqual(['De Luis']);
+    expect(await myTaskTitles(juan.cookies, ws.id, 'all')).toEqual(['Asignada a Juan', 'De Luis']);
+    expect((await get(juan.cookies, myTasksUrl(ws.id, pedro.id))).statusCode).toBe(404);
+  });
+
+  it('el Admin ve el trabajo de cualquiera y, con "todos", también lo que no tiene Responsable', async () => {
+    const { ana, ws, pedro } = await watching();
+
+    expect(await myTaskTitles(ana.cookies, ws.id, 'all')).toEqual([
+      'Asignada a Juan',
+      'De Ana',
+      'De Luis',
+    ]);
+    expect(await myTaskTitles(ana.cookies, ws.id, pedro.id)).toEqual([]);
+  });
+
+  it('personas de otro espacio dan 400', async () => {
+    const { ana, juan, ws } = await watching();
+    const other = await createWorkspace(db, ana.user.id, { name: 'Otro' });
+    const ajena = await db.person.create({
+      data: { workspaceId: other.id, name: 'Ajena', ...auditCreate(null) },
+    });
+
+    const response = await app.inject({
+      method: 'PUT',
+      url: permissionsUrl(ws.id, juan.user.id),
+      cookies: ana.cookies,
+      payload: {
+        role: 'MEMBER',
+        permissions: MEMBER,
+        selectedProjectIds: [],
+        watchedPersonIds: [ajena.id],
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
   });
 });

@@ -17,6 +17,13 @@ export function myTasksWhere(access: WorkspaceAccess): Prisma.TaskWhereInput {
   return { OR: mine };
 }
 
+/** Las de las personas cuyo trabajo puede ver (HU-52): donde son Responsables */
+function watchedTasksWhere(access: WorkspaceAccess): Prisma.TaskWhereInput[] {
+  return access.watchedPersonIds.length > 0
+    ? [{ responsiblePersonId: { in: [...access.watchedPersonIds] } }]
+    : [];
+}
+
 /** Contenedores que ve por las reglas de su sección (sin el acceso por tener una tarea) */
 export function sectionVisibleWhere(access: WorkspaceAccess): Prisma.ProjectWhereInput {
   if (access.role === 'ADMIN') return {};
@@ -34,21 +41,31 @@ export function sectionVisibleWhere(access: WorkspaceAccess): Prisma.ProjectWher
 
 /**
  * Contenedores que ve: los de su sección y, en solo lectura, aquellos donde tiene una tarea suya
- * (para que vea el contexto de su tarea, ADR-0006 §1)
+ * o de una persona cuyo trabajo puede ver (para que vea el contexto de la tarea, ADR-0006 §1, HU-52)
  */
 export function projectVisibleWhere(access: WorkspaceAccess): Prisma.ProjectWhereInput {
   if (access.role === 'ADMIN') return {};
   return {
     OR: [
       sectionVisibleWhere(access),
-      { tasks: { some: { deletedAt: null, ...myTasksWhere(access) } } },
+      {
+        tasks: {
+          some: { deletedAt: null, OR: [myTasksWhere(access), ...watchedTasksWhere(access)] },
+        },
+      },
     ],
   };
 }
 
-/** Tareas que ve: las suyas y, si su permiso lo dice, las de los contenedores que ve */
+/**
+ * Tareas que ve: las suyas, las de las personas cuyo trabajo puede ver (HU-52) y, si su permiso
+ * lo dice, las de los contenedores que ve
+ */
 export function taskVisibleWhere(access: WorkspaceAccess): Prisma.TaskWhereInput {
   if (access.role === 'ADMIN') return {};
-  if (access.permissions.tasks.view === 'MINE') return myTasksWhere(access);
-  return { OR: [myTasksWhere(access), { project: sectionVisibleWhere(access) }] };
+  const visible = [myTasksWhere(access), ...watchedTasksWhere(access)];
+  if (access.permissions.tasks.view === 'VISIBLE') {
+    visible.push({ project: sectionVisibleWhere(access) });
+  }
+  return { OR: visible };
 }

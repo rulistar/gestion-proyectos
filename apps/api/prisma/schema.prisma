@@ -70,6 +70,23 @@ model MembershipProjectAccess {
   @@map("membership_project_access")
 }
 
+/// Personas cuyo trabajo puede ver un miembro, en solo lectura (HU-52): las tareas donde son
+/// Responsables y, por ellas, sus contenedores
+model MembershipPersonAccess {
+  membershipId String     @map("membership_id") @db.Uuid
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  personId     String     @map("person_id") @db.Uuid
+  person       Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdBy   User?    @relation("MembershipPersonAccessCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@id([membershipId, personId])
+  @@index([personId])
+  @@map("membership_person_access")
+}
+
 /// Persona del catálogo del espacio (HU-34, ADR-0005), con o sin cuenta. Vinculada a un usuario,
 /// su nombre es el que se muestra en lugar del de la cuenta. No va a la papelera: se archiva.
 model Person {
@@ -89,12 +106,14 @@ model Person {
   createdBy   User?    @relation("PersonCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy   User?    @relation("PersonUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
 
-  tasksResponsible  Task[]    @relation("TaskResponsible")
-  projectsRequested Project[] @relation("ProjectRequester")
-  projectsAssigned  Project[] @relation("ProjectAssignedTo")
-  projectsManaged   Project[] @relation("ProjectManager")
-  projectsConsulted Project[] @relation("ProjectConsultingManager")
-  projectsPartnered Project[] @relation("ProjectBusinessPartner")
+  tasksResponsible  Task[]                   @relation("TaskResponsible")
+  projectsRequested Project[]                @relation("ProjectRequester")
+  projectsAssigned  Project[]                @relation("ProjectAssignedTo")
+  projectsManaged   Project[]                @relation("ProjectManager")
+  projectsConsulted Project[]                @relation("ProjectConsultingManager")
+  projectsPartnered Project[]                @relation("ProjectBusinessPartner")
+  /// Miembros que pueden ver su trabajo (HU-52)
+  watchers          MembershipPersonAccess[]
 
   @@unique([workspaceId, name], where: { archivedAt: null })
   @@unique([workspaceId, userId])
@@ -304,6 +323,7 @@ model User {
   invitationGrantsCreated InvitationGrant[]         @relation("InvitationGrantCreatedBy")
   projectTaskTypesCreated ProjectTaskType[]         @relation("ProjectTaskTypeCreatedBy")
   projectAccessCreated    MembershipProjectAccess[] @relation("MembershipProjectAccessCreatedBy")
+  personAccessCreated     MembershipPersonAccess[]  @relation("MembershipPersonAccessCreatedBy")
   people                  Person[]                  @relation("PersonUser")
   peopleCreated           Person[]                  @relation("PersonCreatedBy")
   peopleUpdated           Person[]                  @relation("PersonUpdatedBy")
@@ -377,6 +397,7 @@ model Membership {
   user          User                      @relation("MembershipUser", fields: [userId], references: [id], onDelete: Restrict)
   /// Contenedores de la opción "Estos…" de la matriz
   projectAccess MembershipProjectAccess[]
+  personAccess  MembershipPersonAccess[]
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)

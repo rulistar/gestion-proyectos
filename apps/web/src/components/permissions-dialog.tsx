@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { NativeSelect } from '@/components/ui/native-select';
+import { peopleQueryOptions } from '@/lib/people';
 import { projectsQueryOptions } from '@/lib/projects';
 import { SECTIONS } from '@/lib/project-types';
 import { copyPermissions, templateMatrix, type MatrixValue } from '@/lib/matrix';
@@ -147,6 +148,9 @@ function PermissionsForm({
     permissions: copyPermissions(member.matrix.permissions),
     selected: new Set(member.matrix.selectedProjectIds),
   }));
+  const [watched, setWatched] = useState<ReadonlySet<string>>(
+    () => new Set(member.matrix.watchedPersonIds),
+  );
 
   function handleSave() {
     save.mutate(
@@ -155,6 +159,7 @@ function PermissionsForm({
         role: value.role,
         permissions: value.permissions,
         selectedProjectIds: [...value.selected],
+        watchedPersonIds: [...watched],
       },
       {
         onSuccess: () => {
@@ -178,6 +183,15 @@ function PermissionsForm({
         onChange={setValue}
         disabled={save.isPending}
       />
+      {value.role !== 'ADMIN' && (
+        <WatchedPeopleEditor
+          workspaceId={workspaceId}
+          member={member}
+          value={watched}
+          onChange={setWatched}
+          disabled={save.isPending}
+        />
+      )}
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={onDone} disabled={save.isPending}>
           Cancelar
@@ -187,6 +201,66 @@ function PermissionsForm({
         </Button>
       </div>
     </>
+  );
+}
+
+/**
+ * Personas cuyo trabajo puede ver, en solo lectura (HU-52): sus tareas (donde son Responsables)
+ * y los contenedores donde están. Se eligen del catálogo, tengan o no cuenta.
+ */
+function WatchedPeopleEditor({
+  workspaceId,
+  member,
+  value,
+  onChange,
+  disabled,
+}: {
+  workspaceId: string;
+  member: Member;
+  value: ReadonlySet<string>;
+  onChange: (value: ReadonlySet<string>) => void;
+  disabled: boolean;
+}) {
+  const { data: people = [] } = useQuery(peopleQueryOptions(workspaceId));
+  // Su propia persona no: lo suyo ya lo ve. Las archivadas solo si ya estaban elegidas
+  const choices = people.filter(
+    (person) => person.userId !== member.userId && (!person.archived || value.has(person.id)),
+  );
+
+  function toggle(id: string) {
+    const next = new Set(value);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onChange(next);
+  }
+
+  return (
+    <fieldset disabled={disabled} className="grid gap-2 rounded-md border p-3">
+      <legend className="px-1 text-sm font-semibold">Puede ver el trabajo de</legend>
+      <p className="text-xs text-muted-foreground">
+        Ve, sin poder modificarlas, las tareas donde estas personas son Responsables (también en Mi
+        trabajo) y los contenedores donde están. Ej.: si marcas a Luis, verá las tareas de Luis
+        aunque su matriz diga «las suyas».
+      </p>
+      {choices.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No hay otras personas en el catálogo.</p>
+      ) : (
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
+          {choices.map((person) => (
+            <label key={person.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={value.has(person.id)}
+                onChange={() => toggle(person.id)}
+                className="size-4 accent-primary"
+              />
+              {person.name}
+              {person.archived ? ' (archivada)' : ''}
+            </label>
+          ))}
+        </div>
+      )}
+    </fieldset>
   );
 }
 

@@ -38,6 +38,7 @@ export async function findAccess(
         role: true,
         permissions: true,
         projectAccess: { select: { projectId: true } },
+        personAccess: { select: { personId: true } },
       },
     }),
     // Su persona del catálogo: "las tareas donde soy Responsable" (ADR-0005)
@@ -50,6 +51,7 @@ export async function findAccess(
       role: membership.role,
       permissions: parsePermissions(membership.permissions, membership.role),
       selectedProjectIds: membership.projectAccess.map((access) => access.projectId),
+      watchedPersonIds: membership.personAccess.map((access) => access.personId),
     };
   }
 
@@ -63,6 +65,7 @@ export async function findAccess(
         role: 'ADMIN',
         permissions: PERMISSION_TEMPLATES.ADMIN,
         selectedProjectIds: [],
+        watchedPersonIds: [],
       }
     : null;
 }

@@ -8,8 +8,17 @@ export type MyTask = z.infer<typeof myTaskSchema>;
 /** Respuesta de GET /workspaces/:workspaceId/my-tasks: abiertas y hechas desde `doneSince` */
 export const myTaskListSchema = z.array(myTaskSchema);
 
-/** Query de GET .../my-tasks: desde cuándo incluir las Hechas (por omisión, 7 días atrás) */
-export const myTasksQuerySchema = z.object({ doneSince: z.iso.datetime().optional() });
+/** Ver el trabajo de todos los que puedo ver: yo y las personas que sigo; el Admin, todos (HU-52) */
+export const ALL_PEOPLE = 'all';
+
+/**
+ * Query de GET .../my-tasks: desde cuándo incluir las Hechas (por omisión, 7 días atrás) y de
+ * quién (HU-52): una persona del catálogo o `all`. Sin `person`, las mías.
+ */
+export const myTasksQuerySchema = z.object({
+  doneSince: z.iso.datetime().optional(),
+  person: z.union([z.uuid(), z.literal(ALL_PEOPLE)]).optional(),
+});
 
 /** Trabajo abierto: lo que todavía hay que hacer (Pausada sigue pendiente, decisión del PO) */
 const OPEN: readonly TaskStatus[] = ['PENDING', 'IN_PROGRESS', 'PAUSED'];

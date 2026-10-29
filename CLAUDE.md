@@ -92,7 +92,8 @@ apps/
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02);
                           request.membership = acceso con su matriz (ADR-0006). requirePermission solo para lo del Admin
       workspaces/visibility.ts  filtro de visibilidad único (ADR-0006): projectVisibleWhere / taskVisibleWhere;
-                          toda consulta de proyectos o tareas lo usa
+                          toda consulta de proyectos o tareas lo usa. Incluye, en solo lectura, el trabajo de las
+                          personas que sigue (MembershipPersonAccess, HU-52)
       workspaces/facts.ts visibleContainer / visibleTask: datos para que las reglas de shared decidan (404 si no lo ve)
       moves/              mover entre espacios (HU-32): POST .../projects/:id/move y .../tasks/:id/move;
                           Admin en origen y destino (permissionIn de access.ts); traduce catálogos al destino

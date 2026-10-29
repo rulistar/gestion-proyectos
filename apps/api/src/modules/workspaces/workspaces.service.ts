@@ -59,6 +59,7 @@ export async function listMembers(
       role: true,
       permissions: true,
       projectAccess: { select: { projectId: true } },
+      personAccess: { select: { personId: true } },
       user: { select: { id: true, name: true, email: true } },
     },
     orderBy: { user: { name: 'asc' } },
@@ -69,7 +70,7 @@ export async function listMembers(
     workspaceId,
     memberships.map(({ user }) => user.id),
   );
-  return memberships.map(({ role, permissions, projectAccess, user }) => ({
+  return memberships.map(({ role, permissions, projectAccess, personAccess, user }) => ({
     userId: user.id,
     name: names.get(user.id) ?? user.name,
     email: withEmail ? user.email : null,
@@ -78,6 +79,7 @@ export async function listMembers(
       ? {
           permissions: parsePermissions(permissions, role),
           selectedProjectIds: projectAccess.map((access) => access.projectId),
+          watchedPersonIds: personAccess.map((access) => access.personId),
         }
       : null,
   }));
@@ -89,9 +91,16 @@ export class MemberNotFoundError extends Error {}
 export class LastAdminError extends Error {}
 /** Algún contenedor de "Estos…" no es del espacio o está en la papelera → 400 */
 export class InvalidSelectedProjectsError extends Error {}
+/** Alguna persona cuyo trabajo verá no es del catálogo del espacio → 400 (HU-52) */
+export class InvalidWatchedPeopleError extends Error {}
 
-/** Nueva matriz: la plantilla (al cambiar el rol) o la ajustada en la pantalla de permisos */
-type MatrixChange = UpdateMemberPermissions;
+/**
+ * Nueva matriz: la plantilla (al cambiar el rol) o la ajustada en la pantalla de permisos. Sin
+ * `watchedPersonIds`, las personas cuyo trabajo ve no cambian (HU-52)
+ */
+type MatrixChange = Omit<UpdateMemberPermissions, 'watchedPersonIds'> & {
+  watchedPersonIds?: readonly string[];
+};
 
 /**
  * Cambia la plantilla y la matriz (HU-25, HU-17b) o quita a un miembro, en una transacción que
@@ -109,7 +118,7 @@ async function changeMembership(
   await db.$transaction(async (tx) => {
     const membership = await tx.membership.findFirst({
       where: { workspaceId, userId, ...notDeleted },
-      select: { id: true, role: true },
+      select: { id: true, role: true, userId: true },
     });
     if (!membership) throw new MemberNotFoundError();
 
@@ -142,7 +151,40 @@ async function changeMembership(
     });
     await tx.membershipProjectAccess.deleteMany({ where: { membershipId: membership.id } });
     await addProjectAccess(tx, membership.id, selected, actorId);
+
+    if (change.watchedPersonIds) {
+      const watched = await watchedInWorkspace(tx, workspaceId, userId, change.watchedPersonIds);
+      await tx.membershipPersonAccess.deleteMany({ where: { membershipId: membership.id } });
+      if (watched.length > 0) {
+        await tx.membershipPersonAccess.createMany({
+          data: watched.map((personId) => ({
+            membershipId: membership.id,
+            personId,
+            createdById: actorId,
+          })),
+        });
+      }
+    }
   });
+}
+
+/**
+ * Personas cuyo trabajo verá (HU-52): deben ser del catálogo del espacio; su propia persona se
+ * ignora (lo suyo ya lo ve)
+ */
+async function watchedInWorkspace(
+  tx: Tx,
+  workspaceId: string,
+  userId: string,
+  ids: readonly string[],
+): Promise<string[]> {
+  const requested = [...new Set(ids)];
+  const people = await tx.person.findMany({
+    where: { id: { in: requested }, workspaceId },
+    select: { id: true, userId: true },
+  });
+  if (people.length !== requested.length) throw new InvalidWatchedPeopleError();
+  return people.filter((person) => person.userId !== userId).map((person) => person.id);
 }
 
 /** El Admin puede todo: su matriz es siempre la plantilla (ADR-0006 §2) */
