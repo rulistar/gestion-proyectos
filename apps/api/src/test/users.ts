@@ -23,6 +23,7 @@ export const LEGACY_PERMISSIONS: Record<MembershipRole, MemberPermissions> = {
       ON_DEMAND: { view: 'ALL', create: true, update: 'VISIBLE', remove: 'NONE' },
     },
     tasks: { view: 'VISIBLE', create: true, update: 'VISIBLE', remove: 'EDITABLE' },
+    workOnly: false,
   },
   VIEWER: PERMISSION_TEMPLATES.VIEWER,
 };

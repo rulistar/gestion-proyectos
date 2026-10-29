@@ -123,7 +123,7 @@ async function typeId(ws: string, behavior: 'WITH_END' | 'ONGOING' | 'ON_DEMAND'
   return type.id;
 }
 
-describe('plantilla Miembro: ve sus tareas y lo que creó', () => {
+describe('plantilla Miembro: ve lo que creó y las tareas de donde tiene una suya', () => {
   it('ve solo el contenedor donde tiene una tarea (solo lectura); el resto da 404', async () => {
     const { juan, ws, portal, erp } = await setup();
 
@@ -139,11 +139,11 @@ describe('plantilla Miembro: ve sus tareas y lo que creó', () => {
     expect((await send(juan.cookies, 'DELETE', projectUrl(ws.id, portal.id))).statusCode).toBe(403);
   });
 
-  it('en ese contenedor ve y modifica solo sus tareas; las de otros no existen para él', async () => {
+  it('en ese contenedor ve todas las tareas (HU-53), pero solo modifica las suyas', async () => {
     const { juan, ws, portal, assigned, anasTask } = await setup();
 
     const list = taskListSchema.parse((await get(juan.cookies, tasksUrl(ws.id, portal.id))).json());
-    expect(list.map((t) => t.title)).toEqual(['Asignada a Juan']);
+    expect(list.map((t) => t.title).sort()).toEqual(['Asignada a Juan', 'De Ana']);
 
     const mine = await send(
       juan.cookies,
@@ -162,7 +162,7 @@ describe('plantilla Miembro: ve sus tareas y lo que creó', () => {
         status: 'IN_PROGRESS',
       },
     );
-    expect(others.statusCode).toBe(404);
+    expect(others.statusCode).toBe(403);
     // Dar de baja: la plantilla Miembro no lo permite ni con las suyas
     const remove = await send(
       juan.cookies,
@@ -189,7 +189,7 @@ describe('plantilla Miembro: ve sus tareas y lo que creó', () => {
     expect(project.statusCode).toBe(403);
   });
 
-  it('la vista Tareas muestra solo las suyas (creadas o asignadas)', async () => {
+  it('la vista Tareas muestra las de los contenedores que ve (HU-53)', async () => {
     const { juan, ws, portal } = await setup();
     await send(juan.cookies, 'POST', tasksUrl(ws.id, portal.id), { title: 'Creada por Juan' });
 
@@ -198,7 +198,7 @@ describe('plantilla Miembro: ve sus tareas y lo que creó', () => {
       .parse(response.json())
       .map((t) => t.title)
       .sort();
-    expect(titles).toEqual(['Asignada a Juan', 'Creada por Juan']);
+    expect(titles).toEqual(['Asignada a Juan', 'Creada por Juan', 'De Ana']);
   });
 });
 
@@ -261,6 +261,7 @@ describe('matriz ajustada', () => {
         WITH_END: { view: 'ALL', create: false, update: 'NONE', remove: 'NONE' },
       },
       tasks: { ...MEMBER.tasks, view: 'VISIBLE' },
+      workOnly: false,
     };
     const { juan, ws, portal, erp, anasTask } = await setup(permissions);
 
@@ -589,5 +590,35 @@ describe('ver el trabajo de otra persona (HU-52)', () => {
     });
 
     expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('solo trabajo (HU-53)', () => {
+  it('el Lector no ve el contenedor Personal «Gimnasio» ni sus tareas; sí «Portal» (Trabajo)', async () => {
+    const { ana, juan, ws } = await setup(PERMISSION_TEMPLATES.VIEWER);
+    const gimnasio = await createProject(db, ana.user.id, ws.id, {
+      ...emptyProject,
+      name: 'Gimnasio',
+      scope: 'PERSONAL',
+    });
+    await createTask(db, ana.user.id, ws.id, gimnasio.id, { ...emptyTask, title: 'Pesas' });
+
+    expect(await projectNames(juan.cookies, ws.id)).toEqual(['ERP', 'Portal']);
+    expect((await get(juan.cookies, projectUrl(ws.id, gimnasio.id))).statusCode).toBe(404);
+    const tasks = workspaceTaskListSchema.parse(
+      (await get(juan.cookies, `${base(ws.id)}/tasks`)).json(),
+    );
+    expect(tasks.map((t) => t.title)).not.toContain('Pesas');
+  });
+
+  it('sin «Solo trabajo» sí lo ve', async () => {
+    const { ana, juan, ws } = await setup({ ...PERMISSION_TEMPLATES.VIEWER, workOnly: false });
+    await createProject(db, ana.user.id, ws.id, {
+      ...emptyProject,
+      name: 'Gimnasio',
+      scope: 'PERSONAL',
+    });
+
+    expect(await projectNames(juan.cookies, ws.id)).toEqual(['ERP', 'Gimnasio', 'Portal']);
   });
 });

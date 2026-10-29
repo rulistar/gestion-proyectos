@@ -56,8 +56,10 @@ La matriz va en una columna JSON, validada con un esquema de Zod compartido: se 
 | Plantilla | Contenedores | Tareas |
 |---|---|---|
 | **Admin** | Todo | Todo |
-| **Miembro** (valor por defecto del PO) | Ver: solo los míos · Crear: no · Modificar: los míos · Baja: ninguno | Ver: las mías · Crear: sí · Modificar: las mías · Baja: ninguna |
-| **Lector** | Ver: todos · nada más | Ver: todas las de lo que ve · nada más |
+| **Miembro** (valor por defecto del PO) | Ver: solo los míos · Crear: no · Modificar: los míos · Baja: ninguno | Ver: todas las de lo que ve (HU-53) · Crear: sí · Modificar: las mías · Baja: ninguna |
+| **Lector** | Ver: todos los de trabajo (HU-53) · nada más | Ver: todas las de lo que ve · nada más |
+
+**«Las de lo que ve»** incluye los contenedores que ve en solo lectura por tener una tarea suya (HU-53). **«Solo trabajo»** (HU-53, casilla de la matriz): no ve los contenedores Personales (HU-49) ni sus tareas, salvo los que creó o donde tiene una tarea suya; tampoco lo Personal de las personas que sigue (HU-52).
 
 Al elegir una plantilla se llena la matriz, y después se ajusta casilla por casilla. La pantalla muestra "Miembro (ajustado)" cuando la matriz ya no coincide con la plantilla.
 

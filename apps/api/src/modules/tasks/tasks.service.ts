@@ -185,6 +185,7 @@ export async function listWorkspaceTasks(
           name: true,
           folio: true,
           createdById: true,
+          scope: true,
           type: { select: { id: true, name: true, behavior: true } },
         },
       },

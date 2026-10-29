@@ -14,6 +14,7 @@ const linux = {
   name: 'Certificación Linux',
   folio: 'PY2610-001',
   createdById: null,
+  scope: 'WORK' as const,
   type: { id: 't-proyecto', name: 'Proyecto', behavior: 'WITH_END' as const },
 };
 const erp = {
@@ -21,6 +22,7 @@ const erp = {
   name: 'ERP',
   folio: 'MT2610-001',
   createdById: null,
+  scope: 'WORK' as const,
   type: { id: 't-mtto', name: 'Mtto correctivo', behavior: 'ONGOING' as const },
 };
 

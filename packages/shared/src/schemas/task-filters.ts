@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { normalize, sortByValue } from './project-filters.js';
 import { projectBehaviorSchema, projectTypeRefSchema } from './project-types.js';
+import { projectScopeSchema } from './projects.js';
 import { taskSchema, taskStatusSchema } from './tasks.js';
 
 /** Una tarea del espacio con su contenedor (HU-39, vista "Tareas") */
@@ -10,6 +11,7 @@ export const workspaceTaskSchema = taskSchema.extend({
     name: z.string(),
     folio: z.string().nullable(),
     createdById: z.uuid().nullable(),
+    scope: projectScopeSchema,
     type: projectTypeRefSchema,
   }),
 });

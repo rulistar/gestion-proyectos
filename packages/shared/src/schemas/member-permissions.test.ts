@@ -31,9 +31,24 @@ function access(permissions: MemberPermissions, extra: Partial<MemberAccess> = {
   };
 }
 
-const mine = { id: 'p-mio', createdById: ME, behavior: 'WITH_END' as const };
-const theirs = { id: 'p-ajeno', createdById: OTHER, behavior: 'WITH_END' as const };
-const theirMtto = { id: 'm-ajeno', createdById: OTHER, behavior: 'ONGOING' as const };
+const mine = {
+  id: 'p-mio',
+  createdById: ME,
+  behavior: 'WITH_END' as const,
+  scope: 'WORK' as const,
+};
+const theirs = {
+  id: 'p-ajeno',
+  createdById: OTHER,
+  behavior: 'WITH_END' as const,
+  scope: 'WORK' as const,
+};
+const theirMtto = {
+  id: 'm-ajeno',
+  createdById: OTHER,
+  behavior: 'ONGOING' as const,
+  scope: 'WORK' as const,
+};
 
 const member = access(PERMISSION_TEMPLATES.MEMBER);
 
@@ -101,10 +116,10 @@ describe('tareas: "las mías" = las que creé o donde soy Responsable', () => {
   const assignedToMe = { createdById: OTHER, responsiblePersonId: 'mi-persona', project: theirs };
   const others = { createdById: OTHER, responsiblePersonId: 'alguien', project: mine };
 
-  it('el Miembro ve y modifica las suyas, no las de otros (ni en su propio proyecto)', () => {
+  it('el Miembro ve las de otros en su proyecto (HU-53), pero solo modifica las suyas', () => {
     expect(canViewTask(member, createdByMe)).toBe(true);
     expect(canUpdateTask(member, assignedToMe)).toBe(true);
-    expect(canViewTask(member, others)).toBe(false);
+    expect(canViewTask(member, others)).toBe(true);
     expect(canUpdateTask(member, others)).toBe(false);
     expect(canRemoveTask(member, createdByMe)).toBe(false);
   });
@@ -158,6 +173,7 @@ describe('ver el trabajo de otra persona (HU-52)', () => {
   const soloLasMias = {
     sections: PERMISSION_TEMPLATES.VIEWER.sections,
     tasks: { ...PERMISSION_TEMPLATES.VIEWER.tasks, view: 'MINE' as const },
+    workOnly: false,
   };
   const lector = access(soloLasMias, { watchedPersonIds: ['luis'] });
   const deLuis = { createdById: 'otro', responsiblePersonId: 'luis', project: theirs };
@@ -173,11 +189,58 @@ describe('ver el trabajo de otra persona (HU-52)', () => {
       {
         sections: PERMISSION_TEMPLATES.MEMBER.sections,
         tasks: { view: 'MINE', create: true, update: 'VISIBLE', remove: 'EDITABLE' },
+        workOnly: false,
       },
       { watchedPersonIds: ['luis'] },
     );
     expect(canViewTask(miembro, deLuis)).toBe(true);
     expect(canUpdateTask(miembro, deLuis)).toBe(false);
     expect(canRemoveTask(miembro, deLuis)).toBe(false);
+  });
+});
+
+describe('solo trabajo (HU-53)', () => {
+  const lector = access(PERMISSION_TEMPLATES.VIEWER, { role: 'VIEWER' });
+  const gimnasio = { ...theirs, id: 'p-gimnasio', scope: 'PERSONAL' as const };
+  const miGimnasio = { ...gimnasio, createdById: ME };
+
+  it('el Lector ve «Certificación Linux» (Trabajo) pero no «Gimnasio» (Personal) ni sus tareas', () => {
+    expect(sectionCanView(lector, theirs)).toBe(true);
+    expect(sectionCanView(lector, gimnasio)).toBe(false);
+    expect(
+      canViewTask(lector, { createdById: OTHER, responsiblePersonId: null, project: gimnasio }),
+    ).toBe(false);
+  });
+
+  it('lo suyo en un contenedor Personal sí lo ve', () => {
+    expect(sectionCanView(lector, miGimnasio)).toBe(true);
+    const suya = { createdById: OTHER, responsiblePersonId: 'mi-persona', project: gimnasio };
+    expect(canViewTask(lector, suya)).toBe(true);
+  });
+
+  it('tampoco ve lo Personal de una persona que sigue', () => {
+    const sigue = access(PERMISSION_TEMPLATES.VIEWER, { watchedPersonIds: ['luis'] });
+    const deLuis = { createdById: OTHER, responsiblePersonId: 'luis', project: gimnasio };
+    expect(canViewTask(sigue, deLuis)).toBe(false);
+  });
+
+  it('sin «Solo trabajo» (Miembro) ve lo Personal como lo demás', () => {
+    const verTodo = access({ ...PERMISSION_TEMPLATES.VIEWER, workOnly: false });
+    expect(sectionCanView(verTodo, gimnasio)).toBe(true);
+    expect(matchesTemplate('VIEWER', verTodo.permissions)).toBe(false);
+  });
+
+  it('las matrices guardadas antes de HU-53 se leen sin «Solo trabajo»', () => {
+    const { workOnly: _omitida, ...antes } = PERMISSION_TEMPLATES.VIEWER;
+    expect(memberPermissionsSchema.parse(antes).workOnly).toBe(false);
+  });
+});
+
+describe('Miembro (HU-53)', () => {
+  it('ve las tareas de los contenedores que ve, pero solo modifica las suyas', () => {
+    const ajena = { createdById: OTHER, responsiblePersonId: 'otra', project: mine };
+    expect(canViewTask(member, ajena)).toBe(true);
+    expect(canUpdateTask(member, ajena)).toBe(false);
+    expect(canUpdateTask(member, { ...ajena, responsiblePersonId: 'mi-persona' })).toBe(true);
   });
 });

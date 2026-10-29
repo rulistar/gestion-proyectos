@@ -16,6 +16,7 @@ export interface TrashFilter {
 const containerFactsSelect = {
   id: true,
   createdById: true,
+  scope: true,
   type: { select: { behavior: true } },
 } as const;
 
@@ -53,11 +54,13 @@ export async function listTrash(
   const container = (p: {
     id: string;
     createdById: string | null;
+    scope: ContainerFacts['scope'];
     type: { behavior: ContainerFacts['behavior'] };
   }) => ({
     id: p.id,
     createdById: p.createdById,
     behavior: p.type.behavior,
+    scope: p.scope,
   });
   const projects = filter ? allProjects.filter((p) => filter.project(container(p))) : allProjects;
   const tasks = filter

@@ -2,6 +2,7 @@ import type {
   ContainerFacts,
   MemberAccess,
   ProjectBehavior,
+  ProjectScope,
   Task,
   TaskFacts,
 } from '@gestion/shared';
@@ -21,16 +22,26 @@ export function useAccess(workspaceId: string): MemberAccess {
 export function containerFacts(project: {
   id: string;
   createdById: string | null;
+  scope: ProjectScope;
   type: { behavior: ProjectBehavior };
 }): ContainerFacts {
-  return { id: project.id, createdById: project.createdById, behavior: project.type.behavior };
+  return {
+    id: project.id,
+    createdById: project.createdById,
+    behavior: project.type.behavior,
+    scope: project.scope,
+  };
 }
 
-/** Lo que las reglas necesitan de una tarea (con su contenedor) */
-export function taskFacts(task: Task, project: ContainerFacts): TaskFacts {
+/**
+ * Lo que las reglas necesitan de una tarea (con su contenedor). `inMyContainer`: el contenedor
+ * tiene una tarea mía (HU-53)
+ */
+export function taskFacts(task: Task, project: ContainerFacts, inMyContainer = false): TaskFacts {
   return {
     createdById: task.createdById,
     responsiblePersonId: task.responsible?.id ?? null,
     project,
+    inMyContainer,
   };
 }
