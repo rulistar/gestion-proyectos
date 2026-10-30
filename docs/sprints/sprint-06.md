@@ -4,7 +4,7 @@
 |---|---|
 | Fechas | **2026-10-31 → 2026-11-13** |
 | Capacidad | 5–10 h/semana (PO + Claude Code). Velocidad: Sprint 4 = 36 pts, Sprint 5 = 56 pts (24 agregados a mitad del sprint); el límite real es el tiempo del PO para probar |
-| Compromiso | **29 puntos** |
+| Compromiso | **32 puntos** |
 
 ## Objetivo del sprint
 
@@ -14,21 +14,24 @@
 
 | Orden | ID | Elemento | Pts |
 |---|---|---|---|
-| 1 | HU-26 | Pestaña Lista del proyecto, agrupada por fase | 2 |
-| 2 | HU-27 | Gantt del proyecto y del espacio, planeado contra real | 8 |
-| 3 | HU-23 | Campos de detalle por tipo (ADR-0004 §3) | 8 |
-| 4 | HU-10 | Tablero Kanban de proyectos por estado | 5 |
-| 5 | HU-13 | Exportar en JSON y CSV compatible con Excel | 3 |
-| 6 | HU-11 | Detalle del proyecto (pestaña Resumen) | 3 |
-| | | **Total** | **29** |
+| 1 | HU-54 | Restablecer una contraseña olvidada | 3 |
+| 2 | HU-26 | Pestaña Lista del proyecto, agrupada por fase | 2 |
+| 3 | HU-27 | Gantt del proyecto y del espacio, planeado contra real | 8 |
+| 4 | HU-23 | Campos de detalle por tipo (ADR-0004 §3) | 8 |
+| 5 | HU-10 | Tablero Kanban de proyectos por estado | 5 |
+| 6 | HU-13 | Exportar en JSON y CSV compatible con Excel | 3 |
+| 7 | HU-11 | Detalle del proyecto (pestaña Resumen) | 3 |
+| | | **Total** | **32** |
 
 **Por qué este orden:**
+- **Restablecer contraseña primero.** Es chica y hoy, si alguien olvida su contraseña, no puede volver a entrar.
 - **Lista y Gantt primero.** Ya se pospusieron dos veces, y las fases (HU-07) que necesitan ya están en `main`.
 - **Campos de detalle antes de Exportar.** El CSV y el JSON deben llevar las columnas de los campos de detalle.
 - **Resumen al final.** Junta datos de las demás historias (avance por fase, planeado contra real).
 
 **Decisiones del PO al planificar (2026-10-30):**
 - Se elige **cerrar el MVP** (29 pts). Queda espacio para lo que se pida a mitad del sprint.
+- Se agrega **HU-54** (restablecer contraseña, 3 pts), pedida en la revisión del Sprint 5: el compromiso queda en 32.
 - **Pasan al Sprint 7:** HU-50 (personas compartidas, diseño confirmado), TEC-05 (Swagger) y TEC-06 (Playwright).
 
 Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-6).
@@ -40,6 +43,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-6).
 
 ## Guion de demostración (en producción)
 
+1. **Usuarios del sistema** → restablecer la contraseña de la cuenta de prueba; abrir el enlace en una ventana privada, crear una nueva y entrar.
 1. En "Certificación Linux", pestaña **Lista**: tareas agrupadas por fase con sangría, plegar "Módulo 101" y usar los filtros de la vista Tareas.
 2. Pestaña **Gantt**: barras planeadas contra reales, línea de hoy, una tarea vencida resaltada, fases como barras resumen y zoom por semana, mes y trimestre. Abrir el Gantt general del espacio.
 3. **Configuración** → agregar al tipo Incidencia el campo "Severidad" (lista, obligatorio). Crear una incidencia sin severidad da error; con severidad se guarda.
@@ -77,11 +81,11 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-6).
 |---|---|---|
 | Planificación | 2026-10-30 | Este documento ✅ |
 | Seguimiento | En cada sesión de trabajo | Revisar el avance y los bloqueos |
-| Revisión | Al terminar las 6 historias | El guion de arriba, en producción; recorrido del MVP del acta |
+| Revisión | Al terminar las 7 historias | El guion de arriba, en producción; recorrido del MVP del acta |
 | Retrospectiva | Junto con la revisión | Qué salió bien, qué mejorar |
 
 ## Resultado (se completa al cierre)
 
-- Puntos completados: \_\_ / 29
+- Puntos completados: \_\_ / 32
 - Objetivo cumplido: ☐ Sí ☐ No
 - Notas de la retrospectiva:

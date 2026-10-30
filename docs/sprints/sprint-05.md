@@ -166,7 +166,11 @@ El compromiso queda en **58 puntos** (56 después de la replaneación de abajo).
 5. **Usuarios del sistema** → desactivar la cuenta de prueba: en la ventana privada ya no entra. Reactivarla.
 6. Dar de baja la fase "Módulo 101" y restaurarla desde la **Papelera**: regresan su subfase y sus tareas.
 
-**Comentarios del PO durante la revisión:** se anotan aquí al terminarla.
+**Comentarios del PO durante la revisión:**
+
+| Comentario | Respuesta |
+|---|---|
+| No pudo entrar a producción ("Correo o contraseña incorrectos") hasta dar con la contraseña correcta; no hay forma de restablecerla | Nueva historia **HU-54** (restablecer contraseña, 3 pts), primera del Sprint 6 |
 
 ### Retrospectiva
 

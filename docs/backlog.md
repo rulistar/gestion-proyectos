@@ -39,7 +39,7 @@
 | Revisión del Sprint 4 (2026-10-27) | Se hizo lo pedido (36 pts). "Fin hasta" de la lista de proyectos es la fecha de fin del contenedor; las tareas se consultan en la vista **Tareas** (HU-39). Sprint 5: despliegue, fases, pestaña Lista (reducida a 2 pts), Gantt, Mi perfil, usuarios del sistema y visibilidad (34 pts); HU-23 y HU-17 pasan al Sprint 6. |
 | Crear espacios (2026-10-28) | **Solo el Admin del sistema crea espacios de trabajo**; los demás usuarios entran por invitación. La web oculta lo que el perfil no permite (HU-42); los ajustes por persona llegan con HU-17. |
 | Permisos por persona (2026-10-28) | Al invitar se configura a cada persona **por espacio**: qué ve (solo lo suyo, todo o una lista), qué crea, qué modifica y qué da de baja y restaura, por proyectos, mantenimientos, actividades y tareas. El rol queda como plantilla. "Mis tareas" = las que creé o donde soy Responsable. Una invitación puede incluir **varios espacios**. Va **antes del despliegue**; Gantt y pestaña Lista pasan al Sprint 6. Diseño en [ADR-0006](adr/ADR-0006-permisos-por-persona.md). |
-| Revisión del Sprint 5 (2026-10-30) | Se hizo lo replaneado más lo pedido a mitad del sprint (56 pts); la aplicación está en producción. **HU-50 confirmada** tal como está escrita (ejemplo: Luis, de workpers, compartido con Monex) y pasa al Sprint 7. Sprint 6: **cerrar el MVP**: Gantt, pestaña Lista, campos de detalle por tipo, Kanban de proyectos, exportar y detalle del proyecto (29 pts). Swagger y Playwright pasan al Sprint 7. |
+| Revisión del Sprint 5 (2026-10-30) | Se hizo lo replaneado más lo pedido a mitad del sprint (56 pts); la aplicación está en producción. **HU-50 confirmada** tal como está escrita (ejemplo: Luis, de workpers, compartido con Monex) y pasa al Sprint 7. Sprint 6: **cerrar el MVP**: Gantt, pestaña Lista, campos de detalle por tipo, Kanban de proyectos, exportar y detalle del proyecto (29 pts). Swagger y Playwright pasan al Sprint 7. Se agrega **restablecer contraseñas** (HU-54, 3 pts). |
 
 ## Requisitos no funcionales (aplican a todas las historias)
 
@@ -103,23 +103,24 @@
 | 44 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
 | 45 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
 | 46 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 47 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
-| 48 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
-| 49 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
-| 50 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 51 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 52 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 53 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 7 |
-| 54 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 7 |
-| 55 | HU-50 | Catálogo de personas compartido entre espacios | Personas | 5 | 🟡 | 7 |
-| 56 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 57 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 58 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 59 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 60 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 61 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 62 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 63 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 47 | HU-54 | Restablecer una contraseña olvidada (enlace del Admin del sistema y comando de terminal) | Usuarios | 3 | 🔴 | 6 |
+| 48 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
+| 49 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
+| 50 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
+| 51 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 52 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 53 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 54 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 7 |
+| 55 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 7 |
+| 56 | HU-50 | Catálogo de personas compartido entre espacios | Personas | 5 | 🟡 | 7 |
+| 57 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 58 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 59 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 60 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 61 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 62 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 63 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 64 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -664,6 +665,15 @@ _Como Admin, quiero configurar a cada persona al invitarla (en qué espacios ent
 ### Sprint 6
 
 Plan: [sprints/sprint-06.md](sprints/sprint-06.md). Objetivo: cerrar el MVP. HU-26 (Lista) y HU-27 (Gantt) están arriba, en el Sprint 5, de donde vienen. Los criterios de esta sección son iniciales: cada historia se confirma con un ejemplo concreto antes de construirla (acuerdo del Sprint 4).
+
+#### HU-54 · Restablecer una contraseña olvidada (3 pts)
+
+_Como usuario que olvidó su contraseña, quiero recuperar el acceso sin perder mi cuenta._ Pedido del PO (2026-10-30), después de no poder entrar a producción. **Diseño por confirmar con el PO.**
+
+- [ ] En Usuarios del sistema (HU-30), **Restablecer contraseña** genera un enlace de un solo uso, válido 48 horas, que el Admin del sistema copia y manda (como las invitaciones, sin correo automático). Ej.: prueba4 olvida su contraseña; el Admin le manda el enlace por WhatsApp; prueba4 crea una nueva y entra.
+- [ ] Al usar el enlace se cierran todas las sesiones de esa cuenta; en la BD solo se guarda el hash del token.
+- [ ] Si quien la olvida es el Admin del sistema: comando `pnpm reset:password` desde la PC del PO (como `setup:admin`), que pide el correo y la contraseña nueva sin mostrarla.
+- [ ] "¿Olvidaste tu contraseña?" en el login explica que se pide al Admin del sistema. Sin correo automático mientras no haya servicio de correo.
 
 #### HU-23 · Campos de detalle por tipo (8 pts)
 
