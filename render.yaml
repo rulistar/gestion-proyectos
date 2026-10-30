@@ -12,10 +12,13 @@ services:
     # Despliega cada fusión a main, pero solo cuando los checks de CI de GitHub pasaron
     autoDeployTrigger: checksPass
     # --prod=false: con NODE_ENV=production, pnpm omitiría las herramientas de compilación.
+    # db:generate explícito: con la caché de Render, pnpm install puede no correr el postinstall
+    # y el build fallaría sin el cliente de Prisma (src/generated no está en Git).
     # Las migraciones se aplican aquí porque el plan gratuito no tiene comando previo al despliegue.
     buildCommand: >-
       corepack enable &&
       pnpm install --frozen-lockfile --prod=false &&
+      pnpm --filter @gestion/api db:generate &&
       pnpm build &&
       pnpm --filter @gestion/api db:deploy
     startCommand: pnpm --filter @gestion/api start
@@ -39,7 +42,7 @@ services:
         value: 'true'
       - key: SESSION_IDLE_MINUTES
         value: '60'
-      # La URL pública del servicio, p. ej. https://gestion-proyectos.onrender.com
+      # La URL pública del servicio, sin / final: https://gestion-proyectos-gnnp.onrender.com
       - key: CORS_ORIGINS
         sync: false
       # Neon → Connect, conexión directa (sin pooling), con ?sslmode=require
