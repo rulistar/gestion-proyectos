@@ -120,8 +120,80 @@ El compromiso queda en **58 puntos** (56 después de la replaneación de abajo).
 | Revisión | Al terminar las 7 historias | El guion de arriba, en el entorno desplegado |
 | Retrospectiva | Junto con la revisión | Qué salió bien, qué mejorar |
 
-## Resultado (se completa al cierre)
+## Resultado (cierre: 2026-10-30)
 
-- Puntos completados: \_\_ / 34
-- Objetivo cumplido: ☐ Sí ☐ No
-- Notas de la retrospectiva:
+- Puntos completados: **56 / 32 comprometidos** tras la replaneación (34 al planificar), más 24 de historias que el PO agregó durante el sprint.
+- Objetivo replaneado cumplido: ☑ Sí. El PO probó cada historia en local antes de fusionarla. El PO recorrió el guion de abajo en producción (2026-10-30).
+- Se cerró antes de la fecha planeada (2026-11-10). El Sprint 6 empieza el 2026-10-31.
+
+### Revisión
+
+| ID | Historia | Pts | PR |
+|---|---|---|---|
+| HU-40 | Menú lateral plegable (botón y Ctrl+B) | 1 | #52 |
+| HU-41 | Pantallas compactas | 2 | #53 |
+| HU-42 | Ocultar lo que el perfil no permite; solo el Admin del sistema crea espacios | 1 | #54 |
+| — | ADR-0006: permisos por persona | — | #55 |
+| HU-17a | Permisos: modelo, migración y filtro de visibilidad único en la API | 5 | #56 |
+| HU-43 | "Sin folio" es el único folio que puede repetirse | 1 | #57 |
+| HU-44 | Personas: borrar a quien no se usa y ocultar las archivadas | 2 | #58, #59 |
+| HU-17b | Permisos: pantalla de la matriz en Miembros | 5 | #60 |
+| HU-45 | Personas: ver dónde aparece una persona | 1 | #61 |
+| HU-46 | Actividades: columna Fin; Abiertas solo con el menú oculto | 1 | #62 |
+| HU-47 | Origen de la tarea (catálogo, detalle y filtro) | 3 | #63 |
+| HU-48 | Mi trabajo: ocultar el panel; tareas en un renglón | 1 | #64 |
+| HU-17c | Permisos: invitación a varios espacios | 3 | #65 |
+| HU-49 | Contenedores de trabajo o personales | 2 | #66 |
+| HU-49b | Personales: campos de trabajo ocultos; menú oculto en contenedores | 1 | #67 |
+| HU-52 | Ver el trabajo de otras personas | 3 | #68 |
+| HU-53 | Lector solo de trabajo; Miembro ve las tareas de lo que ve | 2 | #69 |
+| HU-51 | Fusionar personas duplicadas | 3 | #70 |
+| TEC-04 | Despliegue en Render + Neon con HTTPS (ADR-0007) | 5 | #71, #72 |
+| HU-07 | Fases anidadas hasta 4 niveles, con avance y fechas calculados | 8 | #73 |
+| HU-29 | Mi perfil: nombre, correo y contraseña | 3 | #74 |
+| HU-30 | Usuarios del sistema: corregir correos y desactivar cuentas | 3 | #76 |
+
+- 350 pruebas en verde: 280 de la API y 70 de shared.
+- En producción desde 2026-10-29: <https://gestion-proyectos-gnnp.onrender.com>. Render publica `main` sola cuando el CI pasa.
+- Quedó pendiente HU-50 (personas compartidas). El PO confirmó su diseño al cierre y pasa al Sprint 7.
+
+**Guion de la revisión** (en producción, con el Admin del sistema). Cambia respecto al plan: la Lista y el Gantt salieron en la replaneación, y la visibilidad se hizo con la matriz de permisos.
+
+1. Abrir la URL: candado de HTTPS e inicio de sesión. La primera carga tarda cerca de un minuto si la app estaba dormida (capa gratuita).
+2. **Configuración** → el tipo Proyecto tiene marcada **Usa fases**. Crear el proyecto "Certificación Linux", la fase "Módulo 101" con la subfase "Tema 1" y una tarea en cada una. La pestaña **Fases** muestra el avance; clic en "Módulo 101" abre el tablero filtrado.
+3. **Miembros** → invitar a un correo de prueba con la plantilla Miembro y **Permisos** ajustados. Abrir el enlace en una ventana privada y crear la contraseña. Esa persona ve solo lo que dice su matriz.
+4. **Mi perfil** → cambiar el nombre. Cambiar la contraseña pide la actual.
+5. **Usuarios del sistema** → desactivar la cuenta de prueba: en la ventana privada ya no entra. Reactivarla.
+6. Dar de baja la fase "Módulo 101" y restaurarla desde la **Papelera**: regresan su subfase y sus tareas.
+
+**Comentarios del PO durante la revisión:**
+
+| Comentario | Respuesta |
+|---|---|
+| No pudo entrar a producción ("Correo o contraseña incorrectos") hasta dar con la contraseña correcta; no hay forma de restablecerla | Nueva historia **HU-54** (restablecer contraseña, 3 pts), primera del Sprint 6 |
+
+### Retrospectiva
+
+Borrador de Claude Code; el PO lo ajusta.
+
+**Salió bien**
+
+- Se entregaron 56 puntos, con pruebas, CI en verde y "Cómo probarlo" en cada PR.
+- La aplicación ya está en internet con HTTPS, y los permisos por persona se hicieron antes de publicarla, como pidió el PO.
+- Los acuerdos del Sprint 4 funcionaron:
+  - Fases, Lector y fusionar personas se confirmaron con un ejemplo concreto antes de tocar el modelo ("Certificación Linux" → "Módulo 101" → "Tema 1"; «Raúl Paredes» fusionada en «Rul»), y no hubo malentendidos de fondo.
+  - Antes de subir cambios se comprobó cada vez si el PR estaba fusionado. Dos "listo" que llegaron antes de la fusión se detectaron y no se perdió trabajo.
+
+**A mejorar**
+
+- El primer despliegue después de HU-17c falló: el caché de Render saltó `prisma generate`. Se corrigió con #72, pero solo se notó al revisar el panel de Render.
+- `setup:admin` apuntó a la base local porque la variable no estaba puesta en esa terminal. Se resolvió comprobando la variable antes de correrlo; queda en docs/despliegue.md.
+- Al crear la migración de fases se aplicó dos veces en la base de desarrollo y se tuvo que revertir a mano. No llegó a `main`.
+- Lo agregado a mitad del sprint (24 puntos, 43 % de lo entregado) desplazó dos veces la Lista y el Gantt. Todo se anotó el mismo día, pero no se dijo qué historia salía a cambio.
+
+**Acuerdos para el Sprint 6**
+
+1. **Al fusionar un PR, se confirma que el despliegue en Render terminó en verde** antes de dar la historia por terminada (Definición de Terminado: funciona en el entorno desplegado).
+2. **Si algo nuevo a mitad del sprint no cabe, se dice en ese momento qué historia comprometida sale**, y el PO decide.
+3. **Las migraciones se crean una sola vez**, con `pnpm db:migrate --create-only`, y se revisan antes de aplicarlas.
+4. Siguen los acuerdos del Sprint 4: ejemplo concreto antes de cambiar el modelo, comprobar la fusión antes de subir cambios, y cada filtro con un ejemplo.
