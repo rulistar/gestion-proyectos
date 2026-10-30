@@ -29,7 +29,7 @@ export function createTestDb(): Db {
 }
 
 const TRUNCATE_ALL =
-  'TRUNCATE TABLE "invitation_grants", "invitations", "membership_project_access", "membership_person_access", "tasks", "phases", "task_origins", "projects", "project_type_task_types", "task_types", "project_types", "people", "folio_counters", "sessions", "memberships", "workspaces", "users" RESTART IDENTITY CASCADE';
+  'TRUNCATE TABLE "invitation_grants", "invitations", "membership_project_access", "membership_person_access", "tasks", "phases", "task_origins", "projects", "project_type_task_types", "task_types", "project_types", "people", "folio_counters", "password_resets", "sessions", "memberships", "workspaces", "users" RESTART IDENTITY CASCADE';
 
 /** PostgreSQL canceló la consulta por un bloqueo mutuo (deadlock) */
 function isDeadlock(error: unknown): boolean {

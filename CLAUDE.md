@@ -76,6 +76,7 @@ apps/
     src/index.css       tema: variables de color (turquesa #0f6e7a, dorado para lo urgente) y Plus Jakarta Sans
     src/routes/         una página por archivo; leen la ruta con getRouteApi() para no importar router.tsx
                         invitation-page.tsx: /invitacion#<token> (el token va tras "#": no llega al servidor)
+                        password-reset-page.tsx: /restablecer#<token> (HU-54), igual que las invitaciones
   api/                Fastify — monolito modular
     src/app.ts          buildApp(): crea la instancia sin abrir puerto (testeable con app.inject)
     src/server.ts       arranque + cierre ordenado
@@ -120,14 +121,18 @@ apps/
                           Responsable = persona del catálogo (HU-35, ADR-0005);
                           GET /workspaces/:id/my-tasks = mis tareas (HU-28b); GET /workspaces/:id/tasks = todas (HU-39)
       users/              usuarios del sistema (HU-30), solo el Admin del sistema: GET /users, PUT /users/:id/email
-                          (cierra sus sesiones), PATCH /users/:id/status (desactivar/reactivar; no a sí mismo)
+                          (cierra sus sesiones), PATCH /users/:id/status (desactivar/reactivar; no a sí mismo),
+                          POST /users/:id/password-reset = enlace para restablecer la contraseña (HU-54)
+      users/password-reset.*  públicas: POST /password-resets/preview|complete (un solo uso, 48 h, cierra sus
+                          sesiones e inicia sesión); resetPasswordByEmail para pnpm reset:password
       trash/              papelera, solo Admin (HU-15): GET /trash, POST /trash/:kind/:id/restore, DELETE /trash/:kind/:id
       invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez.
                           Una invitación puede incluir otros espacios (InvitationGrant, HU-17c): Admin de cada uno
       invitations/accept.* públicas: POST /invitations/preview|register|accept (HU-01); token en el cuerpo
     src/db/dates.ts     columnas date ↔ "AAAA-MM-DD" (siempre en UTC)
       setup/              createFirstAdmin: primer Admin + workspace "workpers" (TEC-07)
-    src/cli/            comandos de terminal (setup-admin.ts → pnpm setup:admin)
+    src/cli/            comandos de terminal (setup-admin.ts → pnpm setup:admin, reset-password.ts → pnpm reset:password;
+                        prompt.ts = pedir una contraseña sin mostrarla)
     src/db/client.ts    createDb(): PrismaClient con el adaptador pg; se inyecta en buildApp({ db }) → app.db
     src/db/audit.ts     auditCreate/auditUpdate/auditSoftDelete/auditRestore + filtro notDeleted (RNF-01, RNF-05)
     src/generated/      cliente de Prisma generado (ignorado por Git; se regenera en pnpm install)
@@ -177,6 +182,7 @@ pnpm db:migrate        # crea/aplica migraciones; después postdb:migrate regene
 pnpm db:studio         # explorador visual de la BD (Prisma Studio)
 pnpm db:reset          # ⚠️ borra y recrea la BD de desarrollo aplicando todas las migraciones
 pnpm setup:admin       # crea el primer Admin (interactivo; solo si no hay usuarios)
+pnpm reset:password    # restablece la contraseña de una cuenta por su correo (interactivo; HU-54)
 pnpm dev               # api (:3000) + web (:5173) en paralelo
 pnpm test              # Vitest en todos los paquetes (requiere pnpm db:up)
 pnpm lint              # ESLint   | pnpm lint:fix

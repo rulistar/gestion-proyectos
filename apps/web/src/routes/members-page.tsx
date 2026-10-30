@@ -10,6 +10,7 @@ import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { ShieldCheck, UserMinus, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { CopyLinkBox } from '@/components/copy-link-box';
 import { PageHeader } from '@/components/page-header';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
@@ -378,7 +379,11 @@ function InviteCard({
           </fieldset>
         </form>
 
-        {link && <InvitationLinkBox email={link.email} url={link.url} />}
+        {link && (
+          <CopyLinkBox url={link.url} label="Enlace de invitación">
+            Enlace para <strong>{link.email}</strong>.
+          </CopyLinkBox>
+        )}
       </CardContent>
     </Card>
   );
@@ -430,35 +435,6 @@ function GrantPermissionsDialog({
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** El enlace solo se puede ver ahora: la API no lo guarda (solo su hash) */
-function InvitationLinkBox({ email, url }: { email: string; url: string }) {
-  const [copied, setCopied] = useState(false);
-
-  function copy() {
-    void navigator.clipboard.writeText(url).then(() => setCopied(true));
-  }
-
-  return (
-    <div role="status" className="grid gap-2 rounded-md border border-dashed bg-muted/50 p-4">
-      <p className="text-sm">
-        Enlace para <strong>{email}</strong>. <strong>Cópialo ahora</strong>: por seguridad no se
-        vuelve a mostrar.
-      </p>
-      <div className="flex gap-2">
-        <Input
-          readOnly
-          value={url}
-          aria-label="Enlace de invitación"
-          onFocus={(e) => e.target.select()}
-        />
-        <Button type="button" variant="outline" onClick={copy}>
-          {copied ? 'Copiado' : 'Copiar'}
-        </Button>
-      </div>
-    </div>
   );
 }
 

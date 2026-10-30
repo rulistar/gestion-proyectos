@@ -67,7 +67,8 @@ export type CreateInvitationResponse = z.infer<typeof createInvitationResponseSc
 // El token viaja siempre en el cuerpo (POST), nunca en la URL: así no queda en registros.
 
 /** Token del enlace: 32 bytes en base64url (43 caracteres) */
-const invitationTokenSchema = z.string().regex(/^[\w-]{43}$/, 'Enlace no válido');
+/** Token de un enlace de un solo uso (invitación o restablecer contraseña): 32 bytes en base64url */
+export const invitationTokenSchema = z.string().regex(/^[\w-]{43}$/, 'Enlace no válido');
 
 /** Cuerpo de POST /invitations/preview y POST /invitations/accept */
 export const invitationTokenRequestSchema = z.object({ token: invitationTokenSchema });
