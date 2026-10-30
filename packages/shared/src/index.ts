@@ -6,6 +6,7 @@ export * from './schemas/member-permissions.js';
 export * from './schemas/moves.js';
 export * from './schemas/my-work.js';
 export * from './schemas/people.js';
+export * from './schemas/phases.js';
 export * from './schemas/permissions.js';
 export * from './schemas/progress.js';
 export * from './schemas/project-filters.js';

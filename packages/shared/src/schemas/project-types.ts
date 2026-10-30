@@ -17,6 +17,8 @@ export type ProjectTypeRef = z.infer<typeof projectTypeRefSchema>;
 
 /** Un tipo de contenedor del catálogo del espacio (HU-21) */
 export const projectTypeSchema = projectTypeRefSchema.extend({
+  /** Sus contenedores agrupan las tareas en fases (HU-07) */
+  usesPhases: z.boolean(),
   position: z.number().int(),
   /** Archivado: ya no se ofrece para lo nuevo; lo existente lo conserva (ADR-0004 §4) */
   archived: z.boolean(),
@@ -39,6 +41,8 @@ const typeName = z
 export const createProjectTypeSchema = z.object({
   name: typeName,
   behavior: projectBehaviorSchema,
+  /** Sin el campo: los tipos Con fin usan fases (defaultUsesPhases) */
+  usesPhases: z.boolean().optional(),
 });
 export type CreateProjectTypeInput = z.infer<typeof createProjectTypeSchema>;
 
@@ -48,10 +52,16 @@ export const updateProjectTypeSchema = z
     name: typeName,
     behavior: projectBehaviorSchema,
     archived: z.boolean(),
+    usesPhases: z.boolean(),
     allowedTaskTypeIds: z.array(z.uuid()).max(100),
   })
   .partial();
 export type UpdateProjectTypeInput = z.infer<typeof updateProjectTypeSchema>;
+
+/** Por omisión usan fases (HU-07) los tipos Con fin, como Proyecto; el Admin lo cambia */
+export function defaultUsesPhases(behavior: ProjectBehavior): boolean {
+  return behavior === 'WITH_END';
+}
 
 /** Tipos que se cargan al crear un espacio (ADR-0004 §5); el Admin los ajusta después */
 export const DEFAULT_PROJECT_TYPES: readonly CreateProjectTypeInput[] = [

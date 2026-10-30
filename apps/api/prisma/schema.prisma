@@ -153,6 +153,8 @@ model ProjectType {
   workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   name        String
   behavior    ProjectBehavior
+  /// Sus contenedores agrupan las tareas en fases (HU-07); por omisión, los tipos Con fin
+  usesPhases  Boolean         @default(false) @map("uses_phases")
   /// Orden en listas y selectores
   position    Int             @default(0)
   archivedAt  DateTime?       @map("archived_at") @db.Timestamptz(3)
@@ -316,6 +318,9 @@ model User {
   tasksCreated            Task[]                    @relation("TaskCreatedBy")
   tasksUpdated            Task[]                    @relation("TaskUpdatedBy")
   tasksDeleted            Task[]                    @relation("TaskDeletedBy")
+  phasesCreated           Phase[]                   @relation("PhaseCreatedBy")
+  phasesUpdated           Phase[]                   @relation("PhaseUpdatedBy")
+  phasesDeleted           Phase[]                   @relation("PhaseDeletedBy")
   invitationsCreated      Invitation[]              @relation("InvitationCreatedBy")
   invitationsUpdated      Invitation[]              @relation("InvitationUpdatedBy")
   invitationsRevoked      Invitation[]              @relation("InvitationRevokedBy")
@@ -377,6 +382,7 @@ model Workspace {
   taskOrigins      TaskOrigin[]
   folioCounters    FolioCounter[]
   people           Person[]
+  phases           Phase[]
   tasks            Task[]
   invitations      Invitation[]
   invitationGrants InvitationGrant[]
@@ -466,6 +472,7 @@ model Project {
   updatedBy   User?     @relation("ProjectUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
   deletedBy   User?     @relation("ProjectDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
 
+  phases           Phase[]
   tasks            Task[]
   allowedTaskTypes ProjectTaskType[]
   memberAccess     MembershipProjectAccess[]
@@ -475,8 +482,44 @@ model Project {
   @@map("projects")
 }
 
+/// Fase de un proyecto (HU-07; la "unidad" del prototipo): agrupa tareas y otras fases, hasta 4
+/// niveles. Su avance y sus fechas no se guardan: se calculan con lo que contiene.
+/// Al darla de baja, ella, sus subfases y sus tareas reciben el mismo deletedAt; al restaurarla
+/// vuelve lo que se fue con ella (lo dado de baja antes sigue en la papelera).
+model Phase {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  /// Redundante con el proyecto a propósito: la frontera de seguridad es el workspace (ADR-0002 §2)
+  workspaceId String    @map("workspace_id") @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projectId   String    @map("project_id") @db.Uuid
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Fase que la contiene; null = primer nivel
+  parentId    String?   @map("parent_id") @db.Uuid
+  parent      Phase?    @relation("PhaseChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  name        String
+  /// Orden entre sus hermanas
+  position    Int       @default(0)
+
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+  createdBy   User?     @relation("PhaseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User?     @relation("PhaseUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  deletedBy   User?     @relation("PhaseDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
+
+  children Phase[] @relation("PhaseChildren")
+  tasks    Task[]
+
+  @@index([projectId])
+  @@index([parentId])
+  @@index([workspaceId])
+  @@map("phases")
+}
+
 /// Tarea de un proyecto (la "actividad" del prototipo, ADR-0002 §1.1).
-/// Las fases (phaseId) llegan con HU-07.
 model Task {
   id                  String      @id @default(uuid(7)) @db.Uuid
   /// Redundante con el proyecto a propósito: la frontera de seguridad es el workspace (ADR-0002 §2)
@@ -484,6 +527,9 @@ model Task {
   workspace           Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   projectId           String      @map("project_id") @db.Uuid
   project             Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Fase (HU-07), o null = suelta. Borrar la fase definitivamente se lleva sus tareas
+  phaseId             String?     @map("phase_id") @db.Uuid
+  phase               Phase?      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
   /// Responsable (HU-35, corregido por el PO): una persona del catálogo del espacio, o nadie
   responsiblePersonId String?     @map("responsible_person_id") @db.Uuid
   responsiblePerson   Person?     @relation("TaskResponsible", fields: [responsiblePersonId], references: [id], onDelete: Restrict)
@@ -518,6 +564,7 @@ model Task {
   deletedBy   User?     @relation("TaskDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
 
   @@index([projectId])
+  @@index([phaseId])
   @@index([workspaceId])
   @@index([responsiblePersonId])
   @@index([typeId])

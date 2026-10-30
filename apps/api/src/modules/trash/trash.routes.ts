@@ -1,4 +1,10 @@
-import { canRemoveContainer, canRemoveTask, trashKindSchema } from '@gestion/shared';
+import {
+  canRemoveContainer,
+  canRemoveTask,
+  canUpdateContainer,
+  trashKindSchema,
+  type TrashKind,
+} from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { requireAuth } from '../auth/session.js';
@@ -7,7 +13,7 @@ import {
   requirePermission,
   type WorkspaceAccess,
 } from '../workspaces/access.js';
-import { trashedContainer, trashedTask } from '../workspaces/facts.js';
+import { trashedContainer, trashedPhaseContainer, trashedTask } from '../workspaces/facts.js';
 import { listTrash, purgeFromTrash, restoreFromTrash } from './trash.service.js';
 
 const itemParamsSchema = z.object({ kind: trashKindSchema, id: z.uuid() });
@@ -31,10 +37,15 @@ export const trashRoutes: FastifyPluginCallback = (app, _options, done) => {
   app.addHook('preHandler', requireAuth);
 
   /** ¿Puede restaurar este elemento? Lo que no puede, para él no está en la papelera */
-  async function canRestore(access: WorkspaceAccess, kind: 'project' | 'task', id: string) {
+  async function canRestore(access: WorkspaceAccess, kind: TrashKind, id: string) {
     if (kind === 'project') {
       const facts = await trashedContainer(app.db, access.workspaceId, id);
       return facts !== null && canRemoveContainer(access, facts);
+    }
+    // Las fases las maneja quien puede modificar su contenedor (HU-07)
+    if (kind === 'phase') {
+      const facts = await trashedPhaseContainer(app.db, access.workspaceId, id);
+      return facts !== null && canUpdateContainer(access, facts);
     }
     const facts = await trashedTask(app.db, access.workspaceId, id);
     return facts !== null && canRemoveTask(access, facts);
@@ -48,6 +59,8 @@ export const trashRoutes: FastifyPluginCallback = (app, _options, done) => {
         : {
             project: (facts: Parameters<typeof canRemoveContainer>[1]) =>
               canRemoveContainer(access, facts),
+            phase: (facts: Parameters<typeof canUpdateContainer>[1]) =>
+              canUpdateContainer(access, facts),
             task: (facts: Parameters<typeof canRemoveTask>[1]) => canRemoveTask(access, facts),
           };
     return listTrash(app.db, access.workspaceId, filter);

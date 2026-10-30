@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  emptyToNull,
   endAfterStart,
   endAfterStartError,
   optionalDate,
@@ -50,6 +51,8 @@ export const taskInputSchema = z
     originId: optionalId,
     /** Detalle del origen: "Ticket #4521 de mesa de ayuda" */
     originDetail: optionalText(300),
+    /** Fase (HU-07); null o "" = suelta. Sin el campo se conserva la que tenía (al crear, suelta) */
+    phaseId: z.preprocess(emptyToNull, z.uuid('Valor no válido').nullish()),
   })
   .refine(endAfterStart, endAfterStartError)
   .refine(reasonWhenRequired, reasonRequiredError);
@@ -64,6 +67,8 @@ export type TaskStatusUpdate = z.infer<typeof taskStatusUpdateSchema>;
 export const taskSchema = z.object({
   id: z.uuid(),
   projectId: z.uuid(),
+  /** Fase (HU-07); null = suelta */
+  phaseId: z.uuid().nullable(),
   title: z.string(),
   type: taskTypeRefSchema,
   status: taskStatusSchema,

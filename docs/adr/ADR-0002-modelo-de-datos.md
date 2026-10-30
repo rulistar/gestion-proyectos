@@ -257,6 +257,7 @@ Todas las **entidades de negocio** (`Workspace`, `Membership`, `Invitation`, `Pr
 
 - **Lógico:** se rellena `deletedAt` + `deletedById`. Todas las consultas normales filtran `deletedAt: null`.
 - **Cascada lógica:** si un proyecto va a la papelera, sus fases y tareas **desaparecen con él** sin marcarlas una por una (se ocultan porque su padre está borrado). Al restaurar el proyecto, vuelven.
+- **Fases (HU-07, 2026-10-30):** como anidan hasta 4 niveles, ocultarlas "porque su madre está borrada" obligaría a revisar 4 niveles en cada consulta de tareas. Por eso, al dar de baja una fase, ella, sus subfases y sus tareas activas reciben **el mismo `deletedAt`**; al restaurarla vuelve exactamente lo que tiene esa fecha. Lo que ya estaba en la papelera conserva su fecha y se queda ahí. La papelera muestra solo la fase (con cuántas tareas se llevó).
 - **Físico:** solo desde la papelera, solo Admin y con confirmación. Las claves foráneas usan `onDelete: Cascade` hacia los hijos (proyecto → fases → tareas → accesos).
 - **Cómo se garantiza el filtro:** cada módulo tiene un **repositorio** (funciones de acceso a datos) que incluye `deletedAt: null` de forma explícita, y **pruebas** que verifican que lo borrado no aparece. Se descartó una extensión automática de Prisma porque no cubre todos los tipos de consulta y oculta la regla.
 - **Unicidad con borrado lógico:** "un usuario solo puede ser miembro una vez de un workspace" debe aplicar solo a los registros **no borrados**. Se implementa con un **índice único parcial** (`WHERE deleted_at IS NULL`).

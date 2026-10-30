@@ -189,6 +189,7 @@ describe('POST .../tasks (HU-08)', () => {
     expect(task).toEqual({
       id: task.id,
       projectId: project.id,
+      phaseId: null,
       title: 'Ver la unidad 1',
       // Sin tipo pedido, el primero que admite el tipo del proyecto (HU-22)
       type: { id: task.type.id, name: 'Tarea', expedited: false },
