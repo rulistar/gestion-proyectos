@@ -263,6 +263,11 @@ export async function moveProject(
         },
       });
     }
+    // Sus fases (HU-07) se van con él, también las de la papelera
+    await tx.phase.updateMany({
+      where: { projectId },
+      data: { workspaceId: targetWorkspaceId },
+    });
     // Sus tipos de tarea propios eran del catálogo de origen: en el destino admite los de su tipo
     await tx.projectTaskType.deleteMany({ where: { projectId } });
     await tx.project.update({
@@ -319,6 +324,8 @@ export async function moveTask(
       data: {
         workspaceId: targetWorkspaceId,
         projectId: targetProjectId,
+        // Las fases son del proyecto de origen: en el destino queda suelta (HU-07)
+        phaseId: null,
         typeId: type.id,
         originId: sameWorkspace ? task.originId : await mapper.origin(task.originId),
         responsiblePersonId: sameWorkspace

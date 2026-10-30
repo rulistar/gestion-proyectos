@@ -11,7 +11,7 @@ export function optionalText(max: number) {
 }
 
 /** Un campo de formulario vacío ("") cuenta como "sin valor" */
-const emptyToNull = (value: unknown) => (value === '' ? null : value);
+export const emptyToNull = (value: unknown) => (value === '' ? null : value);
 
 /** Fecha sin hora en formato AAAA-MM-DD (lo que envía un <input type="date">) */
 export const optionalDate = z

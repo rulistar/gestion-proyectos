@@ -176,6 +176,27 @@ function TypeRow({
         </div>
       )}
       <div className="flex items-center gap-2">
+        {/* HU-07: sus contenedores agrupan las tareas en fases */}
+        <label
+          className="flex items-center gap-1.5 text-sm"
+          title="Agrupa las tareas en fases y subfases"
+        >
+          <input
+            type="checkbox"
+            checked={type.usesPhases}
+            disabled={update.isPending}
+            onChange={(event) =>
+              save(
+                { typeId: type.id, usesPhases: event.target.checked },
+                event.target.checked
+                  ? `"${type.name}" usa fases`
+                  : `"${type.name}" ya no usa fases`,
+              )
+            }
+            className="size-4 accent-primary"
+          />
+          Usa fases
+        </label>
         <NativeSelect
           aria-label={`Comportamiento de ${type.name}`}
           value={type.behavior}

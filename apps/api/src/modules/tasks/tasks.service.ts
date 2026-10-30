@@ -12,6 +12,7 @@ import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
 import { personSelect, toPersonRef, type PersonRow } from '../people/people.service.js';
+import { resolvePhase } from '../phases/phases.service.js';
 import { resolveTaskOrigin } from '../task-origins/task-origins.service.js';
 import { resolveTaskType } from '../task-types/task-types.service.js';
 import type { WorkspaceAccess } from '../workspaces/access.js';
@@ -22,6 +23,7 @@ export class InvalidTaskTypeError extends Error {}
 const taskSelect = {
   id: true,
   projectId: true,
+  phaseId: true,
   title: true,
   type: { select: { id: true, name: true, expedited: true } },
   status: true,
@@ -201,11 +203,17 @@ export async function createTask(
   actorId: string,
   workspaceId: string,
   projectId: string,
-  { typeId: requestedType, originId: requestedOrigin, ...input }: TaskInput,
+  {
+    typeId: requestedType,
+    originId: requestedOrigin,
+    phaseId: requestedPhase,
+    ...input
+  }: TaskInput,
 ): Promise<Task> {
   const typeId = await resolveTaskType(db, workspaceId, projectId, requestedType);
   if (!typeId) throw new InvalidTaskTypeError();
   const originId = await resolveTaskOrigin(db, workspaceId, requestedOrigin);
+  const phaseId = await resolvePhase(db, workspaceId, projectId, requestedPhase);
   const row = await db.task.create({
     data: {
       workspaceId,
@@ -213,6 +221,7 @@ export async function createTask(
       ...input,
       typeId,
       originId,
+      phaseId,
       startDate: fromIsoDate(input.startDate),
       endDate: fromIsoDate(input.endDate),
       completedAt: completedAtFor(input.status, null),
@@ -236,12 +245,20 @@ async function applyUpdate(
   {
     typeId: requestedType,
     originId: requestedOrigin,
+    phaseId: requestedPhase,
     ...changes
   }: Partial<TaskInput> & { status: TaskStatus },
 ): Promise<Task | null> {
   const previous = await db.task.findFirst({
     where: { id: where.taskId, ...taskScope(where.workspaceId, where.projectId) },
-    select: { status: true, completedAt: true, startedAt: true, typeId: true, originId: true },
+    select: {
+      status: true,
+      completedAt: true,
+      startedAt: true,
+      typeId: true,
+      originId: true,
+      phaseId: true,
+    },
   });
   if (!previous) return null;
   // Solo la edición completa trae typeId; mover de columna no cambia el tipo
@@ -261,6 +278,14 @@ async function applyUpdate(
     requestedOrigin === undefined
       ? previous.originId
       : await resolveTaskOrigin(db, where.workspaceId, requestedOrigin, previous.originId);
+  // Sin phaseId (mover de columna, o un cliente que no lo envía) se conserva la fase
+  const phaseId = await resolvePhase(
+    db,
+    where.workspaceId,
+    where.projectId,
+    requestedPhase,
+    previous.phaseId,
+  );
 
   const row = await db.task.update({
     where: { id: where.taskId },
@@ -268,6 +293,7 @@ async function applyUpdate(
       ...changes,
       typeId,
       originId,
+      phaseId,
       startedAt: startedAtFor(changes.status, previous.startedAt),
       ...(changes.startDate !== undefined && { startDate: fromIsoDate(changes.startDate) }),
       ...(changes.endDate !== undefined && { endDate: fromIsoDate(changes.endDate) }),

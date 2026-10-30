@@ -591,13 +591,15 @@ _Como PO, quiero la aplicación en una URL pública con HTTPS, para usarla con m
 
 _Como responsable de un proyecto, quiero agrupar sus tareas en fases (y subfases), para ver el trabajo ordenado y el avance de cada parte, como en Project._
 
-- [ ] Crear, renombrar, reordenar (subir/bajar) y dar de baja **fases** dentro de un proyecto; una fase puede contener tareas y otras fases, hasta **4 niveles**.
-- [ ] Una tarea pertenece a una fase o queda **suelta** (sin fase); se puede mover de fase al crearla o editarla.
-- [ ] La fase **calcula sola** su avance (con las reglas de HU-06), su inicio (el más temprano) y su fin (el más tardío) a partir de todo lo que contiene; no se capturan a mano.
-- [ ] En el proyecto, las fases se ven como un **esquema con sangría** que se pliega y despliega, con su avance; el tablero se puede **filtrar por fase**.
-- [ ] Dar de baja una fase manda a la papelera su contenido (subfases y tareas) y restaurarla lo devuelve, como un proyecto (HU-15).
-- [ ] El tipo de contenedor (ADR-0004) decide si usa fases: Proyecto sí; Mantenimiento y Actividades, no por defecto.
-- [ ] Cumple RNF-01 y RNF-05, con pruebas de permisos y de los cálculos (funciones puras en shared).
+Confirmado por el PO (2026-10-30) con el ejemplo "Certificación Linux" → "Módulo 101" → "Tema 1": la fase solo tiene nombre y orden; las maneja quien puede modificar el contenedor.
+
+- [x] Crear, renombrar, reordenar (subir/bajar) y dar de baja **fases** dentro de un proyecto; una fase puede contener tareas y otras fases, hasta **4 niveles**.
+- [x] Una tarea pertenece a una fase o queda **suelta** (sin fase); se puede mover de fase al crearla o editarla. Al moverla a otro proyecto (HU-32) queda suelta.
+- [x] La fase **calcula sola** su avance (con las reglas de HU-06), su inicio (el más temprano) y su fin (el más tardío) a partir de todo lo que contiene; no se capturan a mano.
+- [x] En el proyecto, las fases se ven como un **esquema con sangría** que se pliega y despliega, con su avance (pestaña **Fases**); el tablero se puede **filtrar por fase**. Ejemplo: "Módulo 101" muestra sus tareas y las de sus subfases; "Sin fase", las sueltas. Clic en una fase del esquema abre el tablero filtrado.
+- [x] Dar de baja una fase manda a la papelera su contenido (subfases y tareas) y restaurarla lo devuelve, como un proyecto (HU-15). Detalle en ADR-0002 §4.
+- [x] El tipo de contenedor (ADR-0004) decide si usa fases: casilla **Usa fases** en Configuración; marcada en Proyecto (Con fin), desmarcada en Mantenimiento y Actividades.
+- [x] Cumple RNF-01 y RNF-05, con pruebas de permisos y de los cálculos (funciones puras en shared).
 
 #### HU-26 · Pestaña Lista del proyecto (2 pts) — pasa al Sprint 6
 

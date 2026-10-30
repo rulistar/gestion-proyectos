@@ -1,7 +1,7 @@
 import { canUseTrash, roleHasPermission, type TrashItem } from '@gestion/shared';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import { FolderKanban, ListChecks, RotateCcw, Trash2 } from 'lucide-react';
+import { FolderKanban, ListChecks, ListTree, RotateCcw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -106,12 +106,15 @@ function TrashRow({
   const restore = useRestoreFromTrash(workspaceId);
   const purge = usePurgeFromTrash(workspaceId);
   const isProject = item.kind === 'project';
-  const Icon = isProject ? FolderKanban : ListChecks;
+  const Icon = isProject ? FolderKanban : item.kind === 'phase' ? ListTree : ListChecks;
+  const taskCount = item.taskCount === 1 ? '1 tarea' : `${item.taskCount} tareas`;
   const target = { kind: item.kind, id: item.id };
 
   const context = isProject
-    ? `Proyecto · ${item.taskCount === 1 ? '1 tarea' : `${item.taskCount} tareas`}`
-    : `Tarea de ${item.projectName}`;
+    ? `Proyecto · ${taskCount}`
+    : item.kind === 'phase'
+      ? `Fase de ${item.projectName} · ${taskCount}`
+      : `Tarea de ${item.projectName}`;
   const who = `Dado de baja por ${item.deletedByName ?? 'el sistema'} el ${dateTimeFormat.format(new Date(item.deletedAt))}`;
 
   function handleRestore() {
@@ -170,7 +173,9 @@ function TrashRow({
             description={
               isProject
                 ? `Se borrará el proyecto con sus ${item.taskCount} tareas. Esto no se puede deshacer.`
-                : 'Se borrará la tarea. Esto no se puede deshacer.'
+                : item.kind === 'phase'
+                  ? `Se borrará la fase con sus subfases y sus ${item.taskCount} tareas. Esto no se puede deshacer.`
+                  : 'Se borrará la tarea. Esto no se puede deshacer.'
             }
             confirmLabel="Borrar definitivamente"
             typeToConfirm={item.name}

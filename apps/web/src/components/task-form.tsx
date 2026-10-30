@@ -1,7 +1,9 @@
 import {
+  orderedPhases,
   statusNeedsReason,
   taskInputSchema,
   type Person,
+  type Phase,
   type Task,
   type TaskInput,
   type TaskStatus,
@@ -31,6 +33,7 @@ const FIELDS = [
   'statusReason',
   'originId',
   'originDetail',
+  'phaseId',
 ] as const;
 
 interface TaskFormProps {
@@ -41,6 +44,10 @@ interface TaskFormProps {
   people: Person[];
   /** Tipos que admite el contenedor (HU-22); el primero es el de por omisión al crear */
   types: TaskTypeRef[];
+  /** Fases del proyecto (HU-07); sin ellas no se muestra el campo y se conserva la que tenga */
+  phases?: Phase[] | undefined;
+  /** Fase con la que empieza al crear (la del filtro del tablero) */
+  defaultPhaseId?: string | undefined;
   submitLabel: string;
   isPending: boolean;
   error?: string | undefined;
@@ -55,6 +62,8 @@ export function TaskForm({
   workspaceId,
   people,
   types,
+  phases,
+  defaultPhaseId,
   submitLabel,
   isPending,
   error,
@@ -76,6 +85,27 @@ export function TaskForm({
           <Input {...form.field('title')} defaultValue={task?.title} maxLength={200} />
           <FieldError {...form.errorProps('title')} />
         </div>
+        {phases ? (
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor={form.idOf('phaseId')}>Fase</Label>
+            <NativeSelect
+              {...form.field('phaseId')}
+              defaultValue={task ? (task.phaseId ?? '') : (defaultPhaseId ?? '')}
+            >
+              <option value="">Sin fase</option>
+              {orderedPhases(phases).map(({ phase, depth }) => (
+                <option key={phase.id} value={phase.id}>
+                  {'\u00a0\u00a0'.repeat(depth - 1)}
+                  {phase.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <FieldError {...form.errorProps('phaseId')} />
+          </div>
+        ) : (
+          // Si el tipo dejó de usar fases, editar la tarea no le quita la que tenía
+          task?.phaseId && <input type="hidden" name="phaseId" value={task.phaseId} />
+        )}
         <div className="grid gap-2">
           <Label htmlFor={form.idOf('typeId')}>Tipo</Label>
           <NativeSelect {...form.field('typeId')} defaultValue={task?.type.id ?? types[0]?.id}>

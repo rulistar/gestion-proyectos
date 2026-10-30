@@ -7,21 +7,25 @@ import {
   daysRemainingLabel,
   isMyTask,
   NOT_APPLICABLE,
+  orderedPhases,
+  phaseDescendantIds,
   roleHasPermission,
   type Person,
+  type Phase,
   type Project,
   type ProjectType,
   type Task,
   type TaskType,
   type TaskTypeRef,
 } from '@gestion/shared';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { MoveProjectDialog } from '@/components/move-dialogs';
+import { LOOSE_TASKS, PhaseOutline } from '@/components/phase-outline';
 import { ProgressBar } from '@/components/progress-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
@@ -29,6 +33,7 @@ import { TaskBoard } from '@/components/task-board';
 import { TaskForm } from '@/components/task-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { NativeSelect } from '@/components/ui/native-select';
 import {
   Dialog,
   DialogContent,
@@ -51,6 +56,7 @@ import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
 import { peopleQueryOptions } from '@/lib/people';
+import { phasesQueryOptions } from '@/lib/phases';
 import { workspaceQueryOptions } from '@/lib/workspaces';
 
 // Es el id de la ruta (no la URL): cuelga de la ruta sin URL "app", de ahí el /app
@@ -58,9 +64,21 @@ const route = getRouteApi('/app/w/$workspaceId/p/$projectId');
 
 const TABS = [
   { id: 'board', label: 'Tablero' },
+  { id: 'phases', label: 'Fases' },
   { id: 'details', label: 'Datos del proyecto' },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
+
+/** Tareas de la fase elegida y de sus subfases; LOOSE_TASKS = las que no tienen fase */
+function tasksOfPhase(tasks: Task[], phases: Phase[], filter: string): Task[] {
+  if (filter === '') return tasks;
+  const known = new Set(phases.map((phase) => phase.id));
+  if (filter === LOOSE_TASKS) {
+    return tasks.filter((task) => task.phaseId === null || !known.has(task.phaseId));
+  }
+  const ids = phaseDescendantIds(phases, filter);
+  return tasks.filter((task) => task.phaseId !== null && ids.has(task.phaseId));
+}
 
 /** Lo que llega en otras historias: se ve como "Pronto" para que se sepa que viene */
 const SOON_TABS = [
@@ -82,6 +100,19 @@ export function ProjectPage() {
     allowedTaskTypes(taskTypes, projectType, project.allowedTaskTypeIds, currentId);
   const section = SECTIONS[project.type.behavior];
   const [tab, setTab] = useState<TabId>('board');
+  // Fases (HU-07): solo si el tipo del contenedor las usa
+  const usesPhases = projectType?.usesPhases ?? false;
+  const { data: phases = [] } = useQuery({
+    ...phasesQueryOptions(workspaceId, projectId),
+    enabled: usesPhases,
+  });
+  // Filtro del tablero por fase: "" = todas; incluye sus subfases
+  const [phaseFilter, setPhaseFilter] = useState('');
+  const activePhaseFilter =
+    phaseFilter === LOOSE_TASKS || phases.some((phase) => phase.id === phaseFilter)
+      ? phaseFilter
+      : '';
+  const boardTasks = usesPhases ? tasksOfPhase(tasks, phases, activePhaseFilter) : tasks;
   const [dialog, setDialog] = useState<'edit' | 'task'>();
   // Qué puedo hacer aquí, según mi matriz (ADR-0006); la API lo vuelve a decidir
   const access = useAccess(workspaceId);
@@ -175,7 +206,7 @@ export function ProjectPage() {
 
       <div>
         <div role="tablist" aria-label="Vistas del proyecto" className="flex gap-1 border-b">
-          {TABS.map((item) => (
+          {TABS.filter((item) => item.id !== 'phases' || usesPhases).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -208,14 +239,32 @@ export function ProjectPage() {
 
         <div role="tabpanel" className="pt-4">
           {tab === 'board' ? (
-            <TaskBoard
+            <div className="grid gap-3">
+              {usesPhases && phases.length > 0 && (
+                <PhaseFilter phases={phases} value={activePhaseFilter} onChange={setPhaseFilter} />
+              )}
+              <TaskBoard
+                workspaceId={workspaceId}
+                projectId={projectId}
+                tasks={boardTasks}
+                people={people}
+                phases={usesPhases ? phases : undefined}
+                canEdit={(task) => canUpdateTask(access, taskFacts(task, facts, hasMyTask))}
+                canDelete={(task) => canRemoveTask(access, taskFacts(task, facts, hasMyTask))}
+                taskTypeOptions={taskTypeOptions}
+              />
+            </div>
+          ) : tab === 'phases' && usesPhases ? (
+            <PhaseOutline
               workspaceId={workspaceId}
               projectId={projectId}
+              phases={phases}
               tasks={tasks}
-              people={people}
-              canEdit={(task) => canUpdateTask(access, taskFacts(task, facts, hasMyTask))}
-              canDelete={(task) => canRemoveTask(access, taskFacts(task, facts, hasMyTask))}
-              taskTypeOptions={taskTypeOptions}
+              canManage={canUpdate}
+              onOpenPhase={(phaseId) => {
+                setPhaseFilter(phaseId);
+                setTab('board');
+              }}
             />
           ) : (
             <ProjectDetails project={project} showWork={showSprint} />
@@ -238,10 +287,46 @@ export function ProjectPage() {
         projectId={projectId}
         people={people}
         types={taskTypeOptions()}
+        phases={usesPhases ? phases : undefined}
+        defaultPhaseId={activePhaseFilter === LOOSE_TASKS ? undefined : activePhaseFilter}
         open={dialog === 'task'}
         onClose={() => setDialog(undefined)}
       />
     </div>
+  );
+}
+
+/**
+ * Filtro del tablero por fase (HU-07). Ejemplo: "Módulo 101" muestra sus tareas y las de "Tema 1"
+ * y "Tema 2"; "Sin fase", las que no están en ninguna.
+ */
+function PhaseFilter({
+  phases,
+  value,
+  onChange,
+}: {
+  phases: Phase[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-sm">
+      <span className="text-muted-foreground">Fase</span>
+      <NativeSelect
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8 w-64"
+      >
+        <option value="">Todas</option>
+        {orderedPhases(phases).map(({ phase, depth }) => (
+          <option key={phase.id} value={phase.id}>
+            {'\u00a0\u00a0'.repeat(depth - 1)}
+            {phase.name}
+          </option>
+        ))}
+        <option value={LOOSE_TASKS}>Sin fase</option>
+      </NativeSelect>
+    </label>
   );
 }
 
@@ -537,6 +622,8 @@ function CreateTaskDialog({
   projectId,
   people,
   types,
+  phases,
+  defaultPhaseId,
   open,
   onClose,
 }: {
@@ -544,6 +631,8 @@ function CreateTaskDialog({
   projectId: string;
   people: Person[];
   types: TaskTypeRef[];
+  phases: Phase[] | undefined;
+  defaultPhaseId: string | undefined;
   open: boolean;
   onClose: () => void;
 }) {
@@ -560,6 +649,8 @@ function CreateTaskDialog({
           workspaceId={workspaceId}
           people={people}
           types={types}
+          phases={phases}
+          defaultPhaseId={defaultPhaseId}
           submitLabel="Crear tarea"
           isPending={createTask.isPending}
           error={createTask.error?.message}

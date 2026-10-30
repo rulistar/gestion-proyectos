@@ -1,6 +1,7 @@
 import {
   statusNeedsReason,
   type Person,
+  type Phase,
   type Task,
   type TaskStatus,
   type TaskTypeRef,
@@ -33,6 +34,8 @@ interface TaskBoardProps {
   projectId: string;
   tasks: Task[];
   people: Person[];
+  /** Fases del proyecto (HU-07), si su tipo las usa */
+  phases?: Phase[] | undefined;
   /** Tipos de tarea que se pueden elegir al editar (HU-22), con el actual de la tarea */
   taskTypeOptions: (currentId: string) => TaskTypeRef[];
   /** Si mi matriz permite editar esa tarea (ADR-0006; la API lo vuelve a comprobar) */
@@ -50,6 +53,7 @@ export function TaskBoard({
   projectId,
   tasks,
   people,
+  phases,
   taskTypeOptions,
   canEdit,
   canDelete,
@@ -77,6 +81,7 @@ export function TaskBoard({
           workspaceId={workspaceId}
           projectId={projectId}
           people={people}
+          phases={phases}
           types={taskTypeOptions(editing.type.id)}
           onClose={() => setEditingId(undefined)}
         />
@@ -364,6 +369,8 @@ interface EditTaskPanelProps {
   workspaceId: string;
   projectId: string;
   people: Person[];
+  /** Fases del proyecto (HU-07); en la vista "Tareas" no se piden */
+  phases?: Phase[] | undefined;
   types: TaskTypeRef[];
   onClose: () => void;
 }
@@ -378,6 +385,7 @@ export function EditTaskPanel({
   workspaceId,
   projectId,
   people,
+  phases,
   types,
   onClose,
 }: EditTaskPanelProps) {
@@ -394,6 +402,7 @@ export function EditTaskPanel({
           task={task}
           workspaceId={workspaceId}
           people={people}
+          phases={phases}
           types={types}
           submitLabel="Guardar"
           isPending={update.isPending}

@@ -1,4 +1,5 @@
 import {
+  defaultUsesPhases,
   DEFAULT_ALLOWED_TASK_TYPES,
   DEFAULT_PROJECT_TYPES,
   DEFAULT_TASK_TYPES,
@@ -28,6 +29,7 @@ export async function seedCatalog(tx: Tx, workspaceId: string, actorId: string |
     data: DEFAULT_PROJECT_TYPES.map((type, position) => ({
       workspaceId,
       ...type,
+      usesPhases: type.usesPhases ?? defaultUsesPhases(type.behavior),
       position,
       ...auditCreate(actorId),
     })),
@@ -64,6 +66,7 @@ export async function listProjectTypes(db: Db, workspaceId: string): Promise<Pro
       id: true,
       name: true,
       behavior: true,
+      usesPhases: true,
       position: true,
       archivedAt: true,
       allowedTaskTypes: { select: { taskTypeId: true } },
@@ -107,6 +110,7 @@ export async function createProjectType(
     data: {
       workspaceId,
       ...input,
+      usesPhases: input.usesPhases ?? defaultUsesPhases(input.behavior),
       position: (last._max.position ?? -1) + 1,
       ...auditCreate(actorId),
     },
@@ -158,6 +162,7 @@ export async function updateProjectType(
       data: {
         ...(changes.name !== undefined && { name: changes.name }),
         ...(changes.behavior !== undefined && { behavior: changes.behavior }),
+        ...(changes.usesPhases !== undefined && { usesPhases: changes.usesPhases }),
         ...(archived !== undefined && {
           archivedAt: archived ? (type.archivedAt ?? new Date()) : null,
         }),

@@ -92,14 +92,39 @@ export async function trashedContainer(
   return row && toContainer(row);
 }
 
-/** Una tarea en la papelera (de un contenedor activo) */
+/** El contenedor de una fase en la papelera (HU-07), si se ve sola: su madre está activa */
+export async function trashedPhaseContainer(
+  db: Db,
+  workspaceId: string,
+  phaseId: string,
+): Promise<ContainerFacts | null> {
+  const row = await db.phase.findFirst({
+    where: {
+      id: phaseId,
+      workspaceId,
+      deletedAt: { not: null },
+      project: notDeleted,
+      OR: [{ parentId: null }, { parent: notDeleted }],
+    },
+    select: { project: { select: containerSelect } },
+  });
+  return row && toContainer(row.project);
+}
+
+/** Una tarea en la papelera (de un contenedor activo y sin fase en la papelera) */
 export async function trashedTask(
   db: Db,
   workspaceId: string,
   taskId: string,
 ): Promise<TaskFacts | null> {
   const row = await db.task.findFirst({
-    where: { id: taskId, workspaceId, deletedAt: { not: null }, project: notDeleted },
+    where: {
+      id: taskId,
+      workspaceId,
+      deletedAt: { not: null },
+      project: notDeleted,
+      OR: [{ phaseId: null }, { phase: notDeleted }],
+    },
     select: { createdById: true, responsiblePersonId: true, project: { select: containerSelect } },
   });
   return row && { ...row, project: toContainer(row.project) };

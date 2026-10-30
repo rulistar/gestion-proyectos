@@ -38,6 +38,7 @@ function task(overrides: Partial<WorkspaceTask>): WorkspaceTask {
   return {
     id: overrides.title ?? 'x',
     projectId: linux.id,
+    phaseId: null,
     title: 'Sin título',
     type: { id: 'tarea', name: 'Tarea', expedited: false },
     status: 'PENDING',

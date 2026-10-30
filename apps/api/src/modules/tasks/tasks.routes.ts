@@ -14,6 +14,7 @@ import { forbidden, requireMembership } from '../workspaces/access.js';
 import { visibleContainer, visibleTask } from '../workspaces/facts.js';
 import { taskVisibleWhere } from '../workspaces/visibility.js';
 import { assignablePeople } from '../people/people.service.js';
+import { InvalidPhaseError } from '../phases/phases.service.js';
 import { InvalidTaskOriginError } from '../task-origins/task-origins.service.js';
 import {
   createTask,
@@ -46,6 +47,9 @@ function invalidType(reply: FastifyReply, error: unknown) {
   }
   if (error instanceof InvalidTaskOriginError) {
     return reply.code(400).send({ message: 'Ese origen no existe o está archivado' });
+  }
+  if (error instanceof InvalidPhaseError) {
+    return reply.code(400).send({ message: 'Esa fase no existe en este proyecto' });
   }
   throw error;
 }

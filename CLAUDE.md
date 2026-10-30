@@ -111,6 +111,9 @@ apps/
                           resolveTaskType valida el tipo contra los permitidos del contenedor
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05); DELETE = a la papelera.
                           GET acepta ?today=&monthStart= (fecha local) para las métricas por comportamiento
+      phases/             fases de un proyecto (HU-07): GET/POST .../projects/:projectId/phases, PATCH /:phaseId (nombre),
+                          POST /:phaseId/move (subir/bajar), DELETE (a la papelera con subfases y tareas, mismo deletedAt);
+                          las maneja quien puede modificar el contenedor. resolvePhase valida la fase de una tarea
       tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status, DELETE (HU-08);
                           Responsable = persona del catálogo (HU-35, ADR-0005);
                           GET /workspaces/:id/my-tasks = mis tareas (HU-28b); GET /workspaces/:id/tasks = todas (HU-39)
@@ -133,6 +136,8 @@ packages/
     src/schemas/member-permissions.ts  matriz por persona (ADR-0006): plantillas y reglas puras
                                 (sectionCanView, canUpdateContainer, canUpdateTask…), con pruebas
     src/schemas/progress.ts     reglas de avance (summarizeTasks, daysRemainingLabel; HU-06), con pruebas
+    src/schemas/phases.ts       fases (HU-07): esquema con sangría (orderedPhases) y avance y fechas calculados
+                                (summarizePhase), con pruebas
     src/schemas/project-filters.ts  filtros y orden de la lista de contenedores (HU-09), en la URL; con pruebas
     src/schemas/task-filters.ts     vista "Tareas": tareas del espacio, filtros y orden (HU-39); con pruebas
     src/schemas/my-work.ts      groupMyWork: agrupa mis tareas por fecha de fin (HU-28b), con pruebas
