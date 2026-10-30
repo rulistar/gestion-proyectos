@@ -1,31 +1,22 @@
-import {
-  canUpdateTask,
-  filterTasks,
-  hasActiveFilters,
-  sortTasks,
-  type TaskSortKey,
-  type WorkspaceTask,
-} from '@gestion/shared';
+import { canUpdateTask, filterTasks, hasActiveFilters, sortTasks } from '@gestion/shared';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { getRouteApi, Link } from '@tanstack/react-router';
-import { useState, type ReactNode } from 'react';
+import { getRouteApi } from '@tanstack/react-router';
+import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
-import { SortTh } from '@/components/sort-th';
 import { EditTaskPanel } from '@/components/task-board';
 import { TaskFiltersBar } from '@/components/task-filters-bar';
+import { TaskTable } from '@/components/task-table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { containerFacts, taskFacts, useAccess } from '@/lib/access';
 import { nextSort } from '@/lib/sort';
-import { formatDate, todayIso } from '@/lib/dates';
-import { dueInfo } from '@/lib/due';
+import { todayIso } from '@/lib/dates';
 import { peopleQueryOptions } from '@/lib/people';
 import { projectTypesQueryOptions } from '@/lib/project-types';
 import { projectsQueryOptions } from '@/lib/projects';
 import { taskOriginsQueryOptions } from '@/lib/task-origins';
-import { allowedTaskTypes, taskTypeClass, taskTypesQueryOptions } from '@/lib/task-types';
-import { TASK_STATUSES, workspaceTasksQueryOptions } from '@/lib/tasks';
-import { cn } from '@/lib/utils';
+import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
+import { workspaceTasksQueryOptions } from '@/lib/tasks';
 import { workspaceQueryOptions } from '@/lib/workspaces';
 
 // Es el id de la ruta (no la URL): cuelga de la ruta sin URL "app", de ahí el /app
@@ -59,17 +50,6 @@ export function TasksPage() {
   function onFilters(search: typeof filters) {
     void navigate({ search, replace: true });
   }
-
-  const th = (column: TaskSortKey, label: string) => (
-    <SortTh
-      column={column}
-      sort={filters.sort}
-      dir={filters.dir ?? 'asc'}
-      onSort={(key) => onFilters({ ...filters, ...nextSort(filters, key) })}
-    >
-      {label}
-    </SortTh>
-  );
 
   return (
     <div className="grid gap-3">
@@ -124,112 +104,23 @@ export function TasksPage() {
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-muted-foreground">
-                    <tr className="border-b">
-                      {th('title', 'Tarea')}
-                      {th('project', 'Contenedor')}
-                      {th('type', 'Tipo')}
-                      {th('responsible', 'Responsable')}
-                      {th('status', 'Estado')}
-                      {th('endDate', 'Fin')}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((task) => (
-                      <TaskRow
-                        key={task.id}
-                        task={task}
-                        workspaceId={workspaceId}
-                        today={today}
-                        onEdit={
-                          canUpdateTask(access, taskFacts(task, containerFacts(task.project)))
-                            ? () => setEditingId(task.id)
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <TaskTable
+                tasks={visible}
+                workspaceId={workspaceId}
+                today={today}
+                sort={filters.sort}
+                dir={filters.dir ?? 'asc'}
+                onSort={(key) => onFilters({ ...filters, ...nextSort(filters, key) })}
+                onEdit={(task) =>
+                  canUpdateTask(access, taskFacts(task, containerFacts(task.project)))
+                    ? () => setEditingId(task.id)
+                    : undefined
+                }
+              />
             )}
           </CardContent>
         </Card>
       )}
     </div>
-  );
-}
-
-function Td({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <td className={`py-1.5 pr-4 ${className}`}>{children}</td>;
-}
-
-function TaskRow({
-  task,
-  workspaceId,
-  today,
-  onEdit,
-}: {
-  task: WorkspaceTask;
-  workspaceId: string;
-  today: string;
-  /** Sin permiso de edición, el título no es un botón */
-  onEdit: (() => void) | undefined;
-}) {
-  const finished = task.status === 'DONE' || task.status === 'CANCELLED';
-  const due = dueInfo(task.endDate, today);
-  return (
-    <tr className="border-b last:border-0">
-      <Td
-        className={cn('min-w-56', finished ? 'text-muted-foreground line-through' : 'font-medium')}
-      >
-        {onEdit ? (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="text-left hover:underline"
-            title="Editar tarea"
-          >
-            {task.title}
-          </button>
-        ) : (
-          task.title
-        )}
-      </Td>
-      <Td className="min-w-48">
-        <Link
-          to="/w/$workspaceId/p/$projectId"
-          params={{ workspaceId, projectId: task.project.id }}
-          className="hover:underline"
-        >
-          {task.project.folio && (
-            <span className="text-muted-foreground">{task.project.folio} · </span>
-          )}
-          {task.project.name}
-        </Link>
-      </Td>
-      <Td className="whitespace-nowrap">
-        <span
-          className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', taskTypeClass(task.type))}
-        >
-          {task.type.expedited && '⚡ '}
-          {task.type.name}
-        </span>
-      </Td>
-      <Td className={task.responsible ? '' : 'text-muted-foreground'}>
-        {task.responsible?.name ?? 'Sin asignar'}
-      </Td>
-      <Td className="whitespace-nowrap">{TASK_STATUSES[task.status]}</Td>
-      <td className="py-1.5 whitespace-nowrap">
-        {finished ? (
-          <span className="text-muted-foreground">{formatDate(task.endDate)}</span>
-        ) : (
-          <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', due.className)}>
-            {due.text}
-          </span>
-        )}
-      </td>
-    </tr>
   );
 }

@@ -7,7 +7,7 @@ import {
   redirect,
 } from '@tanstack/react-router';
 import { ApiError } from '@/lib/api';
-import { projectFiltersSchema, taskFiltersSchema } from '@gestion/shared';
+import { projectFiltersSchema, projectSearchSchema, taskFiltersSchema } from '@gestion/shared';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
 import { peopleQueryOptions } from '@/lib/people';
 import { weekStartIso } from '@/lib/dates';
@@ -194,6 +194,7 @@ const catalogRoute = createRoute({
 const projectRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId/p/$projectId',
+  validateSearch: projectSearchSchema,
   loader: ({ context, params }) =>
     Promise.all([
       context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),

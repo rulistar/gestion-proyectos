@@ -145,3 +145,16 @@ export function sortTasks(
   if (!key) return [...tasks].sort((a, b) => Number(b.type.expedited) - Number(a.type.expedited));
   return sortByValue(tasks, (task) => sortValue(task, key), dir);
 }
+
+/** Pestañas de un proyecto; la elegida va en la URL para que el enlace la conserve (HU-26) */
+export const projectTabSchema = z.enum(['board', 'list', 'phases', 'details']);
+export type ProjectTab = z.infer<typeof projectTabSchema>;
+
+/**
+ * URL de un proyecto (HU-26): la pestaña y los filtros de la Lista, que son los de la vista Tareas
+ * sin sección ni contenedor (ya es este proyecto)
+ */
+export const projectSearchSchema = taskFiltersSchema
+  .omit({ behavior: true, projectId: true })
+  .extend({ tab: projectTabSchema.optional().catch(undefined) });
+export type ProjectSearch = z.infer<typeof projectSearchSchema>;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createPhaseSchema,
+  groupTasksByPhase,
   loosePhaseTasks,
   orderedPhases,
   phaseDepths,
@@ -96,5 +97,48 @@ describe('fases (HU-07)', () => {
       name: 'Módulo 101',
       parentId: null,
     });
+  });
+});
+
+describe('Lista agrupada por fase (HU-26)', () => {
+  const item = (id: string, phaseId: string | null) => ({ id, phaseId });
+  const describeRows = (rows: ReturnType<typeof groupTasksByPhase>) =>
+    rows.map((row) =>
+      row.kind === 'phase'
+        ? `${'  '.repeat(row.depth - 1)}${row.phase.id} (${row.count})`
+        : row.kind === 'loose'
+          ? `Sin fase (${row.count})`
+          : `${'  '.repeat(row.depth - 1)}- ${(row.task as { id: string }).id}`,
+    );
+
+  it('cada fase con sus tareas y luego sus subfases; las vacías no aparecen; las sueltas al final', () => {
+    const tasks = [
+      item('suelta', null),
+      item('repaso', 't1a'),
+      item('examen', 'm101'),
+      item('lab', 't1'),
+    ];
+    expect(describeRows(groupTasksByPhase(tasks, PHASES))).toEqual([
+      'm101 (3)',
+      '  - examen',
+      '  t1 (2)',
+      '    - lab',
+      '    t1a (1)',
+      '      - repaso',
+      'Sin fase (1)',
+      '  - suelta',
+    ]);
+  });
+
+  it('respeta el orden recibido dentro de cada fase', () => {
+    const tasks = [item('b', 'm102'), item('a', 'm102')];
+    expect(describeRows(groupTasksByPhase(tasks, PHASES))).toEqual(['m102 (2)', '  - b', '  - a']);
+  });
+
+  it('una tarea de una fase que ya no existe cuenta como suelta', () => {
+    expect(describeRows(groupTasksByPhase([item('x', 'borrada')], PHASES))).toEqual([
+      'Sin fase (1)',
+      '  - x',
+    ]);
   });
 });

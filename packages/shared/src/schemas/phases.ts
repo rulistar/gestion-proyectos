@@ -149,3 +149,43 @@ export function loosePhaseTasks<T extends Pick<PhaseTask, 'phaseId'>>(
   const ids = new Set(phases.map((phase) => phase.id));
   return tasks.filter((task) => task.phaseId === null || !ids.has(task.phaseId));
 }
+
+/** Un renglón de la Lista agrupada por fase (HU-26): el encabezado de una fase o una tarea */
+export type PhaseListRow<P, T> =
+  | { kind: 'phase'; phase: P; depth: number; count: number }
+  | { kind: 'loose'; count: number }
+  | { kind: 'task'; task: T; depth: number; phaseId: string | null };
+
+/**
+ * Agrupa las tareas por fase, con sangría (HU-26): cada fase, sus tareas (en el orden recibido, ya
+ * filtrado y ordenado) y luego sus subfases. Al final, "Sin fase". Una fase sin tareas en ella ni en
+ * sus subfases no aparece. `count` = tareas de la fase y de sus subfases.
+ * Ejemplo: "Módulo 101" (2), su tarea, "Tema 1" (1), su tarea, y "Sin fase" (1) con la suelta.
+ */
+export function groupTasksByPhase<P extends PhaseLike, T extends { phaseId: string | null }>(
+  tasks: readonly T[],
+  phases: readonly P[],
+): PhaseListRow<P, T>[] {
+  const known = new Set(phases.map((phase) => phase.id));
+  const byPhase = new Map<string | null, T[]>();
+  for (const task of tasks) {
+    const key = task.phaseId !== null && known.has(task.phaseId) ? task.phaseId : null;
+    byPhase.set(key, [...(byPhase.get(key) ?? []), task]);
+  }
+  const rows: PhaseListRow<P, T>[] = [];
+  for (const { phase, depth } of orderedPhases(phases)) {
+    let count = 0;
+    for (const id of phaseDescendantIds(phases, phase.id)) count += byPhase.get(id)?.length ?? 0;
+    if (count === 0) continue;
+    rows.push({ kind: 'phase', phase, depth, count });
+    for (const task of byPhase.get(phase.id) ?? []) {
+      rows.push({ kind: 'task', task, depth: depth + 1, phaseId: phase.id });
+    }
+  }
+  const loose = byPhase.get(null) ?? [];
+  if (loose.length > 0) {
+    rows.push({ kind: 'loose', count: loose.length });
+    for (const task of loose) rows.push({ kind: 'task', task, depth: 2, phaseId: null });
+  }
+  return rows;
+}
