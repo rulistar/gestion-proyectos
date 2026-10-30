@@ -581,11 +581,11 @@ _Como Admin, quiero fusionar dos personas que son la misma, para que sus tareas 
 
 _Como PO, quiero la aplicación en una URL pública con HTTPS, para usarla con mi equipo sin depender de mi PC._
 
-- [ ] Se comparan 2 o 3 servicios gratuitos (aplicación y PostgreSQL) con sus condiciones vigentes, y la elección queda en un ADR. El PO aprueba antes de crear cuentas.
-- [ ] API y web en producción con **HTTPS**, HSTS y cookies `Secure` (ya previsto en `security.ts`); CORS solo para el dominio publicado.
-- [ ] Secretos solo en las variables del hosting (nunca en el repositorio); `.env.example` documenta cada una.
-- [ ] Las migraciones se aplican al desplegar; el primer Admin se crea con `setup:admin`.
-- [ ] Se despliega desde `main` con CI en verde; un documento explica cómo desplegar, cómo ver los registros y cómo respaldar la base de datos.
+- [x] Se comparan 2 o 3 servicios gratuitos (aplicación y PostgreSQL) con sus condiciones vigentes, y la elección queda en un ADR. El PO aprueba antes de crear cuentas. → [ADR-0007](adr/ADR-0007-despliegue.md): Render + Neon, aprobado 2026-10-29.
+- [ ] API y web en producción con **HTTPS**, HSTS y cookies `Secure` (ya previsto en `security.ts`); CORS solo para el dominio publicado. La API sirve la web (`@fastify/static`, misma URL); probado en local en modo producción. Falta el primer despliegue del PO.
+- [x] Secretos solo en las variables del hosting (nunca en el repositorio); `.env.example` documenta cada una.
+- [x] Las migraciones se aplican al desplegar (en el build); el primer Admin se crea con `setup:admin` desde la PC del PO.
+- [x] Se despliega desde `main` con CI en verde (`render.yaml`); [docs/despliegue.md](despliegue.md) explica cómo desplegar, cómo ver los registros y cómo respaldar la base de datos.
 
 #### HU-07 · Fases (8 pts)
 

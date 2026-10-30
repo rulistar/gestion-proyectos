@@ -44,6 +44,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 | Sesiones      | `@fastify/cookie` (cookie HttpOnly + sesión en BD; HU-02)                       | ✅ instalado                              |
 | Web (TEC-03)  | TanStack Router (ADR-0003), TanStack Query, shadcn/ui (copiado a mano)          | ✅ instalado                              |
 | Interfaz      | `lucide-react` (iconos), Radix Dialog y Dropdown Menu, `sonner` (avisos); HU-28 | ✅ instalado                              |
+| Despliegue    | Render Free (app) + Neon Free (BD); `@fastify/static` sirve la web (ADR-0007)   | ✅ configurado (`render.yaml`)            |
 | Pendientes    | Swagger/OpenAPI, Playwright                                                     | ⏳ se instalan en la historia que los use |
 
 **No agregar dependencias fuera del ADR sin preguntar al usuario.**
@@ -79,6 +80,8 @@ apps/
     src/app.ts          buildApp(): crea la instancia sin abrir puerto (testeable con app.inject)
     src/server.ts       arranque + cierre ordenado
     src/config/env.ts   variables de entorno validadas con Zod (falla al inicio si son inválidas)
+    src/web/web-app.ts  en producción la API también sirve la web compilada (TEC-04, ADR-0007): misma URL;
+                        las rutas de la web devuelven index.html y /api inexistente sigue en 404 JSON
     src/security.ts     helmet, CORS (CORS_ORIGINS), rate limit y HTTPS/HSTS en producción (TEC-02).
                         Rutas sensibles (login): `config: { rateLimit: authRateLimit }`
     src/modules/<mod>/  un módulo por funcionalidad: <mod>.routes.ts, <mod>.test.ts, ...
@@ -137,6 +140,7 @@ packages/
 docs/                 acta, ADRs, backlog (no los reformatea Prettier)
 .github/              CI (ci.yml) y Dependabot
 docker-compose.yml    PostgreSQL local
+render.yaml           Blueprint de Render (TEC-04); primer despliegue, registros y respaldos: docs/despliegue.md
 ```
 
 ### Convenciones
