@@ -199,7 +199,17 @@ export function AppSidebar() {
             Tareas
           </Link>
         )}
-        <SoonItem icon={ChartGantt} label="Gantt" story="HU-27" />
+        {current && (
+          <Link
+            to="/w/$workspaceId/gantt"
+            params={{ workspaceId: current.id }}
+            className={itemClass}
+            activeProps={{ className: 'bg-accent text-accent-foreground', 'aria-current': 'page' }}
+          >
+            <ChartGantt aria-hidden />
+            Gantt
+          </Link>
+        )}
         {/* Papelera: para quien puede dar de baja algo (ADR-0006 §3), no solo el Admin */}
         {current && canTrash && (
           <Link

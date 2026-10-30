@@ -617,7 +617,7 @@ _Como responsable, quiero ver mis proyectos y tareas en un diagrama de Gantt, pa
 
 Confirmado por el PO (2026-10-30) con el ejemplo "Certificación Linux": **dos barras por tarea** (arriba la planeada, abajo la real: de que pasó a En curso hasta que quedó Hecha, o hasta hoy); hitos = tareas de **tipo Entregable**; el del espacio con un **combo de sección**; las tareas **sin fechas** aparecen en su renglón, sin barra. Se entrega en dos PR: HU-27a (proyecto) y HU-27b (espacio).
 
-- [ ] Dentro de cada proyecto (sus tareas; HU-27a ✔) y uno general del espacio (los contenedores de la sección elegida como barras, con sus tareas desplegables; HU-27b).
+- [x] Dentro de cada proyecto (sus tareas; HU-27a) y uno general del espacio (menú lateral → Gantt: los contenedores de la sección elegida como barras, plegados, con sus tareas al desplegarlos; hechos y cancelados ocultos salvo que se pidan; HU-27b).
 - [x] Barras con las fechas planeadas coloreadas por estado, línea de "hoy" y vencido resaltado.
 - [x] **Planeado contra real** (ADR-0004 §2.1). Las canceladas no se dibujan.
 - [x] Zoom semana / mes / trimestre (en la URL).

@@ -62,7 +62,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
-                        (/, /perfil, /usuarios, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas,
+                        (/, /perfil, /usuarios, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas, .../gantt,
                         .../miembros, .../personas, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
@@ -73,7 +73,8 @@ apps/
     src/components/ui/  componentes de shadcn/ui (copiados, sin el CLI; se pueden modificar)
     src/components/task-table.tsx  tabla de tareas con orden: vista Tareas (HU-39) y pestaña Lista del proyecto,
                         agrupada por fase y plegable (HU-26)
-    src/components/gantt-chart.tsx  Gantt con cuadrícula de CSS (HU-27): renglones con dos barras, resúmenes, rombos y hoy
+    src/components/gantt-chart.tsx  Gantt con cuadrícula de CSS (HU-27): renglones con dos barras, resúmenes, rombos y hoy;
+                        GanttToolbar = zoom y leyenda. lib/gantt.ts calcula las barras de tareas y contenedores
     src/components/app-sidebar.tsx  menú lateral con el combo "Espacio de trabajo"; app-layout.tsx = menú + barra superior
     src/lib/brand.ts    APP_NAME (nombre del producto, provisional) e initials() para avatares
     src/index.css       tema: variables de color (turquesa #0f6e7a, dorado para lo urgente) y Plus Jakarta Sans
@@ -153,7 +154,8 @@ packages/
     src/schemas/project-filters.ts  filtros y orden de la lista de contenedores (HU-09), en la URL; con pruebas
     src/schemas/task-filters.ts     vista "Tareas": tareas del espacio, filtros y orden (HU-39); projectSearchSchema = pestaña
                                 y filtros de la Lista de un proyecto en la URL (HU-26); con pruebas
-    src/schemas/gantt.ts        Gantt (HU-27): barras planeadas contra reales, hitos, rango y encabezados; con pruebas
+    src/schemas/gantt.ts        Gantt (HU-27): barras planeadas contra reales, hitos, rango y encabezados; URL del Gantt
+                                del espacio (workspaceGanttSearchSchema); con pruebas
     src/schemas/my-work.ts      groupMyWork: agrupa mis tareas por fecha de fin (HU-28b), con pruebas
     tsconfig.build.json         build sin los *.test.ts
 docs/                 acta, ADRs, backlog (no los reformatea Prettier)

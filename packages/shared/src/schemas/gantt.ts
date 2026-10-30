@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { normalize } from './project-filters.js';
+import { projectBehaviorSchema } from './project-types.js';
+import type { ProjectStatus } from './projects.js';
 import type { TaskStatus } from './tasks.js';
 
 /**
@@ -10,6 +12,22 @@ import type { TaskStatus } from './tasks.js';
 /** Zoom del Gantt; va en la URL */
 export const ganttZoomSchema = z.enum(['week', 'month', 'quarter']);
 export type GanttZoom = z.infer<typeof ganttZoomSchema>;
+
+/**
+ * URL del Gantt del espacio (HU-27b): la sección (Proyectos por omisión), el zoom y si se ven los
+ * contenedores hechos y cancelados
+ */
+export const workspaceGanttSearchSchema = z.object({
+  behavior: projectBehaviorSchema.optional().catch(undefined),
+  zoom: ganttZoomSchema.optional().catch(undefined),
+  showClosed: z.boolean().optional().catch(undefined),
+});
+export type WorkspaceGanttSearch = z.infer<typeof workspaceGanttSearchSchema>;
+
+/** Estado de un contenedor como el de una tarea, para colorear su barra */
+export function containerGanttStatus(status: ProjectStatus): TaskStatus {
+  return status === 'NOT_STARTED' ? 'PENDING' : status;
+}
 
 /** Un tramo de días, ambos incluidos */
 export interface DayRange {

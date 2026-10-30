@@ -6,7 +6,6 @@ import {
   canUpdateTask,
   daysRemainingLabel,
   filterTasks,
-  ganttBars,
   ganttRange,
   hasActiveFilters,
   isMyTask,
@@ -40,7 +39,7 @@ import { LOOSE_TASKS, PhaseOutline } from '@/components/phase-outline';
 import { ProgressBar } from '@/components/progress-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
-import { GanttChart, type GanttRow } from '@/components/gantt-chart';
+import { GanttChart, GanttToolbar, type GanttRow } from '@/components/gantt-chart';
 import { EditTaskPanel, TaskBoard } from '@/components/task-board';
 import { TaskFiltersBar } from '@/components/task-filters-bar';
 import { TaskTable } from '@/components/task-table';
@@ -56,7 +55,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { containerFacts, taskFacts, useAccess } from '@/lib/access';
-import { formatDate, formatMinutes, localDateOf, todayIso } from '@/lib/dates';
+import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
 import {
   PROJECT_PRIORITIES,
   PROJECT_SCOPES,
@@ -68,6 +67,7 @@ import {
 import { projectTypesQueryOptions, SECTIONS, selectableTypes } from '@/lib/project-types';
 import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
+import { barDates, byPlannedStart, containerBars, taskBars } from '@/lib/gantt';
 import { nextSort } from '@/lib/sort';
 import { useCollapsed } from '@/lib/use-collapsed';
 import { taskOriginsQueryOptions } from '@/lib/task-origins';
@@ -454,25 +454,6 @@ function ProjectTaskList({
   );
 }
 
-const ZOOMS: { id: GanttZoom; label: string }[] = [
-  { id: 'week', label: 'Semana' },
-  { id: 'month', label: 'Mes' },
-  { id: 'quarter', label: 'Trimestre' },
-];
-
-/** Por fecha de inicio planeada (o de fin); sin fechas al final */
-function byPlannedStart(a: Task, b: Task): number {
-  const first = (task: Task) => task.startDate ?? task.endDate ?? '9999-12-31';
-  return first(a).localeCompare(first(b));
-}
-
-/** Estado de un contenedor como el de una tarea, para el color de su barra en el Gantt */
-function containerStatus(project: Project): Task['status'] {
-  if (project.status === 'DONE') return 'DONE';
-  if (project.status === 'CANCELLED') return 'CANCELLED';
-  return 'IN_PROGRESS';
-}
-
 /**
  * Pestaña Gantt (HU-27): el proyecto, sus fases (barra resumen con las fechas calculadas) y sus
  * tareas, planeado contra real. Ejemplo: "Lab 1", planeada del 2 al 6 de noviembre y hecha el 9,
@@ -504,18 +485,7 @@ function ProjectGantt({
   const [editingId, setEditingId] = useState<string>();
   const editing = tasks.find((task) => task.id === editingId);
   const shown = tasks.filter((task) => task.status !== 'CANCELLED').sort(byPlannedStart);
-  const barsOf = (task: Task) =>
-    ganttBars(
-      {
-        status: task.status,
-        startDate: task.startDate,
-        endDate: task.endDate,
-        typeName: task.type.name,
-        startedOn: localDateOf(task.startedAt),
-        completedOn: localDateOf(task.completedAt),
-      },
-      today,
-    );
+  const barsOf = (task: Task) => taskBars(task, today);
   const taskRow = (task: Task, depth: number): GanttRow => ({
     key: task.id,
     label: task.title,
@@ -537,17 +507,7 @@ function ProjectGantt({
         onToggle: () => collapsed.toggle('project'),
         count: shown.length,
       },
-      bars: ganttBars(
-        {
-          status: containerStatus(project),
-          startDate: project.startDate,
-          endDate: project.endDate,
-          typeName: '',
-          startedOn: localDateOf(project.startedAt),
-          completedOn: localDateOf(project.finishedAt),
-        },
-        today,
-      ),
+      bars: containerBars(project, today),
     },
   ];
   if (projectOpen) {
@@ -588,16 +548,7 @@ function ProjectGantt({
   }
 
   const dates: (string | null)[] = [project.startDate, project.endDate];
-  for (const task of shown) {
-    const bars = barsOf(task);
-    dates.push(
-      bars.planned?.start ?? null,
-      bars.planned?.end ?? null,
-      bars.real?.start ?? null,
-      bars.real?.end ?? null,
-      bars.milestone,
-    );
-  }
+  for (const task of shown) dates.push(...barDates(barsOf(task)));
   const range = ganttRange(dates, today, zoom);
 
   return (
@@ -614,45 +565,8 @@ function ProjectGantt({
           onClose={() => setEditingId(undefined)}
         />
       )}
-      <div className="flex flex-wrap items-center gap-3">
-        <div role="group" aria-label="Zoom" className="inline-flex rounded-md border p-0.5">
-          {ZOOMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              aria-pressed={zoom === item.id}
-              onClick={() => onZoom(item.id)}
-              className={cn(
-                'rounded px-3 py-1 text-sm',
-                zoom === item.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-        <GanttLegend />
-      </div>
+      <GanttToolbar zoom={zoom} onZoom={onZoom} />
       <GanttChart rows={rows} range={range} zoom={zoom} today={today} />
-    </div>
-  );
-}
-
-function GanttLegend() {
-  const item = (swatch: ReactNode, label: string) => (
-    <span className="inline-flex items-center gap-1.5">
-      {swatch}
-      {label}
-    </span>
-  );
-  return (
-    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-      {item(<span className="h-3 w-5 rounded bg-primary/25" />, 'Planeado')}
-      {item(<span className="h-1.5 w-5 rounded-full bg-primary" />, 'Real')}
-      {item(<span className="h-3 w-5 rounded bg-destructive/70" />, 'Vencida')}
-      {item(<span className="h-2 w-5 rounded-sm bg-foreground/60" />, 'Fase (calculada)')}
-      {item(<span className="size-2.5 rotate-45 bg-primary" />, 'Entregable')}
-      {item(<span className="h-3 w-0.5 bg-warning" />, 'Hoy')}
     </div>
   );
 }
