@@ -36,3 +36,33 @@ export const currentUserSchema = z.object({
   workspaces: z.array(workspaceSummarySchema),
 });
 export type CurrentUser = z.infer<typeof currentUserSchema>;
+
+/** La contraseña actual (HU-29): no se le aplica la política, como en el login */
+const currentPasswordSchema = z
+  .string()
+  .min(1, 'Escribe tu contraseña actual')
+  .max(256, 'Máximo 256 caracteres');
+
+/** Cuerpo de PATCH /auth/me/name: mi nombre (HU-29) */
+export const updateMyNameSchema = z.object({ name: personNameSchema });
+export type UpdateMyNameInput = z.infer<typeof updateMyNameSchema>;
+
+/** Cuerpo de PUT /auth/me/email: cambiar mi correo pide mi contraseña actual (HU-29) */
+export const changeMyEmailSchema = z.object({
+  email: emailSchema,
+  currentPassword: currentPasswordSchema,
+});
+export type ChangeMyEmailInput = z.infer<typeof changeMyEmailSchema>;
+
+/** Cuerpo de PUT /auth/me/password: la nueva se escribe dos veces para evitar errores (HU-29) */
+export const changeMyPasswordSchema = z
+  .object({
+    currentPassword: currentPasswordSchema,
+    newPassword: passwordSchema,
+    confirmPassword: z.string().max(256),
+  })
+  .refine((value) => value.newPassword === value.confirmPassword, {
+    message: 'No coincide con la contraseña nueva',
+    path: ['confirmPassword'],
+  });
+export type ChangeMyPasswordInput = z.infer<typeof changeMyPasswordSchema>;
