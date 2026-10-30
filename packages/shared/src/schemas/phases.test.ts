@@ -7,6 +7,7 @@ import {
   phaseDepths,
   phaseDescendantIds,
   summarizePhase,
+  type PhaseListRow,
   type PhaseTask,
 } from './phases.js';
 
@@ -102,13 +103,13 @@ describe('fases (HU-07)', () => {
 
 describe('Lista agrupada por fase (HU-26)', () => {
   const item = (id: string, phaseId: string | null) => ({ id, phaseId });
-  const describeRows = (rows: ReturnType<typeof groupTasksByPhase>) =>
+  const describeRows = (rows: PhaseListRow<{ id: string }, { id: string }>[]) =>
     rows.map((row) =>
       row.kind === 'phase'
         ? `${'  '.repeat(row.depth - 1)}${row.phase.id} (${row.count})`
         : row.kind === 'loose'
           ? `Sin fase (${row.count})`
-          : `${'  '.repeat(row.depth - 1)}- ${(row.task as { id: string }).id}`,
+          : `${'  '.repeat(row.depth - 1)}- ${row.task.id}`,
     );
 
   it('cada fase con sus tareas y luego sus subfases; las vacías no aparecen; las sueltas al final', () => {
