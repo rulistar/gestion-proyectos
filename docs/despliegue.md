@@ -37,6 +37,8 @@ La variable de la terminal tiene prioridad sobre tu `.env`; al quitarla, `pnpm d
 
 No hay pasos manuales: cada PR fusionado a `main` se despliega solo **cuando pasan los checks de CI** (`autoDeployTrigger: checksPass`). Las migraciones nuevas se aplican en el build; si una falla, el despliegue se cancela y sigue la versión anterior.
 
+Si un build falla, sigue corriendo la versión anterior. Si el error es raro y no viene de tu cambio, prueba **Manual Deploy → Clear build cache & deploy**.
+
 Para volver a una versión anterior: Render → servicio → **Events** → en un despliegue anterior, **Rollback**. Ojo: el rollback no deshace migraciones.
 
 ## 3. Registros
