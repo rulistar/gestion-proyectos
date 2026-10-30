@@ -607,9 +607,9 @@ Confirmado por el PO (2026-10-30) con el ejemplo "Certificación Linux" → "Mó
 
 _Como miembro, quiero ver las tareas de un proyecto en lista, para manejar proyectos con muchas tareas._ Reducida por el PO (2026-10-27): reutiliza la vista Tareas (HU-39).
 
-- [ ] En el proyecto se alterna entre **Tablero** y **Lista**; la Lista es la tabla de la vista Tareas filtrada a ese proyecto (mismos filtros y orden, en la URL).
-- [ ] Con fases (HU-07), las tareas se **agrupan por fase con sangría**, y se pueden plegar.
-- [ ] Clic en una tarea abre su edición, como en el tablero.
+- [x] En el proyecto se alterna entre **Tablero** y **Lista**; la Lista es la tabla de la vista Tareas filtrada a ese proyecto (mismos filtros y orden, en la URL).
+- [x] Con fases (HU-07), las tareas se **agrupan por fase con sangría**, y se pueden plegar.
+- [x] Clic en una tarea abre su edición, como en el tablero.
 
 #### HU-27 · Gantt (8 pts) — pasa al Sprint 6
 

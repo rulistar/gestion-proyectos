@@ -18,7 +18,8 @@ import { TASK_STATUSES } from '@/lib/tasks';
 
 /**
  * Filtros de la vista "Tareas" (HU-39), con el mismo estilo que los de proyectos (HU-09). Cada
- * cambio va a la URL. El contenedor se elige de la sección filtrada, si hay una.
+ * cambio va a la URL. El contenedor se elige de la sección filtrada, si hay una. En la pestaña
+ * Lista de un proyecto (HU-26) no hay sección ni contenedor: ya es ese proyecto.
  */
 export function TaskFiltersBar({
   projects,
@@ -27,6 +28,7 @@ export function TaskFiltersBar({
   origins,
   filters,
   onChange,
+  inProject = false,
 }: {
   projects: Project[];
   taskTypes: TaskType[];
@@ -35,6 +37,8 @@ export function TaskFiltersBar({
   origins: TaskOrigin[];
   filters: TaskFilters;
   onChange: (next: TaskFilters) => void;
+  /** Pestaña Lista de un proyecto: sin sección ni contenedor */
+  inProject?: boolean;
 }) {
   const containers = projects
     .filter((project) => !filters.behavior || project.type.behavior === filters.behavior)
@@ -53,47 +57,59 @@ export function TaskFiltersBar({
           className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
         />
         <Input
-          aria-label="Buscar por título, responsable, proyecto u origen"
-          placeholder="Buscar por título, responsable, folio, proyecto u origen…"
+          aria-label={
+            inProject
+              ? 'Buscar por título, responsable u origen'
+              : 'Buscar por título, responsable, proyecto u origen'
+          }
+          placeholder={
+            inProject
+              ? 'Buscar por título, responsable u origen…'
+              : 'Buscar por título, responsable, folio, proyecto u origen…'
+          }
           className="pl-8"
           value={filters.q ?? ''}
           onChange={(event) => set('q', event.target.value)}
         />
       </div>
-      <NativeSelect
-        aria-label="Sección"
-        className="h-9 w-44"
-        value={filters.behavior ?? ''}
-        // Al cambiar de sección, el contenedor elegido puede dejar de pertenecer a ella
-        onChange={(event) =>
-          onChange({
-            ...filters,
-            behavior: (event.target.value || undefined) as ProjectBehavior | undefined,
-            projectId: undefined,
-          })
-        }
-      >
-        <option value="">Todas las secciones</option>
-        {(Object.keys(SECTIONS) as ProjectBehavior[]).map((behavior) => (
-          <option key={behavior} value={behavior}>
-            {SECTIONS[behavior].title}
-          </option>
-        ))}
-      </NativeSelect>
-      <NativeSelect
-        aria-label="Contenedor"
-        className="h-9 w-56"
-        value={filters.projectId ?? ''}
-        onChange={(event) => set('projectId', event.target.value)}
-      >
-        <option value="">Todos los contenedores</option>
-        {containers.map((project) => (
-          <option key={project.id} value={project.id}>
-            {project.folio ? `${project.folio} · ` : ''}
-            {project.name}
-          </option>
-        ))}
-      </NativeSelect>
+      {!inProject && (
+        <>
+          <NativeSelect
+            aria-label="Sección"
+            className="h-9 w-44"
+            value={filters.behavior ?? ''}
+            // Al cambiar de sección, el contenedor elegido puede dejar de pertenecer a ella
+            onChange={(event) =>
+              onChange({
+                ...filters,
+                behavior: (event.target.value || undefined) as ProjectBehavior | undefined,
+                projectId: undefined,
+              })
+            }
+          >
+            <option value="">Todas las secciones</option>
+            {(Object.keys(SECTIONS) as ProjectBehavior[]).map((behavior) => (
+              <option key={behavior} value={behavior}>
+                {SECTIONS[behavior].title}
+              </option>
+            ))}
+          </NativeSelect>
+          <NativeSelect
+            aria-label="Contenedor"
+            className="h-9 w-56"
+            value={filters.projectId ?? ''}
+            onChange={(event) => set('projectId', event.target.value)}
+          >
+            <option value="">Todos los contenedores</option>
+            {containers.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.folio ? `${project.folio} · ` : ''}
+                {project.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </>
+      )}
       <NativeSelect
         aria-label="Tipo de tarea"
         className="h-9 w-40"

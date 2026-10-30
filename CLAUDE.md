@@ -71,6 +71,8 @@ apps/
     src/lib/<mod>.ts    queryOptions + mutaciones de cada módulo (p. ej. workspaces.ts); la ruta precarga con loader
     src/lib/use-schema-form.ts  formularios validados con el esquema de shared (FormData + errores por campo)
     src/components/ui/  componentes de shadcn/ui (copiados, sin el CLI; se pueden modificar)
+    src/components/task-table.tsx  tabla de tareas con orden: vista Tareas (HU-39) y pestaña Lista del proyecto,
+                        agrupada por fase y plegable (HU-26)
     src/components/app-sidebar.tsx  menú lateral con el combo "Espacio de trabajo"; app-layout.tsx = menú + barra superior
     src/lib/brand.ts    APP_NAME (nombre del producto, provisional) e initials() para avatares
     src/index.css       tema: variables de color (turquesa #0f6e7a, dorado para lo urgente) y Plus Jakarta Sans
@@ -146,9 +148,10 @@ packages/
                                 (sectionCanView, canUpdateContainer, canUpdateTask…), con pruebas
     src/schemas/progress.ts     reglas de avance (summarizeTasks, daysRemainingLabel; HU-06), con pruebas
     src/schemas/phases.ts       fases (HU-07): esquema con sangría (orderedPhases) y avance y fechas calculados
-                                (summarizePhase), con pruebas
+                                (summarizePhase); groupTasksByPhase = Lista agrupada por fase (HU-26); con pruebas
     src/schemas/project-filters.ts  filtros y orden de la lista de contenedores (HU-09), en la URL; con pruebas
-    src/schemas/task-filters.ts     vista "Tareas": tareas del espacio, filtros y orden (HU-39); con pruebas
+    src/schemas/task-filters.ts     vista "Tareas": tareas del espacio, filtros y orden (HU-39); projectSearchSchema = pestaña
+                                y filtros de la Lista de un proyecto en la URL (HU-26); con pruebas
     src/schemas/my-work.ts      groupMyWork: agrupa mis tareas por fecha de fin (HU-28b), con pruebas
     tsconfig.build.json         build sin los *.test.ts
 docs/                 acta, ADRs, backlog (no los reformatea Prettier)

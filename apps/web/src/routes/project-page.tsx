@@ -5,18 +5,24 @@ import {
   canUpdateContainer,
   canUpdateTask,
   daysRemainingLabel,
+  filterTasks,
+  hasActiveFilters,
   isMyTask,
   NOT_APPLICABLE,
   orderedPhases,
   phaseDescendantIds,
   roleHasPermission,
+  sortTasks,
   type Person,
   type Phase,
   type Project,
+  type ProjectSearch,
+  type ProjectTab,
   type ProjectType,
   type Task,
   type TaskType,
   type TaskTypeRef,
+  type WorkspaceTask,
 } from '@gestion/shared';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
@@ -29,7 +35,9 @@ import { LOOSE_TASKS, PhaseOutline } from '@/components/phase-outline';
 import { ProgressBar } from '@/components/progress-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
-import { TaskBoard } from '@/components/task-board';
+import { EditTaskPanel, TaskBoard } from '@/components/task-board';
+import { TaskFiltersBar } from '@/components/task-filters-bar';
+import { TaskTable } from '@/components/task-table';
 import { TaskForm } from '@/components/task-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -54,6 +62,8 @@ import {
 import { projectTypesQueryOptions, SECTIONS, selectableTypes } from '@/lib/project-types';
 import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
+import { nextSort } from '@/lib/sort';
+import { taskOriginsQueryOptions } from '@/lib/task-origins';
 import { cn } from '@/lib/utils';
 import { peopleQueryOptions } from '@/lib/people';
 import { phasesQueryOptions } from '@/lib/phases';
@@ -62,12 +72,12 @@ import { workspaceQueryOptions } from '@/lib/workspaces';
 // Es el id de la ruta (no la URL): cuelga de la ruta sin URL "app", de ahí el /app
 const route = getRouteApi('/app/w/$workspaceId/p/$projectId');
 
-const TABS = [
+const TABS: { id: ProjectTab; label: string }[] = [
   { id: 'board', label: 'Tablero' },
+  { id: 'list', label: 'Lista' },
   { id: 'phases', label: 'Fases' },
   { id: 'details', label: 'Datos del proyecto' },
-] as const;
-type TabId = (typeof TABS)[number]['id'];
+];
 
 /** Tareas de la fase elegida y de sus subfases; LOOSE_TASKS = las que no tienen fase */
 function tasksOfPhase(tasks: Task[], phases: Phase[], filter: string): Task[] {
@@ -81,10 +91,7 @@ function tasksOfPhase(tasks: Task[], phases: Phase[], filter: string): Task[] {
 }
 
 /** Lo que llega en otras historias: se ve como "Pronto" para que se sepa que viene */
-const SOON_TABS = [
-  { label: 'Lista', story: 'HU-26' },
-  { label: 'Gantt', story: 'HU-27' },
-];
+const SOON_TABS = [{ label: 'Gantt', story: 'HU-27' }];
 
 /** Un proyecto (HU-28c): indicadores, tablero de tareas y datos; crear y editar en ventanas */
 export function ProjectPage() {
@@ -99,7 +106,19 @@ export function ProjectPage() {
   const taskTypeOptions = (currentId?: string) =>
     allowedTaskTypes(taskTypes, projectType, project.allowedTaskTypeIds, currentId);
   const section = SECTIONS[project.type.behavior];
-  const [tab, setTab] = useState<TabId>('board');
+  // Pestaña y filtros de la Lista en la URL (HU-26): el enlace los conserva
+  const { tab: tabInUrl, ...listFilters } = route.useSearch();
+  const navigate = route.useNavigate();
+  const tab = tabInUrl ?? 'board';
+  function setTab(next: ProjectTab) {
+    void navigate({
+      search: (current: ProjectSearch) => ({
+        ...current,
+        tab: next === 'board' ? undefined : next,
+      }),
+      replace: true,
+    });
+  }
   // Fases (HU-07): solo si el tipo del contenedor las usa
   const usesPhases = projectType?.usesPhases ?? false;
   const { data: phases = [] } = useQuery({
@@ -254,6 +273,21 @@ export function ProjectPage() {
                 taskTypeOptions={taskTypeOptions}
               />
             </div>
+          ) : tab === 'list' ? (
+            <ProjectTaskList
+              workspaceId={workspaceId}
+              project={project}
+              tasks={tasks}
+              people={people}
+              taskTypes={taskTypes}
+              phases={usesPhases ? phases : undefined}
+              filters={listFilters}
+              onFilters={(next) =>
+                void navigate({ search: { ...next, tab: 'list' }, replace: true })
+              }
+              canEdit={(task) => canUpdateTask(access, taskFacts(task, facts, hasMyTask))}
+              taskTypeOptions={taskTypeOptions}
+            />
           ) : tab === 'phases' && usesPhases ? (
             <PhaseOutline
               workspaceId={workspaceId}
@@ -292,6 +326,110 @@ export function ProjectPage() {
         open={dialog === 'task'}
         onClose={() => setDialog(undefined)}
       />
+    </div>
+  );
+}
+
+/**
+ * Pestaña Lista (HU-26): la tabla de la vista Tareas (HU-39) con este proyecto, con los mismos
+ * filtros y orden en la URL. Si el tipo usa fases, agrupa por fase con sangría. Ejemplo: buscar
+ * "examen" deja "Módulo 101" con su tarea "Examen 101" y oculta las fases sin coincidencias.
+ */
+function ProjectTaskList({
+  workspaceId,
+  project,
+  tasks,
+  people,
+  taskTypes,
+  phases,
+  filters,
+  onFilters,
+  canEdit,
+  taskTypeOptions,
+}: {
+  workspaceId: string;
+  project: Project;
+  tasks: Task[];
+  people: Person[];
+  taskTypes: TaskType[];
+  phases: Phase[] | undefined;
+  filters: Omit<ProjectSearch, 'tab'>;
+  onFilters: (next: Omit<ProjectSearch, 'tab'>) => void;
+  canEdit: (task: Task) => boolean;
+  taskTypeOptions: (currentId?: string) => TaskType[];
+}) {
+  const { data: origins = [] } = useQuery(taskOriginsQueryOptions(workspaceId));
+  const [editingId, setEditingId] = useState<string>();
+  const today = todayIso();
+  // Las reglas de filtro y orden de la vista Tareas piden el contenedor de cada tarea
+  const projectRef: WorkspaceTask['project'] = {
+    id: project.id,
+    name: project.name,
+    folio: project.folio,
+    createdById: project.createdById,
+    scope: project.scope,
+    type: project.type,
+  };
+  const all = tasks.map((task) => ({ ...task, project: projectRef }));
+  const visible = sortTasks(filterTasks(all, filters, today), filters.sort, filters.dir);
+  const hidden = all.length - visible.length;
+  const editing = tasks.find((task) => task.id === editingId);
+
+  if (tasks.length === 0) {
+    return <p className="text-sm text-muted-foreground">Todavía no hay tareas.</p>;
+  }
+
+  return (
+    <div className="grid gap-3">
+      {editing && (
+        <EditTaskPanel
+          key={editing.id}
+          task={editing}
+          workspaceId={workspaceId}
+          projectId={project.id}
+          people={people}
+          phases={phases}
+          types={taskTypeOptions(editing.type.id)}
+          onClose={() => setEditingId(undefined)}
+        />
+      )}
+      <TaskFiltersBar
+        projects={[]}
+        taskTypes={taskTypes}
+        people={people}
+        origins={origins}
+        filters={filters}
+        onChange={onFilters}
+        inProject
+      />
+      <p className="text-sm text-muted-foreground">
+        {visible.length} de {all.length}
+        {hidden > 0 && !hasActiveFilters(filters) ? ' (hechas y canceladas ocultas)' : ''}
+      </p>
+      {visible.length === 0 ? (
+        <div className="grid justify-items-center gap-2 py-8 text-center">
+          <p className="font-medium">Ninguna tarea coincide con los filtros</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onFilters({ sort: filters.sort, dir: filters.dir })}
+          >
+            Limpiar filtros
+          </Button>
+        </div>
+      ) : (
+        <TaskTable
+          tasks={visible}
+          workspaceId={workspaceId}
+          today={today}
+          sort={filters.sort}
+          dir={filters.dir ?? 'asc'}
+          onSort={(key) => onFilters({ ...filters, ...nextSort(filters, key) })}
+          onEdit={(task) => (canEdit(task) ? () => setEditingId(task.id) : undefined)}
+          showProject={false}
+          phases={phases && phases.length > 0 ? phases : undefined}
+        />
+      )}
     </div>
   );
 }

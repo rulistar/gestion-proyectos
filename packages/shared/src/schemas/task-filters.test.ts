@@ -3,6 +3,7 @@ import {
   filterTasks,
   NO_ORIGIN,
   sortTasks,
+  projectSearchSchema,
   taskFiltersSchema,
   type WorkspaceTask,
 } from './task-filters.js';
@@ -141,5 +142,20 @@ describe('sortTasks (HU-39)', () => {
       q: 'erp',
     });
     expect(taskFiltersSchema.parse({ responsibleId: 'none' })).toEqual({ responsibleId: 'none' });
+  });
+});
+
+describe('URL de un proyecto (HU-26)', () => {
+  it('guarda la pestaña y los filtros de la Lista; ignora sección, contenedor y valores inválidos', () => {
+    expect(
+      projectSearchSchema.parse({
+        tab: 'list',
+        q: 'examen',
+        projectId: '01a18cf0-0000-7000-8000-000000000000',
+        behavior: 'WITH_END',
+        status: 'RARO',
+      }),
+    ).toEqual({ tab: 'list', q: 'examen' });
+    expect(projectSearchSchema.parse({ tab: 'otra' })).toEqual({});
   });
 });
