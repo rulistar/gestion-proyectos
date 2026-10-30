@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  containerGanttStatus,
   ganttBars,
   ganttBox,
   ganttRange,
   ganttTicks,
   isMilestoneType,
+  workspaceGanttSearchSchema,
   type GanttTaskInput,
 } from './gantt.js';
 
@@ -90,5 +92,20 @@ describe('Gantt (HU-27)', () => {
       left: 48,
       width: 72,
     });
+  });
+});
+
+describe('Gantt del espacio (HU-27b)', () => {
+  it('la URL guarda sección, zoom y "mostrar hechos"; ignora valores inválidos', () => {
+    expect(
+      workspaceGanttSearchSchema.parse({ behavior: 'ONGOING', zoom: 'month', showClosed: true }),
+    ).toEqual({ behavior: 'ONGOING', zoom: 'month', showClosed: true });
+    expect(workspaceGanttSearchSchema.parse({ behavior: 'OTRA', zoom: 'año' })).toEqual({});
+  });
+
+  it('el estado del contenedor colorea su barra como el de una tarea', () => {
+    expect(containerGanttStatus('NOT_STARTED')).toBe('PENDING');
+    expect(containerGanttStatus('PAUSED')).toBe('PAUSED');
+    expect(containerGanttStatus('DONE')).toBe('DONE');
   });
 });

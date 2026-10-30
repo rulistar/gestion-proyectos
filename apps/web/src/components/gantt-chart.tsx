@@ -57,11 +57,14 @@ export function GanttChart({
   range,
   zoom,
   today,
+  labelTitle = 'Tarea',
 }: {
   rows: GanttRow[];
   range: DayRange;
   zoom: GanttZoom;
   today: string;
+  /** Encabezado de la columna de nombres */
+  labelTitle?: string;
 }) {
   const dayWidth = GANTT_DAY_WIDTH[zoom];
   const timelineWidth = (daysBetween(range.start, range.end) + 1) * dayWidth;
@@ -92,7 +95,7 @@ export function GanttChart({
             className="sticky left-0 z-20 flex shrink-0 items-center bg-card px-3 font-medium"
             style={{ width: LABEL_WIDTH }}
           >
-            Tarea
+            {labelTitle}
           </div>
           <div className="relative" style={{ width: timelineWidth }}>
             {ticks.map((tick) => (
@@ -241,5 +244,61 @@ function Bar({
       className={cn('absolute', className)}
       style={{ left: box.left, width: Math.max(box.width, 3) }}
     />
+  );
+}
+
+const ZOOMS: { id: GanttZoom; label: string }[] = [
+  { id: 'week', label: 'Semana' },
+  { id: 'month', label: 'Mes' },
+  { id: 'quarter', label: 'Trimestre' },
+];
+
+/** Zoom (en la URL) y leyenda de colores */
+export function GanttToolbar({
+  zoom,
+  onZoom,
+}: {
+  zoom: GanttZoom;
+  onZoom: (zoom: GanttZoom) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <div role="group" aria-label="Zoom" className="inline-flex rounded-md border p-0.5">
+        {ZOOMS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={zoom === item.id}
+            onClick={() => onZoom(item.id)}
+            className={cn(
+              'rounded px-3 py-1 text-sm',
+              zoom === item.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <GanttLegend />
+    </div>
+  );
+}
+
+function GanttLegend() {
+  const item = (swatch: ReactNode, label: string) => (
+    <span className="inline-flex items-center gap-1.5">
+      {swatch}
+      {label}
+    </span>
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+      {item(<span className="h-3 w-5 rounded bg-primary/25" />, 'Planeado')}
+      {item(<span className="h-1.5 w-5 rounded-full bg-primary" />, 'Real')}
+      {item(<span className="h-3 w-5 rounded bg-destructive/70" />, 'Vencida')}
+      {item(<span className="h-2 w-5 rounded-sm bg-foreground/60" />, 'Fase (calculada)')}
+      {item(<span className="size-2.5 rotate-45 bg-primary" />, 'Entregable')}
+      {item(<span className="h-3 w-0.5 bg-warning" />, 'Hoy')}
+    </div>
   );
 }

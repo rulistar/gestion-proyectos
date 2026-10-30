@@ -7,7 +7,12 @@ import {
   redirect,
 } from '@tanstack/react-router';
 import { ApiError } from '@/lib/api';
-import { projectFiltersSchema, projectSearchSchema, taskFiltersSchema } from '@gestion/shared';
+import {
+  projectFiltersSchema,
+  projectSearchSchema,
+  taskFiltersSchema,
+  workspaceGanttSearchSchema,
+} from '@gestion/shared';
 import { meQueryKey, meQueryOptions } from '@/lib/auth';
 import { peopleQueryOptions } from '@/lib/people';
 import { weekStartIso } from '@/lib/dates';
@@ -20,6 +25,7 @@ import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
 import { AppLayout } from '@/routes/app-layout';
 import { ErrorPage } from '@/routes/error-page';
 import { HomePage } from '@/routes/home-page';
+import { GanttPage } from '@/routes/gantt-page';
 import { InvitationPage } from '@/routes/invitation-page';
 import { PasswordResetPage } from '@/routes/password-reset-page';
 import { LoginPage } from '@/routes/login-page';
@@ -43,6 +49,7 @@ import { ActivitiesPage, MaintenancePage, WorkspacePage } from '@/routes/workspa
  *   /w/$workspaceId/mantenimientos y /actividades: los contenedores de esos tipos (HU-21)
  *   /w/$workspaceId/mi-trabajo    mis tareas en ese workspace (HU-28b)
  *   /w/$workspaceId/tareas        todas las tareas del espacio, con filtros en la URL (HU-39)
+ *   /w/$workspaceId/gantt         Gantt del espacio por sección, planeado contra real (HU-27b)
  *   /w/$workspaceId/configuracion tipos de contenedor (HU-21, solo Admin)
  *   /w/$workspaceId/miembros      y sus miembros e invitaciones
  *   /w/$workspaceId/personas      catálogo de personas (HU-34, solo Admin)
@@ -237,6 +244,22 @@ const tasksRoute = createRoute({
   component: TasksPage,
 });
 
+const ganttRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/gantt',
+  validateSearch: workspaceGanttSearchSchema,
+  loader: ({ context, params }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(projectsQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(workspaceTasksQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(projectTypesQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(taskTypesQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(peopleQueryOptions(params.workspaceId)),
+    ]),
+  component: GanttPage,
+});
+
 const peopleRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId/personas',
@@ -298,6 +321,7 @@ const routeTree = rootRoute.addChildren([
     projectRoute,
     myWorkRoute,
     tasksRoute,
+    ganttRoute,
     membersRoute,
     peopleRoute,
     trashRoute,
