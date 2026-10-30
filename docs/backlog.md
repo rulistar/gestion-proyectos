@@ -39,6 +39,7 @@
 | Revisión del Sprint 4 (2026-10-27) | Se hizo lo pedido (36 pts). "Fin hasta" de la lista de proyectos es la fecha de fin del contenedor; las tareas se consultan en la vista **Tareas** (HU-39). Sprint 5: despliegue, fases, pestaña Lista (reducida a 2 pts), Gantt, Mi perfil, usuarios del sistema y visibilidad (34 pts); HU-23 y HU-17 pasan al Sprint 6. |
 | Crear espacios (2026-10-28) | **Solo el Admin del sistema crea espacios de trabajo**; los demás usuarios entran por invitación. La web oculta lo que el perfil no permite (HU-42); los ajustes por persona llegan con HU-17. |
 | Permisos por persona (2026-10-28) | Al invitar se configura a cada persona **por espacio**: qué ve (solo lo suyo, todo o una lista), qué crea, qué modifica y qué da de baja y restaura, por proyectos, mantenimientos, actividades y tareas. El rol queda como plantilla. "Mis tareas" = las que creé o donde soy Responsable. Una invitación puede incluir **varios espacios**. Va **antes del despliegue**; Gantt y pestaña Lista pasan al Sprint 6. Diseño en [ADR-0006](adr/ADR-0006-permisos-por-persona.md). |
+| Revisión del Sprint 5 (2026-10-30) | Se hizo lo replaneado más lo pedido a mitad del sprint (56 pts); la aplicación está en producción. **HU-50 confirmada** tal como está escrita (ejemplo: Luis, de workpers, compartido con Monex) y pasa al Sprint 7. Sprint 6: **cerrar el MVP**: Gantt, pestaña Lista, campos de detalle por tipo, Kanban de proyectos, exportar y detalle del proyecto (29 pts). Swagger y Playwright pasan al Sprint 7. |
 
 ## Requisitos no funcionales (aplican a todas las historias)
 
@@ -102,15 +103,15 @@
 | 44 | HU-07 | Fases: agrupar las tareas de un proyecto en fases anidadas (hasta 4 niveles), con avance y fechas calculadas | Proyectos | 8 | 🔴 | 5 |
 | 45 | HU-29 | Mi perfil: cambiar mi nombre, correo y contraseña | Usuarios | 3 | 🔴 | 5 |
 | 46 | HU-30 | Usuarios del sistema: el Admin del sistema cambia correos y desactiva cuentas | Usuarios | 3 | 🔴 | 5 |
-| 47 | HU-50 | Catálogo de personas compartido entre espacios (diseño por confirmar) | Personas | 5 | 🟡 | 6 |
-| 48 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
-| 49 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
-| 50 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
-| 51 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
-| 52 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
-| 53 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 54 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 6 |
-| 55 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 6 |
+| 47 | HU-27 | Diagrama de Gantt del proyecto y del espacio (planeado contra real) | Vistas | 8 | 🔴 | 6 |
+| 48 | HU-26 | Pestaña Lista del proyecto: la tabla de la vista Tareas, agrupada por fase | Vistas | 2 | 🔴 | 6 |
+| 49 | HU-23 | Campos de detalle por tipo (ADR-0004) | Tipos | 8 | 🔴 | 6 |
+| 50 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
+| 51 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
+| 52 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
+| 53 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 7 |
+| 54 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 7 |
+| 55 | HU-50 | Catálogo de personas compartido entre espacios | Personas | 5 | 🟡 | 7 |
 | 56 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
 | 57 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
 | 58 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
@@ -560,9 +561,9 @@ _Como Admin, quiero que un Lector vea solo lo de trabajo y que un Miembro vea to
 - [x] La plantilla Miembro ve **todas las tareas de los contenedores que ve**, también donde solo tiene una tarea asignada. Ej.: prueba4 ve todas las tareas de «Certificación Linux», pero solo modifica las que creó o donde es Responsable (las suyas).
 - [x] La migración actualiza a los Lectores y Miembros que tenían la plantilla sin ajustes (también en invitaciones pendientes); los «(ajustado)» se quedan igual.
 
-#### HU-50 · Catálogo de personas compartido entre espacios (5 pts)
+#### HU-50 · Catálogo de personas compartido entre espacios (5 pts) — pasa al Sprint 7
 
-_Como Admin, quiero que una persona dada de alta en un espacio aparezca en otros, para no darla de alta dos veces._ Pedido del PO (2026-10-28). **Diseño por confirmar con el PO.**
+_Como Admin, quiero que una persona dada de alta en un espacio aparezca en otros, para no darla de alta dos veces._ Pedido del PO (2026-10-28). **Diseño confirmado por el PO (2026-10-30)** con el ejemplo de Luis.
 
 - [ ] En Personas, «Compartir con…» ofrece los espacios donde soy Admin. Ej.: Luis, de workpers, compartido con Monex, aparece en Personas de Monex («compartida desde workpers») y en sus combos de Responsable, PM, etc.
 - [ ] Solo se edita, archiva o borra desde su espacio dueño; en los otros, «Dejar de compartir» si no está asignada a nada ahí.
@@ -660,8 +661,43 @@ _Como Admin, quiero configurar a cada persona al invitarla (en qué espacios ent
 - [x] Una invitación incluye uno o varios espacios, cada uno con su plantilla y su matriz (y su lista "Estos…"); quien invita debe ser Admin de cada uno (403 si no). En "Invitar": plantilla y "Permisos" por espacio, y "+ Agregar otro espacio".
 - [x] Al aceptar, entra a todos con su persona del catálogo; las invitaciones pendientes de antes siguen funcionando (la migración las convierte en invitaciones de un espacio). La invitación aparece como pendiente en cada espacio y se revoca entera desde cualquiera; ya miembro o con otra invitación pendiente en alguno de los espacios da 409 con su nombre.
 
+### Sprint 6
+
+Plan: [sprints/sprint-06.md](sprints/sprint-06.md). Objetivo: cerrar el MVP. HU-26 (Lista) y HU-27 (Gantt) están arriba, en el Sprint 5, de donde vienen. Los criterios de esta sección son iniciales: cada historia se confirma con un ejemplo concreto antes de construirla (acuerdo del Sprint 4).
+
+#### HU-23 · Campos de detalle por tipo (8 pts)
+
+_Como Admin, quiero que cada tipo de contenedor y de tarea pida su propio detalle, para capturar lo que cada trabajo necesita sin cambiar el código._ Diseño en [ADR-0004 §3](adr/ADR-0004-tipos-de-trabajo.md).
+
+- [ ] En Configuración, cada tipo define sus campos: texto corto, texto largo, número, fecha, lista de opciones o Sí/No; obligatorio u opcional, con orden.
+- [ ] Los formularios de contenedor y de tarea muestran solos los campos del tipo elegido. Ej.: una tarea Incidencia pide Severidad (obligatoria); una Tarea no pide nada extra.
+- [ ] La API valida los valores con un esquema Zod armado a partir de la definición: tipo equivocado, opción inexistente u obligatorio vacío → 400.
+- [ ] Se puede renombrar un campo y agregar opciones; no se cambia la clase de un campo con datos. Quitar un campo lo archiva y conserva sus valores.
+- [ ] Valores iniciales del ADR-0004 §5 para los espacios nuevos y, por migración, para los existentes (el PO los ajusta).
+
+#### HU-10 · Tablero Kanban de proyectos (5 pts)
+
+_Como responsable, quiero ver mis contenedores en un tablero por estado, para saber de un vistazo qué está en curso._
+
+- [ ] En Proyectos y Mantenimientos se alterna entre **Tabla** y **Tablero**; el tablero tiene una columna por estado y respeta los filtros de la lista (HU-09) y el filtro por tipo.
+- [ ] Cada tarjeta muestra folio, nombre, prioridad, avance y fin; clic abre el contenedor.
+- [ ] Se cambia el estado desde la tarjeta, como en el tablero de tareas, solo si la matriz permite modificarlo (ADR-0006). Arrastrar las tarjetas se decide con el PO al empezar, sin librería nueva.
+
+#### HU-13 · Exportar (3 pts)
+
+_Como usuario, quiero exportar lo que veo, para respaldarlo o analizarlo en Excel._
+
+- [ ] JSON (respaldo completo del espacio) y CSV con BOM UTF-8 (una fila por tarea, compatible con el formato del prototipo), con las columnas de tipo y de campos de detalle.
+- [ ] Respeta la visibilidad de quien exporta (ADR-0006) y excluye lo borrado. Sin dependencias nuevas.
+
+#### HU-11 · Detalle del proyecto (3 pts)
+
+_Como responsable, quiero una vista de resumen del proyecto, para ver su estado sin abrir cada pestaña._
+
+- [ ] Pestaña **Resumen** con datos, personas, avance, minutos pendientes, días restantes, fechas planeadas contra reales y avance por fase.
+- [ ] Qué datos lleva y en qué orden se confirma con el PO antes de construirla.
+
 ### Sprints siguientes (criterios por detallar en su planificación)
 
-- **HU-13 · Exportar:** JSON (respaldo completo) y CSV con BOM UTF-8 (una fila por tarea, compatible con el formato del prototipo); respeta la visibilidad y excluye lo borrado. Sin dependencias nuevas.
 - **HU-14 · Importar:** JSON o CSV, incluidos los respaldos del prototipo; "Actualizar" busca coincidencias por ID o, si no hay, por nombre sin distinguir mayúsculas; "Reemplazar" pide doble confirmación y manda lo anterior a la papelera; fechas normalizadas a AAAA-MM-DD (ambiguas = día/mes/año).
 - **Integraciones (TEC-08 a HU-20):** diseño en ADR-0002 §7.
