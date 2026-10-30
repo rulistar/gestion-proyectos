@@ -42,7 +42,7 @@ services:
         value: 'true'
       - key: SESSION_IDLE_MINUTES
         value: '60'
-      # La URL pública del servicio, p. ej. https://gestion-proyectos.onrender.com
+      # La URL pública del servicio, sin / final: https://gestion-proyectos-gnnp.onrender.com
       - key: CORS_ORIGINS
         sync: false
       # Neon → Connect, conexión directa (sin pooling), con ?sslmode=require

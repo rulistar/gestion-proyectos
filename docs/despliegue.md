@@ -1,5 +1,7 @@
 # Despliegue (TEC-04, ADR-0007)
 
+**Producción:** <https://gestion-proyectos-gnnp.onrender.com>
+
 La aplicación corre en **Render** (un servicio web gratuito que sirve la API y la web) con la base de datos en **Neon**. Este documento explica el primer despliegue, cómo desplegar cambios, ver los registros y respaldar la base de datos.
 
 > **Secretos**: la cadena de conexión de Neon solo se pega en Render y en tu terminal. Nunca en el repositorio, en un issue ni en un chat.
@@ -17,7 +19,7 @@ La aplicación corre en **Render** (un servicio web gratuito que sirve la API y 
 1. Crea una cuenta en <https://render.com> entrando con GitHub y dale acceso al repositorio `gestion-proyectos`.
 2. **New → Blueprint** y elige el repositorio. Render lee [`render.yaml`](../render.yaml) y pide dos valores:
    - `DATABASE_URL`: la cadena de Neon del paso anterior.
-   - `CORS_ORIGINS`: la URL que tendrá el servicio, `https://gestion-proyectos.onrender.com`. Si Render asigna otra, corrígela en **Environment** y vuelve a desplegar.
+   - `CORS_ORIGINS`: la URL que tendrá el servicio, sin `/` al final. Render puede agregarle un sufijo al nombre (la nuestra es `https://gestion-proyectos-gnnp.onrender.com`); si la que asigna es otra, corrígela en **Environment** y vuelve a desplegar.
 3. **Apply**. El primer build instala, compila, aplica las migraciones en Neon y arranca. Tarda unos minutos.
 4. Abre la URL: debe cargar el inicio de sesión con el candado de HTTPS.
 
