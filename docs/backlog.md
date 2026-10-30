@@ -624,11 +624,11 @@ _Como responsable, quiero ver mis proyectos y tareas en un diagrama de Gantt, pa
 
 _Como usuario, quiero cambiar mi nombre, mi correo y mi contraseña, sin pedírselo al Admin._
 
-- [ ] Desde el menú del usuario: cambiar nombre, correo y contraseña.
-- [ ] Cambiar el correo o la contraseña pide la **contraseña actual**.
-- [ ] El correo nuevo se guarda en minúsculas y no puede estar en uso.
-- [ ] Al cambiar el correo o la contraseña se **cierran mis demás sesiones**.
-- [ ] Cumple RNF-01. Sin verificación por correo mientras no haya servicio de correo.
+- [x] Desde el menú del usuario (**Mi perfil**, `/perfil`): cambiar nombre, correo y contraseña. Al cambiar el nombre, también cambia el de su persona en los espacios donde se llamaba igual; si el Admin le puso otro nombre (alias), se respeta.
+- [x] Cambiar el correo o la contraseña pide la **contraseña actual** (con límite de intentos, como el login).
+- [x] El correo nuevo se guarda en minúsculas y no puede estar en uso.
+- [x] Al cambiar el correo o la contraseña se **cierran mis demás sesiones**.
+- [x] Cumple RNF-01. Sin verificación por correo mientras no haya servicio de correo.
 
 #### HU-30 · Usuarios del sistema (3 pts)
 

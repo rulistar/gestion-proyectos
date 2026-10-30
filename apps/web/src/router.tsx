@@ -25,6 +25,7 @@ import { LoginPage } from '@/routes/login-page';
 import { MembersPage } from '@/routes/members-page';
 import { MyWorkPage } from '@/routes/my-work-page';
 import { PeoplePage } from '@/routes/people-page';
+import { ProfilePage } from '@/routes/profile-page';
 import { ProjectPage } from '@/routes/project-page';
 import { TasksPage } from '@/routes/tasks-page';
 import { TrashPage } from '@/routes/trash-page';
@@ -257,11 +258,19 @@ const trashRoute = createRoute({
   component: TrashPage,
 });
 
+/** Mi perfil (HU-29): fuera de los espacios; el usuario ya está en caché por la ruta "app" */
+const profileRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/perfil',
+  component: ProfilePage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   invitationRoute,
   appRoute.addChildren([
     homeRoute,
+    profileRoute,
     workspaceRoute,
     maintenanceRoute,
     activitiesRoute,

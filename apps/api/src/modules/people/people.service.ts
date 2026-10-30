@@ -104,6 +104,29 @@ export async function ensureMemberPerson(
   });
 }
 
+/**
+ * El usuario cambió su nombre (HU-29): en cada espacio donde su persona se llamaba igual que la
+ * cuenta, se renombra también. Si el Admin le había puesto otro nombre (un alias) se respeta, y si
+ * el nombre nuevo ya lo usa otra persona del espacio, se deja como estaba.
+ */
+export async function renameLinkedPeople(
+  tx: Tx,
+  user: { id: string; oldName: string; newName: string },
+  actorId: string,
+) {
+  const people = await tx.person.findMany({
+    where: { userId: user.id, name: user.oldName },
+    select: { id: true, workspaceId: true },
+  });
+  for (const person of people) {
+    if (await nameTaken(tx, person.workspaceId, user.newName, person.id)) continue;
+    await tx.person.update({
+      where: { id: person.id },
+      data: { name: user.newName, ...auditUpdate(actorId) },
+    });
+  }
+}
+
 const PROJECT_ROLES = [
   'requesterId',
   'assignedToId',

@@ -62,7 +62,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
-                        (/, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas,
+                        (/, /perfil, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas,
                         .../miembros, .../personas, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
@@ -90,6 +90,8 @@ apps/
       auth/session.ts     sesiones en BD (hash SHA-256 del token, cookie "sid") + requireAuth + startSession
       auth/current-user.ts getCurrentUser: el usuario con sus workspaces (/auth/me, login, HU-01)
       auth/auth.routes.ts POST /auth/login, POST /auth/logout, GET /auth/me (HU-02)
+      auth/profile.*      mi perfil (HU-29): PATCH /auth/me/name, PUT /auth/me/email y /auth/me/password (piden la
+                          contraseña actual, límite de intentos, cierran mis demás sesiones)
       workspaces/         GET/POST/PATCH /workspaces[/:id] (el detalle trae mi matriz), /:id/members (PATCH rol = plantilla,
                           PUT /:userId/permissions = matriz y "Estos…" (HU-17b), DELETE quitar; HU-25)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02);
