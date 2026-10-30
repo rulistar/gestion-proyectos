@@ -23,6 +23,7 @@
     "db:studio": "pnpm --filter @gestion/api db:studio",
     "db:reset": "pnpm --filter @gestion/api db:reset",
     "setup:admin": "pnpm --filter @gestion/api setup:admin",
+    "reset:password": "pnpm --filter @gestion/api reset:password",
     "prepare": "husky"
   },
   "lint-staged": {

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
 import { EmailTakenError } from '../auth/profile.service.js';
 import { requireAuth } from '../auth/session.js';
+import { createPasswordReset, DisabledAccountError } from './password-reset.service.js';
 import {
   changeUserEmail,
   listSystemUsers,
@@ -27,7 +28,10 @@ async function requireSystemAdmin(request: FastifyRequest, reply: FastifyReply) 
   }
 }
 
-/** Usuarios del sistema (HU-30): ver todas las cuentas, corregir correos y desactivar cuentas */
+/**
+ * Usuarios del sistema (HU-30): ver todas las cuentas, corregir correos, desactivar cuentas y
+ * generar enlaces para restablecer contraseñas (HU-54)
+ */
 export const usersRoutes: FastifyPluginCallback = (app, _options, done) => {
   app.addHook('preHandler', requireAuth);
   app.addHook('preHandler', requireSystemAdmin);
@@ -76,6 +80,23 @@ export const usersRoutes: FastifyPluginCallback = (app, _options, done) => {
       throw error;
     }
     return listSystemUsers(app.db);
+  });
+
+  // Enlace para que cree una contraseña nueva (HU-54); el token solo se ve en esta respuesta
+  app.post('/users/:userId/password-reset', async (request, reply) => {
+    const params = userParamsSchema.safeParse(request.params);
+    if (!params.success) return userNotFound(reply);
+    try {
+      const link = await createPasswordReset(app.db, request.auth!.userId, params.data.userId);
+      return link ?? userNotFound(reply);
+    } catch (error) {
+      if (error instanceof DisabledAccountError) {
+        return reply.code(409).send({
+          message: 'La cuenta está desactivada: reactívala antes de restablecer su contraseña',
+        });
+      }
+      throw error;
+    }
   });
 
   done();

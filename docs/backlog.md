@@ -670,10 +670,10 @@ Plan: [sprints/sprint-06.md](sprints/sprint-06.md). Objetivo: cerrar el MVP. HU-
 
 _Como usuario que olvidó su contraseña, quiero recuperar el acceso sin perder mi cuenta._ Pedido del PO (2026-10-30), después de no poder entrar a producción. **Diseño confirmado por el PO (2026-10-30)** con el ejemplo de prueba4.
 
-- [ ] En Usuarios del sistema (HU-30), **Restablecer contraseña** genera un enlace de un solo uso, válido 48 horas, que el Admin del sistema copia y manda (como las invitaciones, sin correo automático). Ej.: prueba4 olvida su contraseña; el Admin le manda el enlace por WhatsApp; prueba4 crea una nueva y entra.
-- [ ] Al usar el enlace se cierran todas las sesiones de esa cuenta; en la BD solo se guarda el hash del token.
-- [ ] Si quien la olvida es el Admin del sistema: comando `pnpm reset:password` desde la PC del PO (como `setup:admin`), que pide el correo y la contraseña nueva sin mostrarla.
-- [ ] "¿Olvidaste tu contraseña?" en el login explica que se pide al Admin del sistema. Sin correo automático mientras no haya servicio de correo.
+- [x] En Usuarios del sistema (HU-30), **Restablecer contraseña** genera un enlace de un solo uso, válido 48 horas, que el Admin del sistema copia y manda (como las invitaciones, sin correo automático). Ej.: prueba4 olvida su contraseña; el Admin le manda el enlace por WhatsApp; prueba4 crea una nueva y entra.
+- [x] Al usar el enlace se cierran todas las sesiones de esa cuenta; en la BD solo se guarda el hash del token.
+- [x] Si quien la olvida es el Admin del sistema: comando `pnpm reset:password` desde la PC del PO (como `setup:admin`), que pide el correo y la contraseña nueva sin mostrarla.
+- [x] "¿Olvidaste tu contraseña?" en el login explica que se pide al Admin del sistema. Sin correo automático mientras no haya servicio de correo.
 
 #### HU-23 · Campos de detalle por tipo (8 pts)
 

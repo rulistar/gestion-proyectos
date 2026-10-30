@@ -339,6 +339,9 @@ model User {
   allowedTaskTypesCreated ProjectTypeTaskType[]     @relation("ProjectTypeTaskTypeCreatedBy")
   taskOriginsCreated      TaskOrigin[]              @relation("TaskOriginCreatedBy")
   taskOriginsUpdated      TaskOrigin[]              @relation("TaskOriginUpdatedBy")
+  passwordResets          PasswordReset[]           @relation("PasswordResetUser")
+  passwordResetsCreated   PasswordReset[]           @relation("PasswordResetCreatedBy")
+  passwordResetsUpdated   PasswordReset[]           @relation("PasswordResetUpdatedBy")
 
   @@map("users")
 }
@@ -358,6 +361,27 @@ model Session {
   @@index([userId])
   @@index([expiresAt])
   @@map("sessions")
+}
+
+/// Enlace para restablecer una contraseña olvidada (HU-54): lo genera el Admin del sistema.
+/// Como las invitaciones: un solo uso, 48 horas y en la BD solo el hash del token
+model PasswordReset {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation("PasswordResetUser", fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  createdBy   User?    @relation("PasswordResetCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User?    @relation("PasswordResetUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@map("password_resets")
 }
 
 /// Espacio de trabajo: frontera de seguridad de toda la información de negocio.

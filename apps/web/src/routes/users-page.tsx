@@ -1,10 +1,11 @@
 import { changeUserEmailSchema, type SystemUser } from '@gestion/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Mail, UserCheck, UserX } from 'lucide-react';
+import { KeyRound, Mail, UserCheck, UserX } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { CopyLinkBox } from '@/components/copy-link-box';
 import { FieldError } from '@/components/field-error';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useCurrentUser } from '@/lib/auth';
 import { useSchemaForm } from '@/lib/use-schema-form';
-import { useChangeUserEmail, usersQueryOptions, useSetUserStatus } from '@/lib/users';
+import {
+  passwordResetLink,
+  useChangeUserEmail,
+  useCreatePasswordReset,
+  usersQueryOptions,
+  useSetUserStatus,
+} from '@/lib/users';
 import { ROLE_LABELS } from '@/lib/workspaces';
 
 const dateTimeFormat = new Intl.DateTimeFormat('es-MX', {
@@ -21,8 +28,9 @@ const dateTimeFormat = new Intl.DateTimeFormat('es-MX', {
 });
 
 /**
- * Usuarios del sistema (HU-30): solo el Admin del sistema. Corrige correos y desactiva cuentas;
- * el Admin de un espacio no cambia correos (quita al miembro e invita el correo correcto).
+ * Usuarios del sistema (HU-30): solo el Admin del sistema. Corrige correos, desactiva cuentas y
+ * genera enlaces para restablecer contraseñas (HU-54); el Admin de un espacio no cambia correos
+ * (quita al miembro e invita el correo correcto).
  */
 export function UsersPage() {
   const me = useCurrentUser();
@@ -55,7 +63,7 @@ export function UsersPage() {
     <div className="grid gap-3">
       <PageHeader
         title="Usuarios del sistema"
-        description="Todas las cuentas. Cambiar el correo o desactivar una cuenta cierra sus sesiones; una cuenta desactivada no puede entrar, pero sus tareas y su persona se conservan."
+        description="Todas las cuentas. Cambiar el correo o desactivar una cuenta cierra sus sesiones; una cuenta desactivada no puede entrar, pero sus tareas y su persona se conservan. Si alguien olvida su contraseña, genera un enlace para que cree una nueva."
       />
       <Card>
         <CardContent className="pt-6">
@@ -76,7 +84,9 @@ export function UsersPage() {
 
 function UserRow({ user, isMe }: { user: SystemUser; isMe: boolean }) {
   const [editing, setEditing] = useState(false);
+  const [resetUrl, setResetUrl] = useState<string>();
   const setStatus = useSetUserStatus();
+  const createReset = useCreatePasswordReset();
   const disabled = user.status === 'DISABLED';
 
   function changeStatus(status: SystemUser['status']) {
@@ -90,6 +100,13 @@ function UserRow({ user, isMe }: { user: SystemUser; isMe: boolean }) {
         onError: (error) => toast.error(error.message),
       },
     );
+  }
+
+  function resetPassword() {
+    createReset.mutate(user.id, {
+      onSuccess: ({ token }) => setResetUrl(passwordResetLink(token)),
+      onError: (error) => toast.error(error.message),
+    });
   }
 
   return (
@@ -127,6 +144,18 @@ function UserRow({ user, isMe }: { user: SystemUser; isMe: boolean }) {
               Cambiar correo
             </Button>
           )}
+          {/* Para mí mismo está Mi perfil; una cuenta desactivada primero se reactiva */}
+          {!isMe && !disabled && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={createReset.isPending}
+              onClick={resetPassword}
+            >
+              <KeyRound aria-hidden />
+              Restablecer contraseña
+            </Button>
+          )}
           {disabled ? (
             <Button
               size="sm"
@@ -156,6 +185,12 @@ function UserRow({ user, isMe }: { user: SystemUser; isMe: boolean }) {
         </div>
       </div>
       {editing && <EmailForm user={user} onDone={() => setEditing(false)} />}
+      {resetUrl && (
+        <CopyLinkBox url={resetUrl} label={`Enlace para restablecer la contraseña de ${user.name}`}>
+          Envía este enlace a <strong>{user.name}</strong> para que cree una contraseña nueva. Sirve
+          una vez, durante 48 horas; al usarlo se cierran sus sesiones.
+        </CopyLinkBox>
+      )}
     </li>
   );
 }

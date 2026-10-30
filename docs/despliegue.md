@@ -35,6 +35,17 @@ Remove-Item Env:DATABASE_URL
 
 La variable de la terminal tiene prioridad sobre tu `.env`; al quitarla, `pnpm dev` vuelve a usar tu BD de Docker.
 
+### Olvidé mi contraseña (HU-54)
+
+- **Otra persona:** el Admin del sistema entra a **Usuarios del sistema** → **Restablecer contraseña** y le manda el enlace (un solo uso, 48 horas).
+- **El Admin del sistema:** nadie más puede generarle el enlace, así que se restablece desde tu PC, igual que el primer Admin. Pide el correo y la contraseña nueva sin mostrarla, y cierra las sesiones abiertas de esa cuenta:
+
+```powershell
+$env:DATABASE_URL = '<cadena de Neon>'
+pnpm reset:password
+Remove-Item Env:DATABASE_URL
+```
+
 ## 2. Desplegar cambios
 
 No hay pasos manuales: cada PR fusionado a `main` se despliega solo **cuando pasan los checks de CI** (`autoDeployTrigger: checksPass`). Las migraciones nuevas se aplican en el build; si una falla, el despliegue se cancela y sigue la versión anterior.

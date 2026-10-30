@@ -21,6 +21,7 @@ import { AppLayout } from '@/routes/app-layout';
 import { ErrorPage } from '@/routes/error-page';
 import { HomePage } from '@/routes/home-page';
 import { InvitationPage } from '@/routes/invitation-page';
+import { PasswordResetPage } from '@/routes/password-reset-page';
 import { LoginPage } from '@/routes/login-page';
 import { MembersPage } from '@/routes/members-page';
 import { MyWorkPage } from '@/routes/my-work-page';
@@ -48,6 +49,7 @@ import { ActivitiesPage, MaintenancePage, WorkspacePage } from '@/routes/workspa
  *   /w/$workspaceId/papelera      y su papelera (solo Admin)
  *   /login                     pública; si ya hay sesión, redirige a /
  *   /invitacion#<token>        pública: aceptar una invitación (HU-01)
+ *   /restablecer#<token>       pública: crear una contraseña nueva con el enlace del Admin (HU-54)
  */
 
 /**
@@ -104,6 +106,13 @@ const invitationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/invitacion',
   component: InvitationPage,
+});
+
+/** Pública: el enlace para restablecer una contraseña olvidada (HU-54) */
+const passwordResetRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/restablecer',
+  component: PasswordResetPage,
 });
 
 /** Ruta sin URL propia ("id"): protege a todas sus hijas y les pone el layout */
@@ -276,6 +285,7 @@ const usersRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   loginRoute,
   invitationRoute,
+  passwordResetRoute,
   appRoute.addChildren([
     homeRoute,
     profileRoute,
