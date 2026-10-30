@@ -1,5 +1,12 @@
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
-import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen, UserRound } from 'lucide-react';
+import {
+  ChevronDown,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  UserRound,
+  UsersRound,
+} from 'lucide-react';
 import { useEffect } from 'react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Button } from '@/components/ui/button';
@@ -103,6 +110,13 @@ function UserMenu() {
           <UserRound aria-hidden />
           Mi perfil
         </DropdownMenuItem>
+        {/* HU-30: solo el Admin del sistema administra las cuentas */}
+        {user.isSystemAdmin && (
+          <DropdownMenuItem onSelect={() => void navigate({ to: '/usuarios' })}>
+            <UsersRound aria-hidden />
+            Usuarios del sistema
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onSelect={handleLogout} disabled={logout.isPending}>
           <LogOut aria-hidden />
           Cerrar sesión

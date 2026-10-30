@@ -62,7 +62,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
-                        (/, /perfil, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas,
+                        (/, /perfil, /usuarios, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas,
                         .../miembros, .../personas, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
@@ -119,6 +119,8 @@ apps/
       tasks/              tareas de un proyecto: GET/POST, PUT /:taskId, PATCH /:taskId/status, DELETE (HU-08);
                           Responsable = persona del catálogo (HU-35, ADR-0005);
                           GET /workspaces/:id/my-tasks = mis tareas (HU-28b); GET /workspaces/:id/tasks = todas (HU-39)
+      users/              usuarios del sistema (HU-30), solo el Admin del sistema: GET /users, PUT /users/:id/email
+                          (cierra sus sesiones), PATCH /users/:id/status (desactivar/reactivar; no a sí mismo)
       trash/              papelera, solo Admin (HU-15): GET /trash, POST /trash/:kind/:id/restore, DELETE /trash/:kind/:id
       invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez.
                           Una invitación puede incluir otros espacios (InvitationGrant, HU-17c): Admin de cada uno

@@ -15,6 +15,7 @@ import { taskOriginsRoutes } from './modules/task-origins/task-origins.routes.js
 import { taskTypesRoutes } from './modules/task-types/task-types.routes.js';
 import { phasesRoutes } from './modules/phases/phases.routes.js';
 import { tasksRoutes } from './modules/tasks/tasks.routes.js';
+import { usersRoutes } from './modules/users/users.routes.js';
 import { trashRoutes } from './modules/trash/trash.routes.js';
 import { workspacesRoutes } from './modules/workspaces/workspaces.routes.js';
 import { registerSecurity, type SecurityOptions } from './security.js';
@@ -82,6 +83,7 @@ export function buildApp({
   void app.register(phasesRoutes, { prefix: '/api/v1' });
   void app.register(tasksRoutes, { prefix: '/api/v1' });
   void app.register(trashRoutes, { prefix: '/api/v1' });
+  void app.register(usersRoutes, { prefix: '/api/v1' });
   void app.register(invitationsRoutes, { prefix: '/api/v1' });
   void app.register(acceptInvitationRoutes, { prefix: '/api/v1' });
 

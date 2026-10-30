@@ -29,6 +29,7 @@ import { ProfilePage } from '@/routes/profile-page';
 import { ProjectPage } from '@/routes/project-page';
 import { TasksPage } from '@/routes/tasks-page';
 import { TrashPage } from '@/routes/trash-page';
+import { UsersPage } from '@/routes/users-page';
 import { CatalogPage } from '@/routes/catalog-page';
 import { ActivitiesPage, MaintenancePage, WorkspacePage } from '@/routes/workspace-page';
 
@@ -265,12 +266,20 @@ const profileRoute = createRoute({
   component: ProfilePage,
 });
 
+/** Usuarios del sistema (HU-30): la página revisa que sea el Admin del sistema antes de pedirlos */
+const usersRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/usuarios',
+  component: UsersPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   invitationRoute,
   appRoute.addChildren([
     homeRoute,
     profileRoute,
+    usersRoute,
     workspaceRoute,
     maintenanceRoute,
     activitiesRoute,
