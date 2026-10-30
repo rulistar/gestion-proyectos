@@ -40,3 +40,11 @@ export function monthStartIso(): string {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 }
+
+/** Instante ISO → su fecha AAAA-MM-DD en la zona horaria del usuario (fechas reales del Gantt) */
+export function localDateOf(instant: string | null): string | null {
+  if (!instant) return null;
+  const date = new Date(instant);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}

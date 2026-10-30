@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ganttZoomSchema } from './gantt.js';
 import { normalize, sortByValue } from './project-filters.js';
 import { projectBehaviorSchema, projectTypeRefSchema } from './project-types.js';
 import { projectScopeSchema } from './projects.js';
@@ -147,14 +148,17 @@ export function sortTasks(
 }
 
 /** Pestañas de un proyecto; la elegida va en la URL para que el enlace la conserve (HU-26) */
-export const projectTabSchema = z.enum(['board', 'list', 'phases', 'details']);
+export const projectTabSchema = z.enum(['board', 'list', 'gantt', 'phases', 'details']);
 export type ProjectTab = z.infer<typeof projectTabSchema>;
 
 /**
- * URL de un proyecto (HU-26): la pestaña y los filtros de la Lista, que son los de la vista Tareas
- * sin sección ni contenedor (ya es este proyecto)
+ * URL de un proyecto (HU-26): la pestaña, los filtros de la Lista, que son los de la vista Tareas
+ * sin sección ni contenedor (ya es este proyecto), y el zoom del Gantt (HU-27)
  */
 export const projectSearchSchema = taskFiltersSchema
   .omit({ behavior: true, projectId: true })
-  .extend({ tab: projectTabSchema.optional().catch(undefined) });
+  .extend({
+    tab: projectTabSchema.optional().catch(undefined),
+    zoom: ganttZoomSchema.optional().catch(undefined),
+  });
 export type ProjectSearch = z.infer<typeof projectSearchSchema>;
