@@ -668,7 +668,7 @@ Plan: [sprints/sprint-06.md](sprints/sprint-06.md). Objetivo: cerrar el MVP. HU-
 
 #### HU-54 · Restablecer una contraseña olvidada (3 pts)
 
-_Como usuario que olvidó su contraseña, quiero recuperar el acceso sin perder mi cuenta._ Pedido del PO (2026-10-30), después de no poder entrar a producción. **Diseño por confirmar con el PO.**
+_Como usuario que olvidó su contraseña, quiero recuperar el acceso sin perder mi cuenta._ Pedido del PO (2026-10-30), después de no poder entrar a producción. **Diseño confirmado por el PO (2026-10-30)** con el ejemplo de prueba4.
 
 - [ ] En Usuarios del sistema (HU-30), **Restablecer contraseña** genera un enlace de un solo uso, válido 48 horas, que el Admin del sistema copia y manda (como las invitaciones, sin correo automático). Ej.: prueba4 olvida su contraseña; el Admin le manda el enlace por WhatsApp; prueba4 crea una nueva y entra.
 - [ ] Al usar el enlace se cierran todas las sesiones de esa cuenta; en la BD solo se guarda el hash del token.

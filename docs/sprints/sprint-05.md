@@ -123,7 +123,7 @@ El compromiso queda en **58 puntos** (56 después de la replaneación de abajo).
 ## Resultado (cierre: 2026-10-30)
 
 - Puntos completados: **56 / 32 comprometidos** tras la replaneación (34 al planificar), más 24 de historias que el PO agregó durante el sprint.
-- Objetivo replaneado cumplido: ☑ Sí. El PO probó cada historia en local antes de fusionarla. La revisión en producción está en curso (guion de abajo).
+- Objetivo replaneado cumplido: ☑ Sí. El PO probó cada historia en local antes de fusionarla. El PO recorrió el guion de abajo en producción (2026-10-30).
 - Se cerró antes de la fecha planeada (2026-11-10). El Sprint 6 empieza el 2026-10-31.
 
 ### Revisión
