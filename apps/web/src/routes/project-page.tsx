@@ -6,14 +6,19 @@ import {
   canUpdateTask,
   daysRemainingLabel,
   filterTasks,
+  ganttBars,
+  ganttRange,
   hasActiveFilters,
   isMyTask,
   NOT_APPLICABLE,
+  groupTasksByPhase,
   orderedPhases,
   phaseDescendantIds,
   roleHasPermission,
   sortTasks,
+  summarizePhase,
   type Person,
+  type GanttZoom,
   type Phase,
   type Project,
   type ProjectSearch,
@@ -35,6 +40,7 @@ import { LOOSE_TASKS, PhaseOutline } from '@/components/phase-outline';
 import { ProgressBar } from '@/components/progress-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
+import { GanttChart, type GanttRow } from '@/components/gantt-chart';
 import { EditTaskPanel, TaskBoard } from '@/components/task-board';
 import { TaskFiltersBar } from '@/components/task-filters-bar';
 import { TaskTable } from '@/components/task-table';
@@ -50,7 +56,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { containerFacts, taskFacts, useAccess } from '@/lib/access';
-import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
+import { formatDate, formatMinutes, localDateOf, todayIso } from '@/lib/dates';
 import {
   PROJECT_PRIORITIES,
   PROJECT_SCOPES,
@@ -63,6 +69,7 @@ import { projectTypesQueryOptions, SECTIONS, selectableTypes } from '@/lib/proje
 import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
 import { nextSort } from '@/lib/sort';
+import { useCollapsed } from '@/lib/use-collapsed';
 import { taskOriginsQueryOptions } from '@/lib/task-origins';
 import { cn } from '@/lib/utils';
 import { peopleQueryOptions } from '@/lib/people';
@@ -75,6 +82,7 @@ const route = getRouteApi('/app/w/$workspaceId/p/$projectId');
 const TABS: { id: ProjectTab; label: string }[] = [
   { id: 'board', label: 'Tablero' },
   { id: 'list', label: 'Lista' },
+  { id: 'gantt', label: 'Gantt' },
   { id: 'phases', label: 'Fases' },
   { id: 'details', label: 'Datos del proyecto' },
 ];
@@ -90,9 +98,6 @@ function tasksOfPhase(tasks: Task[], phases: Phase[], filter: string): Task[] {
   return tasks.filter((task) => task.phaseId !== null && ids.has(task.phaseId));
 }
 
-/** Lo que llega en otras historias: se ve como "Pronto" para que se sepa que viene */
-const SOON_TABS = [{ label: 'Gantt', story: 'HU-27' }];
-
 /** Un proyecto (HU-28c): indicadores, tablero de tareas y datos; crear y editar en ventanas */
 export function ProjectPage() {
   const { workspaceId, projectId } = route.useParams();
@@ -107,7 +112,7 @@ export function ProjectPage() {
     allowedTaskTypes(taskTypes, projectType, project.allowedTaskTypeIds, currentId);
   const section = SECTIONS[project.type.behavior];
   // Pestaña y filtros de la Lista en la URL (HU-26): el enlace los conserva
-  const { tab: tabInUrl, ...listFilters } = route.useSearch();
+  const { tab: tabInUrl, zoom = 'week', ...listFilters } = route.useSearch();
   const navigate = route.useNavigate();
   const tab = tabInUrl ?? 'board';
   function setTab(next: ProjectTab) {
@@ -242,18 +247,6 @@ export function ProjectPage() {
               {item.label}
             </button>
           ))}
-          {SOON_TABS.map((item) => (
-            <span
-              key={item.label}
-              title={`Llega con ${item.story}`}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground/60"
-            >
-              {item.label}
-              <span className="rounded bg-muted px-1.5 text-[10px] font-semibold uppercase">
-                Pronto
-              </span>
-            </span>
-          ))}
         </div>
 
         <div role="tabpanel" className="pt-4">
@@ -283,7 +276,34 @@ export function ProjectPage() {
               phases={usesPhases ? phases : undefined}
               filters={listFilters}
               onFilters={(next) =>
-                void navigate({ search: { ...next, tab: 'list' }, replace: true })
+                void navigate({
+                  search: (current: ProjectSearch) => ({
+                    ...next,
+                    tab: 'list',
+                    zoom: current.zoom,
+                  }),
+                  replace: true,
+                })
+              }
+              canEdit={(task) => canUpdateTask(access, taskFacts(task, facts, hasMyTask))}
+              taskTypeOptions={taskTypeOptions}
+            />
+          ) : tab === 'gantt' ? (
+            <ProjectGantt
+              workspaceId={workspaceId}
+              project={project}
+              tasks={tasks}
+              people={people}
+              phases={usesPhases ? phases : undefined}
+              zoom={zoom}
+              onZoom={(next) =>
+                void navigate({
+                  search: (current: ProjectSearch) => ({
+                    ...current,
+                    zoom: next === 'week' ? undefined : next,
+                  }),
+                  replace: true,
+                })
               }
               canEdit={(task) => canUpdateTask(access, taskFacts(task, facts, hasMyTask))}
               taskTypeOptions={taskTypeOptions}
@@ -430,6 +450,209 @@ function ProjectTaskList({
           phases={phases && phases.length > 0 ? phases : undefined}
         />
       )}
+    </div>
+  );
+}
+
+const ZOOMS: { id: GanttZoom; label: string }[] = [
+  { id: 'week', label: 'Semana' },
+  { id: 'month', label: 'Mes' },
+  { id: 'quarter', label: 'Trimestre' },
+];
+
+/** Por fecha de inicio planeada (o de fin); sin fechas al final */
+function byPlannedStart(a: Task, b: Task): number {
+  const first = (task: Task) => task.startDate ?? task.endDate ?? '9999-12-31';
+  return first(a).localeCompare(first(b));
+}
+
+/** Estado de un contenedor como el de una tarea, para el color de su barra en el Gantt */
+function containerStatus(project: Project): Task['status'] {
+  if (project.status === 'DONE') return 'DONE';
+  if (project.status === 'CANCELLED') return 'CANCELLED';
+  return 'IN_PROGRESS';
+}
+
+/**
+ * Pestaña Gantt (HU-27): el proyecto, sus fases (barra resumen con las fechas calculadas) y sus
+ * tareas, planeado contra real. Ejemplo: "Lab 1", planeada del 2 al 6 de noviembre y hecha el 9,
+ * muestra la barra real tres días más larga. Las canceladas no se dibujan.
+ */
+function ProjectGantt({
+  workspaceId,
+  project,
+  tasks,
+  people,
+  phases,
+  zoom,
+  onZoom,
+  canEdit,
+  taskTypeOptions,
+}: {
+  workspaceId: string;
+  project: Project;
+  tasks: Task[];
+  people: Person[];
+  phases: Phase[] | undefined;
+  zoom: GanttZoom;
+  onZoom: (zoom: GanttZoom) => void;
+  canEdit: (task: Task) => boolean;
+  taskTypeOptions: (currentId?: string) => TaskType[];
+}) {
+  const today = todayIso();
+  const collapsed = useCollapsed();
+  const [editingId, setEditingId] = useState<string>();
+  const editing = tasks.find((task) => task.id === editingId);
+  const shown = tasks.filter((task) => task.status !== 'CANCELLED').sort(byPlannedStart);
+  const barsOf = (task: Task) =>
+    ganttBars(
+      {
+        status: task.status,
+        startDate: task.startDate,
+        endDate: task.endDate,
+        typeName: task.type.name,
+        startedOn: localDateOf(task.startedAt),
+        completedOn: localDateOf(task.completedAt),
+      },
+      today,
+    );
+  const taskRow = (task: Task, depth: number): GanttRow => ({
+    key: task.id,
+    label: task.title,
+    depth,
+    bars: barsOf(task),
+    status: task.status,
+    onOpen: canEdit(task) ? () => setEditingId(task.id) : undefined,
+  });
+
+  // El proyecto completo arriba: sus fechas planeadas y las reales (ADR-0004 §2.1)
+  const projectOpen = collapsed.isOpen('project');
+  const rows: GanttRow[] = [
+    {
+      key: 'project',
+      label: project.name,
+      depth: 0,
+      group: {
+        open: projectOpen,
+        onToggle: () => collapsed.toggle('project'),
+        count: shown.length,
+      },
+      bars: ganttBars(
+        {
+          status: containerStatus(project),
+          startDate: project.startDate,
+          endDate: project.endDate,
+          typeName: '',
+          startedOn: localDateOf(project.startedAt),
+          completedOn: localDateOf(project.finishedAt),
+        },
+        today,
+      ),
+    },
+  ];
+  if (projectOpen) {
+    if (phases && phases.length > 0) {
+      // Mismo esquema que la Lista: al plegar una fase se ocultan los renglones más adentro
+      let hiddenBelow: number | null = null;
+      for (const row of groupTasksByPhase(shown, phases)) {
+        const depth = row.kind === 'loose' ? 1 : row.depth;
+        if (hiddenBelow !== null && depth > hiddenBelow) continue;
+        hiddenBelow = null;
+        if (row.kind === 'task') {
+          rows.push(taskRow(row.task, row.depth));
+          continue;
+        }
+        const key = row.kind === 'phase' ? row.phase.id : 'none';
+        const open = collapsed.isOpen(key);
+        if (!open) hiddenBelow = depth;
+        const summary = row.kind === 'phase' ? summarizePhase(phases, shown, row.phase.id) : null;
+        rows.push({
+          key: `phase-${key}`,
+          label: row.kind === 'phase' ? row.phase.name : 'Sin fase',
+          depth,
+          group: { open, onToggle: () => collapsed.toggle(key), count: row.count },
+          bars: {
+            planned:
+              summary?.startDate && summary.endDate
+                ? { start: summary.startDate, end: summary.endDate }
+                : null,
+            real: null,
+            milestone: null,
+            overdue: false,
+          },
+        });
+      }
+    } else {
+      for (const task of shown) rows.push(taskRow(task, 1));
+    }
+  }
+
+  const dates: (string | null)[] = [project.startDate, project.endDate];
+  for (const task of shown) {
+    const bars = barsOf(task);
+    dates.push(
+      bars.planned?.start ?? null,
+      bars.planned?.end ?? null,
+      bars.real?.start ?? null,
+      bars.real?.end ?? null,
+      bars.milestone,
+    );
+  }
+  const range = ganttRange(dates, today, zoom);
+
+  return (
+    <div className="grid gap-3">
+      {editing && (
+        <EditTaskPanel
+          key={editing.id}
+          task={editing}
+          workspaceId={workspaceId}
+          projectId={project.id}
+          people={people}
+          phases={phases}
+          types={taskTypeOptions(editing.type.id)}
+          onClose={() => setEditingId(undefined)}
+        />
+      )}
+      <div className="flex flex-wrap items-center gap-3">
+        <div role="group" aria-label="Zoom" className="inline-flex rounded-md border p-0.5">
+          {ZOOMS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={zoom === item.id}
+              onClick={() => onZoom(item.id)}
+              className={cn(
+                'rounded px-3 py-1 text-sm',
+                zoom === item.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <GanttLegend />
+      </div>
+      <GanttChart rows={rows} range={range} zoom={zoom} today={today} />
+    </div>
+  );
+}
+
+function GanttLegend() {
+  const item = (swatch: ReactNode, label: string) => (
+    <span className="inline-flex items-center gap-1.5">
+      {swatch}
+      {label}
+    </span>
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+      {item(<span className="h-3 w-5 rounded bg-primary/25" />, 'Planeado')}
+      {item(<span className="h-1.5 w-5 rounded-full bg-primary" />, 'Real')}
+      {item(<span className="h-3 w-5 rounded bg-destructive/70" />, 'Vencida')}
+      {item(<span className="h-2 w-5 rounded-sm bg-foreground/60" />, 'Fase (calculada)')}
+      {item(<span className="size-2.5 rotate-45 bg-primary" />, 'Entregable')}
+      {item(<span className="h-3 w-0.5 bg-warning" />, 'Hoy')}
     </div>
   );
 }

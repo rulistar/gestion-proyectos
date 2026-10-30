@@ -19,3 +19,4 @@ export * from './schemas/tasks.js';
 export * from './schemas/trash.js';
 export * from './schemas/users.js';
 export * from './schemas/workspaces.js';
+export * from './schemas/gantt.js';

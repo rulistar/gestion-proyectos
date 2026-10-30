@@ -615,12 +615,14 @@ _Como miembro, quiero ver las tareas de un proyecto en lista, para manejar proye
 
 _Como responsable, quiero ver mis proyectos y tareas en un diagrama de Gantt, para comparar lo planeado contra lo real._
 
-- [ ] Dentro de cada proyecto (sus tareas) y uno general del espacio (los proyectos como barras, con sus tareas desplegables).
-- [ ] Barras con las fechas planeadas coloreadas por estado, línea de "hoy" y vencido resaltado.
-- [ ] **Planeado contra real** (ADR-0004 §2.1).
-- [ ] Zoom semana / mes / trimestre.
-- [ ] **Fases como barras resumen** (HU-07) y Entregables como hitos (rombo).
-- [ ] Sin librería nueva (cuadrícula de CSS). Dependencias entre tareas: más adelante, si hacen falta.
+Confirmado por el PO (2026-10-30) con el ejemplo "Certificación Linux": **dos barras por tarea** (arriba la planeada, abajo la real: de que pasó a En curso hasta que quedó Hecha, o hasta hoy); hitos = tareas de **tipo Entregable**; el del espacio con un **combo de sección**; las tareas **sin fechas** aparecen en su renglón, sin barra. Se entrega en dos PR: HU-27a (proyecto) y HU-27b (espacio).
+
+- [ ] Dentro de cada proyecto (sus tareas; HU-27a ✔) y uno general del espacio (los contenedores de la sección elegida como barras, con sus tareas desplegables; HU-27b).
+- [x] Barras con las fechas planeadas coloreadas por estado, línea de "hoy" y vencido resaltado.
+- [x] **Planeado contra real** (ADR-0004 §2.1). Las canceladas no se dibujan.
+- [x] Zoom semana / mes / trimestre (en la URL).
+- [x] **Fases como barras resumen** (HU-07) y Entregables como hitos (rombo).
+- [x] Sin librería nueva (cuadrícula de CSS). Dependencias entre tareas: más adelante, si hacen falta.
 
 #### HU-29 · Mi perfil (3 pts)
 
