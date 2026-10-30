@@ -22,6 +22,8 @@ const envSchema = z.object({
   TRUST_PROXY: z.stringbool().default(false),
   // La sesión expira tras este tiempo sin actividad (de 5 minutos a 24 horas)
   SESSION_IDLE_MINUTES: z.coerce.number().int().min(5).max(1440).default(60),
+  // Carpeta de la web compilada que sirve la API (TEC-04). En producción, por omisión apps/web/dist
+  WEB_DIST_DIR: z.string().min(1).optional(),
 });
 
 /** Un origen es protocolo + dominio + puerto, sin ruta ni barra final */
