@@ -17,4 +17,5 @@ export * from './schemas/task-origins.js';
 export * from './schemas/task-types.js';
 export * from './schemas/tasks.js';
 export * from './schemas/trash.js';
+export * from './schemas/users.js';
 export * from './schemas/workspaces.js';

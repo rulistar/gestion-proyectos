@@ -634,10 +634,10 @@ _Como usuario, quiero cambiar mi nombre, mi correo y mi contraseña, sin pedírs
 
 _Como Admin del sistema, quiero corregir correos y desactivar cuentas, para mantener los accesos en orden._
 
-- [ ] Pantalla solo para el **Admin del sistema** con todos los usuarios (nombre, correo, espacios, estado).
-- [ ] Puede **cambiar el correo** de cualquiera (mismas reglas que HU-29); se cierran sus sesiones.
-- [ ] Puede **desactivar o reactivar** una cuenta: una cuenta desactivada no inicia sesión y sus sesiones se cierran.
-- [ ] El Admin de un espacio no cambia correos: quita al miembro e invita el correo correcto.
+- [x] Pantalla solo para el **Admin del sistema** con todos los usuarios (nombre, correo, espacios, estado y último acceso): menú del usuario → **Usuarios del sistema** (`/usuarios`).
+- [x] Puede **cambiar el correo** de cualquiera (mismas reglas que HU-29); se cierran sus sesiones.
+- [x] Puede **desactivar o reactivar** una cuenta: una cuenta desactivada no inicia sesión y sus sesiones se cierran. No puede desactivar la suya (nadie podría reactivarla). Sus tareas y su persona se conservan.
+- [x] El Admin de un espacio no cambia correos: quita al miembro e invita el correo correcto (la API le responde 403).
 
 #### HU-17 · Permisos por persona y por espacio (13 pts)
 
