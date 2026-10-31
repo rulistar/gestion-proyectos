@@ -66,6 +66,8 @@ apps/
                         .../miembros, .../personas, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
+    src/lib/view-as.ts  ver como un miembro (HU-56): a quién se ve (sessionStorage); apiFetch manda el encabezado y no
+                        envía cambios. components/view-as-bar.tsx = combo de la barra superior y aviso con "Salir"
     src/lib/access.ts   useAccess (mi matriz en el espacio) + containerFacts/taskFacts: la web oculta botones
                         con las reglas de shared (canUpdateContainer, canUpdateTask…; ADR-0006)
     src/lib/<mod>.ts    queryOptions + mutaciones de cada módulo (p. ej. workspaces.ts); la ruta precarga con loader
@@ -100,7 +102,9 @@ apps/
       workspaces/         GET/POST/PATCH /workspaces[/:id] (el detalle trae mi matriz), /:id/members (PATCH rol = plantilla,
                           PUT /:userId/permissions = matriz y "Estos…" (HU-17b), DELETE quitar; HU-25)
       workspaces/access.ts requireMembership / requirePermission(permiso): membresía + rol (RNF-02);
-                          request.membership = acceso con su matriz (ADR-0006). requirePermission solo para lo del Admin
+                          request.membership = acceso con su matriz (ADR-0006). requirePermission solo para lo del Admin.
+                          "Ver como" (HU-56): con el encabezado x-view-as (o ?viewAs= en descargas) el Admin recibe el
+                          acceso del miembro elegido; solo GET (lo demás da 403)
       workspaces/visibility.ts  filtro de visibilidad único (ADR-0006): projectVisibleWhere / taskVisibleWhere;
                           toda consulta de proyectos o tareas lo usa. Incluye, en solo lectura, el trabajo de las
                           personas que sigue (MembershipPersonAccess, HU-52)

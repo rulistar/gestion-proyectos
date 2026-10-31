@@ -30,6 +30,17 @@ export const workspaceListSchema = z.array(workspaceSummarySchema);
  * que no puedo hacer. La API lo vuelve a comprobar en cada petición.
  */
 export const workspaceDetailSchema = workspaceSummarySchema.extend({ access: memberAccessSchema });
+
+/**
+ * Ver como un miembro (HU-56): el Admin del espacio manda el ID del miembro en este encabezado
+ * (o en `?viewAs=` en las descargas) y la API responde con el acceso de esa persona. Solo lectura:
+ * cualquier cambio con el encabezado da 403.
+ */
+export const VIEW_AS_HEADER = 'x-view-as';
+
+/** A quién está viendo el Admin en la web (se guarda en la pestaña) */
+export const viewAsSchema = z.object({ workspaceId: z.uuid(), userId: z.uuid(), name: z.string() });
+export type ViewAs = z.infer<typeof viewAsSchema>;
 export type WorkspaceDetail = z.infer<typeof workspaceDetailSchema>;
 
 /** Un miembro activo del workspace (por ejemplo, para elegir el responsable de una tarea) */

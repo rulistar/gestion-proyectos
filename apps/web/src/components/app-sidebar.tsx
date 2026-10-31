@@ -80,6 +80,8 @@ export function AppSidebar() {
     enabled: current !== undefined,
   });
   const canTrash = detail !== undefined && canUseTrash({ role: detail.role, ...detail.access });
+  // El rol de la vista actual: el mío o, viendo como otra persona (HU-56), el suyo
+  const role = detail?.role ?? current?.role;
 
   return (
     <nav
@@ -128,7 +130,7 @@ export function AppSidebar() {
               }
             />
           )}
-          {current && roleHasPermission(current.role, 'workspace.update') && (
+          {current && role && roleHasPermission(role, 'workspace.update') && (
             <RenameWorkspaceDialog
               workspace={current}
               trigger={
@@ -239,7 +241,7 @@ export function AppSidebar() {
       </div>
 
       {/* Administración: solo para quien administra el espacio (los demás no ven la sección) */}
-      {current && roleHasPermission(current.role, 'member.manage') && (
+      {current && role && roleHasPermission(role, 'member.manage') && (
         <div className="grid gap-0.5">
           <SectionTitle>Administración</SectionTitle>
           <Link
@@ -260,7 +262,7 @@ export function AppSidebar() {
             <Contact aria-hidden />
             Personas
           </Link>
-          {roleHasPermission(current.role, 'catalog.manage') && (
+          {role && roleHasPermission(role, 'catalog.manage') && (
             <Link
               to="/w/$workspaceId/configuracion"
               params={{ workspaceId: current.id }}
@@ -275,7 +277,7 @@ export function AppSidebar() {
             </Link>
           )}
           {/* Cargar información (HU-14): solo el Admin del espacio */}
-          {roleHasPermission(current.role, 'catalog.manage') && (
+          {role && roleHasPermission(role, 'catalog.manage') && (
             <Link
               to="/w/$workspaceId/cargar"
               params={{ workspaceId: current.id }}
