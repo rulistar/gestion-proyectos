@@ -110,17 +110,18 @@
 | 51 | HU-10 | Tablero Kanban de proyectos por estado | Vistas | 5 | 🔴 | 6 |
 | 52 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
 | 53 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
-| 54 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 7 |
-| 55 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 7 |
-| 56 | HU-50 | Catálogo de personas compartido entre espacios | Personas | 5 | 🟡 | 7 |
-| 57 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 58 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
-| 59 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 60 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 61 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 62 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 63 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 64 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 54 | HU-55 | Filtro por año (abiertos, cerrados o ambos) en las listas de contenedores | Vistas | 3 | 🔴 | 6 |
+| 55 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 7 |
+| 56 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 7 |
+| 57 | HU-50 | Catálogo de personas compartido entre espacios | Personas | 5 | 🟡 | 7 |
+| 58 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 59 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 60 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 61 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 62 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 63 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 64 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 65 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -691,11 +692,20 @@ Confirmado por el PO (2026-10-30) con el ejemplo Incidencia → "Severidad" (lis
 
 #### HU-10 · Tablero Kanban de proyectos (5 pts)
 
-_Como responsable, quiero ver mis contenedores en un tablero por estado, para saber de un vistazo qué está en curso._
+_Como responsable, quiero ver mis contenedores en un tablero por estado, para saber de un vistazo qué está en curso._ Confirmado por el PO (2026-10-31) con el ejemplo de su lista de Proyectos: también en Mantenimientos y Actividades; el estado se cambia con un combo en la tarjeta (sin arrastrar).
 
-- [ ] En Proyectos y Mantenimientos se alterna entre **Tabla** y **Tablero**; el tablero tiene una columna por estado y respeta los filtros de la lista (HU-09) y el filtro por tipo.
-- [ ] Cada tarjeta muestra folio, nombre, prioridad, avance y fin; clic abre el contenedor.
-- [ ] Se cambia el estado desde la tarjeta, como en el tablero de tareas, solo si la matriz permite modificarlo (ADR-0006). Arrastrar las tarjetas se decide con el PO al empezar, sin librería nueva.
+- [x] En Proyectos, Mantenimientos y Actividades se alterna entre **Tabla** y **Tablero** (en la URL); el tablero tiene una columna por estado y respeta los filtros de la lista. Los terminados y cancelados se cuentan aunque "Mostrar terminados" esté apagado (ver el ajuste de abajo).
+- [x] Cada tarjeta muestra folio, nombre, prioridad, sprint, avance (o abiertas y vencidas) y fin; clic en el nombre abre el contenedor.
+- [x] El combo de Estado de la tarjeta lo pasa de columna (PATCH .../status, registra las fechas reales), solo si la matriz permite modificarlo (ADR-0006).
+- [x] Ajuste del PO en la prueba (2026-10-31): Terminado y Cancelado **no se muestran por omisión**, para dar espacio a los otros tres; dos botones "Terminados (N)" y "Cancelados (N)" muestran u ocultan su columna.
+
+#### HU-55 · Filtro por año en las listas (3 pts)
+
+_Como responsable, quiero ver mis contenedores por año, separando abiertos y cerrados, para revisar lo de cada año sin mezclarlo con lo anterior._ Pedido del PO (2026-10-31), confirmado con el ejemplo "Portal clientes" (En curso), "Migración ERP" (Terminado en marzo de 2026) y "Curso Linux" (Terminado en 2025).
+
+- [ ] En Proyectos, Mantenimientos y Actividades (tabla y tablero), un combo **Año** con los años que tienen datos (el en curso por omisión) y un selector **Abiertos / Cerrados / Ambos** que reemplaza la casilla "Mostrar terminados"; en la URL como los demás filtros.
+- [ ] **Abiertos** en un año: creados a más tardar ese año y sin cerrar. **Cerrados**: terminados o cancelados ese año (fecha de fin real). Ej.: 2026 con "Ambos" muestra Portal clientes y Migración ERP; Curso Linux, no.
+- [ ] Al llegar 2027 aparecen 2026 y 2027 en el combo; 2026 sigue mostrando lo que estuvo vivo y lo que se cerró ese año.
 
 #### HU-13 · Exportar (3 pts)
 

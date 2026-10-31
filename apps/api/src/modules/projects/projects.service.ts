@@ -421,6 +421,30 @@ export async function updateProject(
 }
 
 /**
+ * Solo el estado (HU-10, tablero): registra las fechas reales como al editarlo. null si no existe
+ * en ese workspace (→ 404).
+ */
+export async function updateProjectStatus(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  projectId: string,
+  status: ProjectStatus,
+  metrics = defaultMetrics(),
+): Promise<Project | null> {
+  const previous = await db.project.findFirst({
+    where: { id: projectId, workspaceId, ...notDeleted },
+    select: { status: true, startedAt: true, finishedAt: true },
+  });
+  if (!previous) return null;
+  await db.project.update({
+    where: { id: projectId },
+    data: { status, ...realDatesFor(status, previous), ...auditUpdate(actorId) },
+  });
+  return getProject(db, workspaceId, projectId, metrics);
+}
+
+/**
  * Manda el proyecto a la papelera (HU-15). Sus tareas no se tocan: dejan de verse porque su
  * proyecto está borrado, y vuelven con él al restaurarlo. false si no existe (→ 404).
  */

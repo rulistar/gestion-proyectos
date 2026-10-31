@@ -148,3 +148,11 @@ describe('filtros en la URL', () => {
     expect(hasActiveFilters({ area: 'Ventas' })).toBe(true);
   });
 });
+
+describe('vista tabla o tablero (HU-10)', () => {
+  it('la vista va en la URL pero no cuenta como filtro', () => {
+    expect(projectFiltersSchema.parse({ view: 'board' })).toEqual({ view: 'board' });
+    expect(projectFiltersSchema.parse({ view: 'gantt' })).toEqual({});
+    expect(hasActiveFilters({ view: 'board', sort: 'name' })).toBe(false);
+  });
+});

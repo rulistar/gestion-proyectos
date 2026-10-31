@@ -75,6 +75,10 @@ export const projectInputSchema = z
   .refine(endAfterStart, endAfterStartError);
 export type ProjectInput = z.infer<typeof projectInputSchema>;
 
+/** Cuerpo de PATCH .../projects/:projectId/status: pasarlo de columna en el tablero (HU-10) */
+export const projectStatusUpdateSchema = z.object({ status: projectStatusSchema });
+export type ProjectStatusUpdate = z.infer<typeof projectStatusUpdateSchema>;
+
 export const projectSchema = z.object({
   id: z.uuid(),
   workspaceId: z.uuid(),

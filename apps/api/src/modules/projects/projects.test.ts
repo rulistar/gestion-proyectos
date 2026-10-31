@@ -557,3 +557,46 @@ describe('folio sin duplicados y formato que se completa (HU-38)', () => {
     expect(projectSchema.parse(auto.json()).folio).toBe('PY2610-002');
   });
 });
+
+describe('cambiar el estado desde el tablero (HU-10)', () => {
+  function setStatus(cookies: Cookies, workspaceId: string, projectId: string, status: string) {
+    return app.inject({
+      method: 'PATCH',
+      url: `${url(workspaceId, projectId)}/status`,
+      cookies,
+      payload: { status },
+    });
+  }
+
+  it('pasa de columna y registra las fechas reales; los demás datos no cambian', async () => {
+    const { ana, ws } = await setup();
+    const project = await createOk(ana.cookies, ws.id, {
+      name: 'Portal clientes',
+      priority: 'HIGH',
+      notes: 'Primera etapa',
+    });
+
+    const started = await setStatus(ana.cookies, ws.id, project.id, 'IN_PROGRESS');
+    expect(started.statusCode).toBe(200);
+    const inProgress = projectSchema.parse(started.json());
+    expect(inProgress.status).toBe('IN_PROGRESS');
+    expect(inProgress.startedAt).not.toBeNull();
+    expect([inProgress.priority, inProgress.notes]).toEqual(['HIGH', 'Primera etapa']);
+
+    const done = projectSchema.parse(
+      (await setStatus(ana.cookies, ws.id, project.id, 'DONE')).json(),
+    );
+    expect(done.finishedAt).not.toBeNull();
+    expect(done.startedAt).toBe(inProgress.startedAt);
+  });
+
+  it('un estado inválido da 400; un Lector, 403; otro espacio, 404', async () => {
+    const { ana, ws, withRole } = await setup();
+    const project = await createOk(ana.cookies, ws.id, { name: 'Portal clientes' });
+    expect((await setStatus(ana.cookies, ws.id, project.id, 'ARCHIVADO')).statusCode).toBe(400);
+    const lector = await withRole('lector@example.com', 'VIEWER');
+    expect((await setStatus(lector.cookies, ws.id, project.id, 'DONE')).statusCode).toBe(403);
+    const other = await createWorkspace(db, ana.user.id, { name: 'Otro' });
+    expect((await setStatus(ana.cookies, other.id, project.id, 'DONE')).statusCode).toBe(404);
+  });
+});
