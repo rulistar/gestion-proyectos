@@ -95,12 +95,12 @@ export function TaskFiltersBar({
             ))}
           </NativeSelect>
           <NativeSelect
-            aria-label="Contenedor"
+            aria-label="Proyecto, mantenimiento o actividad"
             className="h-9 w-56"
             value={filters.projectId ?? ''}
             onChange={(event) => set('projectId', event.target.value)}
           >
-            <option value="">Todos los contenedores</option>
+            <option value="">Todo proyecto, mantenimiento o actividad</option>
             {containers.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.folio ? `${project.folio} · ` : ''}

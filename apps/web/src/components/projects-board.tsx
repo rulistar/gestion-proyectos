@@ -7,18 +7,18 @@ import {
   type ProjectStatus,
 } from '@gestion/shared';
 import { Link } from '@tanstack/react-router';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { ProgressBar } from '@/components/progress-bar';
+import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
 import { containerFacts, useAccess } from '@/lib/access';
 import { formatDate, todayIso } from '@/lib/dates';
 import { PROJECT_PRIORITIES, PROJECT_STATUSES, useUpdateProjectStatus } from '@/lib/projects';
-import { cn } from '@/lib/utils';
 
-/** Como en el tablero de tareas: lo cerrado empieza plegado */
-const FOLDED_AT_START: readonly ProjectStatus[] = ['DONE', 'CANCELLED'];
+/** Pedido del PO (2026-10-31): lo cerrado no se ve hasta pedirlo, para dar espacio a lo abierto */
+const CLOSED: readonly ProjectStatus[] = ['DONE', 'CANCELLED'];
 
 /**
  * Tablero de contenedores por estado (HU-10): una columna por estado, con los mismos filtros de la
@@ -35,10 +35,12 @@ export function ProjectsBoard({
   projects: Project[];
   behavior: ProjectBehavior;
 }) {
-  const [folded, setFolded] = useState<ReadonlySet<ProjectStatus>>(new Set(FOLDED_AT_START));
+  const [shown, setShown] = useState<ReadonlySet<ProjectStatus>>(new Set());
+  const columnOf = (status: ProjectStatus) =>
+    projects.filter((project) => project.status === status);
 
   function toggle(status: ProjectStatus) {
-    setFolded((current) => {
+    setShown((current) => {
       const next = new Set(current);
       if (next.has(status)) next.delete(status);
       else next.add(status);
@@ -46,40 +48,46 @@ export function ProjectsBoard({
     });
   }
 
+  const statuses = projectStatusSchema.options.filter(
+    (status) => !CLOSED.includes(status) || shown.has(status),
+  );
+
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1">
-      {projectStatusSchema.options.map((status) => {
-        const column = projects.filter((project) => project.status === status);
-        const isFolded = folded.has(status);
-        return (
-          <section
+    <div className="grid gap-2">
+      {/* Botones con el total de cada estado cerrado: muestran u ocultan su columna */}
+      <div className="flex flex-wrap gap-2">
+        {CLOSED.map((status) => (
+          <Button
             key={status}
-            aria-label={PROJECT_STATUSES[status].label}
-            className={cn(
-              'grid shrink-0 content-start gap-2 rounded-lg bg-muted/50 p-2',
-              isFolded ? 'w-44' : 'w-64',
-            )}
+            type="button"
+            size="sm"
+            variant={shown.has(status) ? 'default' : 'outline'}
+            aria-pressed={shown.has(status)}
+            onClick={() => toggle(status)}
           >
-            <button
-              type="button"
-              onClick={() => toggle(status)}
-              aria-expanded={!isFolded}
-              className="flex items-center gap-1.5 px-1 text-left text-sm font-semibold"
+            {shown.has(status) ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
+            {status === 'DONE' ? 'Terminados' : 'Cancelados'} ({columnOf(status).length})
+          </Button>
+        ))}
+      </div>
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {statuses.map((status) => {
+          const column = columnOf(status);
+          return (
+            <section
+              key={status}
+              aria-label={PROJECT_STATUSES[status].label}
+              className="grid min-w-56 flex-1 content-start gap-2 rounded-lg bg-muted/50 p-2"
             >
-              {isFolded ? (
-                <ChevronRight aria-hidden className="size-4" />
-              ) : (
-                <ChevronDown aria-hidden className="size-4" />
-              )}
-              <span
-                aria-hidden
-                className="size-2 rounded-full"
-                style={{ backgroundColor: PROJECT_STATUSES[status].color }}
-              />
-              {PROJECT_STATUSES[status].label} · {column.length}
-            </button>
-            {!isFolded &&
-              column.map((project) => (
+              <h3 className="flex items-center gap-1.5 px-1 text-sm font-semibold">
+                <span
+                  aria-hidden
+                  className="size-2 rounded-full"
+                  style={{ backgroundColor: PROJECT_STATUSES[status].color }}
+                />
+                {PROJECT_STATUSES[status].label} · {column.length}
+              </h3>
+              {column.map((project) => (
                 <ProjectCard
                   key={project.id}
                   workspaceId={workspaceId}
@@ -87,9 +95,10 @@ export function ProjectsBoard({
                   behavior={behavior}
                 />
               ))}
-          </section>
-        );
-      })}
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }

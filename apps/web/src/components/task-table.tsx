@@ -41,7 +41,7 @@ export function TaskTable({
   onSort: (column: TaskSortKey) => void;
   /** Sin permiso de edición devuelve undefined: el título no es un botón */
   onEdit: (task: WorkspaceTask) => (() => void) | undefined;
-  /** Columna Contenedor: sobra dentro de un proyecto */
+  /** Columna Proyecto/Mantenimiento/Actividad: sobra dentro de un proyecto */
   showProject?: boolean;
   /** Fases del proyecto (HU-07): agrupa por fase */
   phases?: Phase[] | undefined;
@@ -124,7 +124,7 @@ export function TaskTable({
         <thead className="text-left text-muted-foreground">
           <tr className="border-b">
             {th('title', 'Tarea')}
-            {showProject && th('project', 'Contenedor')}
+            {showProject && th('project', 'Proyecto/Mantenimiento/Actividad')}
             {th('type', 'Tipo')}
             {th('responsible', 'Responsable')}
             {th('status', 'Estado')}
