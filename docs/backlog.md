@@ -115,7 +115,7 @@
 | 56 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 7 |
 | 57 | HU-50 | Catálogo de personas compartido entre espacios | Personas | 5 | 🟡 | 7 |
 | 58 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 59 | HU-14 | Importar desde JSON o CSV (actualizar o reemplazar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 7 |
+| 59 | HU-14 | Cargar información desde JSON o Excel (solo actualizar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 6 |
 | 60 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
 | 61 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
 | 62 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
@@ -716,12 +716,20 @@ _Como usuario, quiero exportar lo que veo, para respaldarlo o analizarlo en Exce
 
 #### HU-11 · Detalle del proyecto (3 pts)
 
-_Como responsable, quiero una vista de resumen del proyecto, para ver su estado sin abrir cada pestaña._
+_Como responsable, quiero una vista de resumen del proyecto, para ver su estado sin abrir cada pestaña._ Confirmado por el PO (2026-10-31) con el ejemplo "Certificación Linux": pestaña Resumen primera, pero el proyecto sigue abriendo en Tablero.
 
-- [ ] Pestaña **Resumen** con datos, personas, avance, minutos pendientes, días restantes, fechas planeadas contra reales y avance por fase.
-- [ ] Qué datos lleva y en qué orden se confirma con el PO antes de construirla.
+- [x] Pestaña **Resumen** (la primera): Fechas (planeado contra real y desviación o días restantes), Tareas por estado, Avance por fase (con sangría) y Próximas a vencer (abiertas con fecha, las vencidas primero; clic abre la edición). Avance y trabajo pendiente siguen en los indicadores de arriba, para no repetirlos.
+
+#### HU-14 · Cargar información (8 pts)
+
+_Como Admin, quiero cargar proyectos y tareas desde un respaldo JSON o un Excel, para no capturarlos a mano y para restaurar respaldos._ Pedido del PO (2026-10-31) para el Sprint 6; diseño confirmado con el ejemplo "Certificación Linux" (ya existe, con una tarea nueva "Lab 3") y "Portal clientes" (nuevo).
+
+- [ ] Acepta el **JSON** de Exportar (HU-13), el **CSV** de Exportar y los respaldos del prototipo (columnas viejas: Curso, Plataforma, Unidad, Actividad…). Fechas normalizadas a AAAA-MM-DD (las ambiguas, día/mes/año).
+- [ ] Solo modo **Actualizar**: lo que coincide (por folio o, sin folio, por nombre sin distinguir mayúsculas) se actualiza; lo demás se crea. Nunca borra.
+- [ ] Antes de guardar, un **resumen**: contenedores y tareas nuevos y actualizados, y lo que se creará en los catálogos ("tipo Ticket, persona Luis Pérez"); se confirma o se cancela.
+- [ ] Lo que falta en los catálogos (tipos, orígenes, fases, personas sin cuenta) **se crea** y se avisa en el resumen.
+- [ ] Solo el **Admin del espacio**; validado con Zod; sin dependencias nuevas.
 
 ### Sprints siguientes (criterios por detallar en su planificación)
 
-- **HU-14 · Importar:** JSON o CSV, incluidos los respaldos del prototipo; "Actualizar" busca coincidencias por ID o, si no hay, por nombre sin distinguir mayúsculas; "Reemplazar" pide doble confirmación y manda lo anterior a la papelera; fechas normalizadas a AAAA-MM-DD (ambiguas = día/mes/año).
 - **Integraciones (TEC-08 a HU-20):** diseño en ADR-0002 §7.

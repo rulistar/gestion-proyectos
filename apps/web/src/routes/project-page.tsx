@@ -4,6 +4,7 @@ import {
   canRemoveTask,
   canUpdateContainer,
   canUpdateTask,
+  countByStatus,
   daysRemainingLabel,
   filterTasks,
   ganttRange,
@@ -15,6 +16,7 @@ import {
   phaseDescendantIds,
   roleHasPermission,
   sortTasks,
+  upcomingTasks,
   summarizePhase,
   type Person,
   type GanttZoom,
@@ -66,12 +68,13 @@ import {
 } from '@/lib/projects';
 import { projectTypesQueryOptions, SECTIONS, selectableTypes } from '@/lib/project-types';
 import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
-import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
+import { TASK_STATUSES, tasksQueryOptions, useCreateTask } from '@/lib/tasks';
 import { barDates, byPlannedStart, containerBars, taskBars } from '@/lib/gantt';
 import { detailFieldsQueryOptions, fieldsOfType, formatDetailValue } from '@/lib/detail-fields';
 import { nextSort } from '@/lib/sort';
 import { useCollapsed } from '@/lib/use-collapsed';
 import { taskOriginsQueryOptions } from '@/lib/task-origins';
+import { dueInfo } from '@/lib/due';
 import { cn } from '@/lib/utils';
 import { peopleQueryOptions } from '@/lib/people';
 import { phasesQueryOptions } from '@/lib/phases';
@@ -81,6 +84,7 @@ import { workspaceQueryOptions } from '@/lib/workspaces';
 const route = getRouteApi('/app/w/$workspaceId/p/$projectId');
 
 const TABS: { id: ProjectTab; label: string }[] = [
+  { id: 'summary', label: 'Resumen' },
   { id: 'board', label: 'Tablero' },
   { id: 'list', label: 'Lista' },
   { id: 'gantt', label: 'Gantt' },
@@ -139,6 +143,9 @@ export function ProjectPage() {
       : '';
   const boardTasks = usesPhases ? tasksOfPhase(tasks, phases, activePhaseFilter) : tasks;
   const [dialog, setDialog] = useState<'edit' | 'task'>();
+  // Tarea abierta desde el Resumen (HU-11)
+  const [editingTaskId, setEditingTaskId] = useState<string>();
+  const editingTask = tasks.find((task) => task.id === editingTaskId);
   // Qué puedo hacer aquí, según mi matriz (ADR-0006); la API lo vuelve a decidir
   const access = useAccess(workspaceId);
   const facts = containerFacts(project);
@@ -267,6 +274,14 @@ export function ProjectPage() {
                 taskTypeOptions={taskTypeOptions}
               />
             </div>
+          ) : tab === 'summary' ? (
+            <ProjectSummary
+              project={project}
+              tasks={tasks}
+              phases={usesPhases ? phases : undefined}
+              canOpenTask={(task) => canUpdateTask(access, taskFacts(task, facts, hasMyTask))}
+              onOpenTask={(task) => setEditingTaskId(task.id)}
+            />
           ) : tab === 'list' ? (
             <ProjectTaskList
               workspaceId={workspaceId}
@@ -327,6 +342,18 @@ export function ProjectPage() {
         </div>
       </div>
 
+      {editingTask && (
+        <EditTaskPanel
+          key={editingTask.id}
+          task={editingTask}
+          workspaceId={workspaceId}
+          projectId={projectId}
+          people={people}
+          phases={usesPhases ? phases : undefined}
+          types={taskTypeOptions(editingTask.type.id)}
+          onClose={() => setEditingTaskId(undefined)}
+        />
+      )}
       <EditProjectDialog
         workspaceId={workspaceId}
         project={project}
@@ -736,6 +763,153 @@ function formatInstant(iso: string) {
   const date = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, '0');
   return formatDate(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`);
+}
+
+/**
+ * Pestaña Resumen (HU-11): lo importante del proyecto sin abrir las demás. Avance y trabajo
+ * pendiente ya están en los indicadores de arriba; aquí van las fechas planeadas contra reales, las
+ * tareas por estado, el avance por fase y las próximas a vencer. Ejemplo: en "Certificación Linux",
+ * "Repaso" (vencida) aparece primero en Próximas a vencer.
+ */
+function ProjectSummary({
+  project,
+  tasks,
+  phases,
+  canOpenTask,
+  onOpenTask,
+}: {
+  project: Project;
+  tasks: Task[];
+  phases: Phase[] | undefined;
+  /** Si la matriz deja editarla, su título abre la edición */
+  canOpenTask: (task: Task) => boolean;
+  onOpenTask: (task: Task) => void;
+}) {
+  const today = todayIso();
+  const counts = countByStatus(tasks);
+  const upcoming = upcomingTasks(tasks);
+  const phaseName = new Map((phases ?? []).map((phase) => [phase.id, phase.name]));
+  const deviation = deviationLabel(project.endDate, project.finishedAt);
+  const late =
+    project.endDate !== null &&
+    project.endDate < today &&
+    project.status !== 'DONE' &&
+    project.status !== 'CANCELLED';
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card>
+        <CardContent className="grid gap-3">
+          <h2 className="font-semibold">Fechas</h2>
+          <dl className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 text-sm">
+            <dt className="text-muted-foreground">Planeado</dt>
+            <dd>
+              {project.startDate ? formatDate(project.startDate) : '—'} –{' '}
+              {project.endDate ? formatDate(project.endDate) : '—'}
+            </dd>
+            <dt className="text-muted-foreground">Real</dt>
+            <dd>
+              {project.startedAt ? formatInstant(project.startedAt) : 'Sin empezar'} –{' '}
+              {project.finishedAt
+                ? formatInstant(project.finishedAt)
+                : project.startedAt
+                  ? 'en curso'
+                  : '—'}
+            </dd>
+            <dt className="text-muted-foreground">Fin</dt>
+            <dd className={late ? 'font-semibold text-destructive' : undefined}>
+              {deviation ?? daysRemainingLabel(project.endDate, today)}
+            </dd>
+          </dl>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="grid gap-3">
+          <h2 className="font-semibold">Tareas por estado</h2>
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
+            {(Object.keys(TASK_STATUSES) as Task['status'][]).map((status) => (
+              <li key={status} className="flex justify-between gap-2">
+                <span className="text-muted-foreground">{TASK_STATUSES[status]}</span>
+                <span className="font-semibold tabular-nums">{counts[status]}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      {phases && phases.length > 0 && (
+        <Card>
+          <CardContent className="grid gap-3">
+            <h2 className="font-semibold">Avance por fase</h2>
+            <ul className="grid gap-2 text-sm">
+              {orderedPhases(phases).map(({ phase, depth }) => {
+                const summary = summarizePhase(phases, tasks, phase.id);
+                return (
+                  <li
+                    key={phase.id}
+                    className="grid grid-cols-[minmax(0,1fr)_8rem_3rem] items-center gap-3"
+                    style={{ paddingLeft: `${(depth - 1) * 1.25}rem` }}
+                  >
+                    <span className="truncate">{phase.name}</span>
+                    <ProgressBar percent={summary.percent} label={`Avance de ${phase.name}`} />
+                    <span className="text-right tabular-nums">{summary.percent}%</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardContent className="grid gap-3">
+          <h2 className="font-semibold">Próximas a vencer</h2>
+          {upcoming.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No hay tareas abiertas con fecha de fin.
+            </p>
+          ) : (
+            <ul className="divide-y text-sm">
+              {upcoming.map((task) => {
+                const due = dueInfo(task.endDate, today);
+                return (
+                  <li key={task.id} className="flex items-center gap-3 py-1.5">
+                    <div className="min-w-0 flex-1">
+                      {canOpenTask(task) ? (
+                        <button
+                          type="button"
+                          onClick={() => onOpenTask(task)}
+                          className="truncate text-left font-medium hover:underline"
+                        >
+                          {task.title}
+                        </button>
+                      ) : (
+                        <p className="truncate font-medium">{task.title}</p>
+                      )}
+                      {task.phaseId && phaseName.has(task.phaseId) && (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {phaseName.get(task.phaseId)}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={cn(
+                        'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold',
+                        due.className,
+                      )}
+                    >
+                      {due.text}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 /** Fin real contra fin planeado: "3 días tarde", "A tiempo"; sin alguno de los dos, nada */
