@@ -5,9 +5,9 @@ import {
   type Member,
   type MembershipRole,
 } from '@gestion/shared';
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { ShieldCheck, UserMinus, X } from 'lucide-react';
+import { Eye, ShieldCheck, UserMinus, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { CopyLinkBox } from '@/components/copy-link-box';
@@ -28,6 +28,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
+import { setViewAs } from '@/lib/view-as';
 import {
   invitationLink,
   invitationsQueryOptions,
@@ -113,6 +114,13 @@ function MemberRow({ workspaceId, member }: { workspaceId: string; member: Membe
   const changeRole = useChangeMemberRole(workspaceId);
   const remove = useRemoveMember(workspaceId);
   const isMe = member.userId === me.id;
+  const queryClient = useQueryClient();
+
+  // Ver como este miembro (HU-56): su Mi trabajo, su menú y lo que puede ver, solo lectura
+  function handleViewAs() {
+    setViewAs(queryClient, { workspaceId, userId: member.userId, name: member.name });
+    void navigate({ to: '/w/$workspaceId/mi-trabajo', params: { workspaceId } });
+  }
 
   function handleRoleChange(role: MembershipRole) {
     changeRole.mutate(
@@ -160,6 +168,18 @@ function MemberRow({ workspaceId, member }: { workspaceId: string; member: Membe
         </div>
       </div>
       <div className="flex items-center gap-2">
+        {!isMe && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleViewAs}
+            aria-label={`Ver como ${member.name}`}
+            title="Ver lo que ve esta persona, sin entrar con su cuenta"
+          >
+            <Eye aria-hidden />
+            Ver como
+          </Button>
+        )}
         <NativeSelect
           aria-label={`Rol de ${member.name}`}
           value={member.role}

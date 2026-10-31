@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { todayIso } from '@/lib/dates';
+import { useViewAs } from '@/lib/view-as';
 import { workspaceQueryOptions } from '@/lib/workspaces';
 
 // Es el id de la ruta (no la URL): cuelga de la ruta sin URL "app", de ahí el /app
@@ -18,8 +19,11 @@ const route = getRouteApi('/app/w/$workspaceId/exportar');
 export function ExportPage() {
   const { workspaceId } = route.useParams();
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
+  // Viendo como otra persona (HU-56): descarga lo que ella ve. Un enlace no lleva encabezados
+  const viewAs = useViewAs();
+  const asOther = viewAs?.workspaceId === workspaceId ? `&viewAs=${viewAs.userId}` : '';
   const href = (extension: 'csv' | 'json') =>
-    `/api/v1/workspaces/${workspaceId}/export.${extension}?today=${todayIso()}`;
+    `/api/v1/workspaces/${workspaceId}/export.${extension}?today=${todayIso()}${asOther}`;
 
   return (
     <div className="grid gap-3">

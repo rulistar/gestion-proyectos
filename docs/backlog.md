@@ -111,17 +111,18 @@
 | 52 | HU-13 | Exportar datos en JSON y CSV compatible con Excel | Respaldo | 3 | 🟡 | 6 |
 | 53 | HU-11 | Vista de detalle del proyecto | Vistas | 3 | 🟡 | 6 |
 | 54 | HU-55 | Filtro por año (abiertos, cerrados o ambos) en las listas de contenedores | Vistas | 3 | 🔴 | 6 |
-| 55 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 7 |
-| 56 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 7 |
-| 57 | HU-50 | Catálogo de personas compartido entre espacios | Personas | 5 | 🟡 | 7 |
-| 58 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 59 | HU-14 | Cargar información desde JSON o Excel (solo actualizar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 6 |
-| 60 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 61 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 62 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 63 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 64 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 65 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 55 | HU-56 | Ver como un miembro: el Admin del espacio ve lo que ve otra persona, solo lectura | Permisos | 5 | 🔴 | 6 |
+| 56 | TEC-05 | Documentación OpenAPI (Swagger) | Plataforma | 3 | 🟡 | 7 |
+| 57 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 7 |
+| 58 | HU-50 | Catálogo de personas compartido entre espacios | Personas | 5 | 🟡 | 7 |
+| 59 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
+| 60 | HU-14 | Cargar información desde JSON o Excel (solo actualizar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 6 |
+| 61 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
+| 62 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
+| 63 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
+| 64 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
+| 65 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
+| 66 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
 
@@ -730,6 +731,15 @@ _Como Admin, quiero cargar proyectos y tareas desde un respaldo JSON o un Excel,
 - [x] Lo que falta en los catálogos (tipos, orígenes, fases, personas sin cuenta) **se crea** y se avisa en el resumen.
 - [x] Solo el **Admin del espacio**; validado con Zod; sin dependencias nuevas.
 - [x] Menú Administración → **Cargar información**. Una celda vacía no borra lo que ya hay; las tareas pausadas o canceladas sin motivo reciben "Cargada desde archivo"; los tipos de tarea nuevos quedan admitidos en el contenedor. Límites: 5 MB, 1000 contenedores y 10 000 tareas por archivo.
+
+#### HU-56 · Ver como un miembro (5 pts)
+
+_Como Admin del espacio, quiero ver lo que ve un miembro sin entrar con su cuenta, para revisar sus permisos y ayudarle sin pedirle su contraseña._ Pedido del PO (2026-10-31); diseño confirmado con el ejemplo "Ana (Admin de Monex) ve como Beto (Miembro que solo ve lo suyo)".
+
+- [x] **Solo lectura**: se ve el menú, los contenedores, Mi trabajo, Tareas, Gantt y botones que tendría esa persona, pero no se guarda nada (la API rechaza cualquier cambio con 403). Así nada queda registrado como hecho por ella sin serlo.
+- [x] Solo el **Admin del espacio**, solo con miembros activos de ese espacio y solo dentro de él; al cambiar de espacio termina la vista.
+- [x] Se entra con **Ver como** en cada renglón de Miembros (abre su Mi trabajo) o con el combo **Ver como** de la barra superior, que cambia rápido de persona. Un aviso fijo arriba dice a quién se ve, con **Salir**.
+- [x] Exportar, viendo como otra persona, descarga lo que ella ve. Sin migración ni dependencias nuevas.
 
 ### Sprints siguientes (criterios por detallar en su planificación)
 

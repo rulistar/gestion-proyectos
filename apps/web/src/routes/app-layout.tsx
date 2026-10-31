@@ -10,6 +10,7 @@ import {
 import { useEffect } from 'react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Button } from '@/components/ui/button';
+import { ViewAsBanner, ViewAsSelect } from '@/components/view-as-bar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +48,7 @@ export function AppLayout() {
     <div className="flex min-h-screen flex-col md:flex-row">
       {menu.open && <AppSidebar />}
       <div className="flex min-w-0 flex-1 flex-col">
+        <ViewAsBanner />
         <header className="flex h-12 items-center justify-between gap-3 border-b bg-card px-3 md:px-6">
           <Button
             type="button"
@@ -60,7 +62,10 @@ export function AppLayout() {
             {menu.open ? <PanelLeftClose aria-hidden /> : <PanelLeftOpen aria-hidden />}
             <span className="hidden sm:inline">{menu.open ? 'Ocultar menú' : 'Menú'}</span>
           </Button>
-          <UserMenu />
+          <div className="flex items-center gap-3">
+            <ViewAsSelect />
+            <UserMenu />
+          </div>
         </header>
         <main className="mx-auto w-full max-w-screen-2xl flex-1 p-3 md:px-6 md:py-4">
           <MenuOpenContext value={menu.open}>

@@ -1,5 +1,6 @@
 import {
   memberPermissionsSchema,
+  VIEW_AS_HEADER,
   PERMISSION_TEMPLATES,
   roleHasPermission,
   type MemberAccess,
@@ -12,6 +13,7 @@ import type { Db } from '../../db/client.js';
 import { notDeleted } from '../../db/audit.js';
 
 const workspaceParamsSchema = z.object({ workspaceId: z.uuid() });
+const viewAsIdSchema = z.uuid().optional();
 
 /** Acceso de quien pregunta en el workspace de la URL (ADR-0006) */
 export type WorkspaceAccess = MemberAccess & { workspaceId: string };
@@ -70,12 +72,42 @@ export async function findAccess(
     : null;
 }
 
+/** ID del miembro que el Admin quiere ver (HU-56): encabezado o, en las descargas, `?viewAs=` */
+function viewAsOf(request: FastifyRequest) {
+  const query = request.query as { viewAs?: unknown } | undefined;
+  return viewAsIdSchema.safeParse(request.headers[VIEW_AS_HEADER] ?? query?.viewAs);
+}
+
+/**
+ * Ver como un miembro (HU-56): el acceso de esa persona en lugar del mío, solo para leer. Solo el
+ * Admin del espacio, y solo con miembros activos del espacio. Devuelve el acceso o un error.
+ */
+async function viewAsAccess(
+  request: FastifyRequest,
+  access: WorkspaceAccess,
+  userId: string,
+): Promise<WorkspaceAccess | { code: number; message: string }> {
+  if (access.role !== 'ADMIN') {
+    return { code: 403, message: 'Solo el Admin del espacio puede ver como otra persona' };
+  }
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return { code: 403, message: 'Estás viendo como otra persona: es solo lectura' };
+  }
+  const member = await request.server.db.membership.findFirst({
+    where: { workspaceId: access.workspaceId, userId, ...notDeleted },
+    select: { id: true },
+  });
+  const target = member && (await findAccess(request.server.db, access.workspaceId, userId));
+  return target ?? { code: 400, message: 'Esa persona no es miembro de este espacio' };
+}
+
 /**
  * preHandler para rutas `/workspaces/:workspaceId/...` (RNF-02, ADR-0002 §5). Va después de
  * `requireAuth` y deja el acceso en `request.membership`:
  *
  * - no es miembro (o el ID no es válido) → 404: no revela que el workspace existe
  * - es miembro pero su rol no tiene el permiso → 403
+ * - con "ver como" (HU-56), el acceso y el permiso son los del miembro elegido
  *
  * Lo que depende de la matriz (ver, crear, modificar, dar de baja) lo decide cada ruta con
  * `visibility.ts` y las reglas de shared (ADR-0006).
@@ -83,13 +115,22 @@ export async function findAccess(
 function workspaceGuard(permission?: Permission) {
   return async function (request: FastifyRequest, reply: FastifyReply) {
     const params = workspaceParamsSchema.safeParse(request.params);
-    const access =
+    let access =
       params.success && request.auth
         ? await findAccess(request.server.db, params.data.workspaceId, request.auth.userId)
         : null;
 
     if (!access) {
       return reply.code(404).send({ message: 'Espacio de trabajo no encontrado' });
+    }
+    const viewAs = viewAsOf(request);
+    if (!viewAs.success) {
+      return reply.code(400).send({ message: 'Persona no válida para "ver como"' });
+    }
+    if (viewAs.data) {
+      const target = await viewAsAccess(request, access, viewAs.data);
+      if ('code' in target) return reply.code(target.code).send({ message: target.message });
+      access = target;
     }
     if (permission && !roleHasPermission(access.role, permission)) {
       return reply.code(403).send({ message: 'No tienes permiso para esta acción' });
