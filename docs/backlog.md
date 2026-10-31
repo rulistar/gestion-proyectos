@@ -709,10 +709,10 @@ _Como responsable, quiero ver mis contenedores por año, separando abiertos y ce
 
 #### HU-13 · Exportar (3 pts)
 
-_Como usuario, quiero exportar lo que veo, para respaldarlo o analizarlo en Excel._
+_Como usuario, quiero exportar lo que veo, para respaldarlo o analizarlo en Excel._ Confirmado por el PO (2026-10-31): columnas con los nombres nuevos; se exporta desde el menú del espacio.
 
-- [ ] JSON (respaldo completo del espacio) y CSV con BOM UTF-8 (una fila por tarea, compatible con el formato del prototipo), con las columnas de tipo y de campos de detalle.
-- [ ] Respeta la visibilidad de quien exporta (ADR-0006) y excluye lo borrado. Sin dependencias nuevas.
+- [x] Menú lateral → **Exportar** (para cualquier miembro): **Excel (CSV)** con BOM UTF-8, una fila por tarea, las 16 columnas del prototipo en su orden con los nombres de ahora (Proyecto, Área, …, Fase, …, Tarea, …, Completada), luego Sección, Tipo de contenedor, Folio, Estado de la tarea, Responsable, Origen, Detalle del origen y una columna por campo de detalle. La fase va con su ruta ("Módulo 101 / Tema 1") y sus fechas calculadas; un contenedor sin tareas lleva una fila. **Respaldo (JSON)**: catálogos, personas y contenedores con fases y tareas (`format`, `version` para Importar).
+- [x] Respeta la visibilidad de quien exporta (ADR-0006) y excluye lo borrado. Celdas que parecen fórmulas de Excel (=, +, -, @) se protegen con un apóstrofo. Sin dependencias nuevas.
 
 #### HU-11 · Detalle del proyecto (3 pts)
 

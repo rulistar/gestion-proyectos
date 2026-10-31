@@ -26,6 +26,7 @@ import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
 import { AppLayout } from '@/routes/app-layout';
 import { ErrorPage } from '@/routes/error-page';
 import { HomePage } from '@/routes/home-page';
+import { ExportPage } from '@/routes/export-page';
 import { GanttPage } from '@/routes/gantt-page';
 import { InvitationPage } from '@/routes/invitation-page';
 import { PasswordResetPage } from '@/routes/password-reset-page';
@@ -51,6 +52,7 @@ import { ActivitiesPage, MaintenancePage, WorkspacePage } from '@/routes/workspa
  *   /w/$workspaceId/mi-trabajo    mis tareas en ese workspace (HU-28b)
  *   /w/$workspaceId/tareas        todas las tareas del espacio, con filtros en la URL (HU-39)
  *   /w/$workspaceId/gantt         Gantt del espacio por sección, planeado contra real (HU-27b)
+ *   /w/$workspaceId/exportar      descargar CSV para Excel o respaldo JSON de lo que veo (HU-13)
  *   /w/$workspaceId/configuracion tipos de contenedor (HU-21, solo Admin)
  *   /w/$workspaceId/miembros      y sus miembros e invitaciones
  *   /w/$workspaceId/personas      catálogo de personas (HU-34, solo Admin)
@@ -262,6 +264,14 @@ const ganttRoute = createRoute({
   component: GanttPage,
 });
 
+const exportRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/w/$workspaceId/exportar',
+  loader: ({ context, params }) =>
+    context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
+  component: ExportPage,
+});
+
 const peopleRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/w/$workspaceId/personas',
@@ -324,6 +334,7 @@ const routeTree = rootRoute.addChildren([
     myWorkRoute,
     tasksRoute,
     ganttRoute,
+    exportRoute,
     membersRoute,
     peopleRoute,
     trashRoute,

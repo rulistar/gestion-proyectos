@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import {
   ChartGantt,
+  Download,
   ClipboardList,
   Contact,
   FolderKanban,
@@ -220,6 +221,18 @@ export function AppSidebar() {
           >
             <Trash2 aria-hidden />
             Papelera
+          </Link>
+        )}
+        {/* Exportar (HU-13): cualquier miembro descarga lo que puede ver */}
+        {current && (
+          <Link
+            to="/w/$workspaceId/exportar"
+            params={{ workspaceId: current.id }}
+            className={itemClass}
+            activeProps={{ className: 'bg-accent text-accent-foreground', 'aria-current': 'page' }}
+          >
+            <Download aria-hidden />
+            Exportar
           </Link>
         )}
       </div>
