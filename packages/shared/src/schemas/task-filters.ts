@@ -148,7 +148,7 @@ export function sortTasks(
 }
 
 /** Pestañas de un proyecto; la elegida va en la URL para que el enlace la conserve (HU-26) */
-export const projectTabSchema = z.enum(['board', 'list', 'gantt', 'phases', 'details']);
+export const projectTabSchema = z.enum(['summary', 'board', 'list', 'gantt', 'phases', 'details']);
 export type ProjectTab = z.infer<typeof projectTabSchema>;
 
 /**

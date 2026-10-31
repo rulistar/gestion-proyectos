@@ -4,7 +4,7 @@
 |---|---|
 | Fechas | **2026-10-31 → 2026-11-13** |
 | Capacidad | 5–10 h/semana (PO + Claude Code). Velocidad: Sprint 4 = 36 pts, Sprint 5 = 56 pts (24 agregados a mitad del sprint); el límite real es el tiempo del PO para probar |
-| Compromiso | **35 puntos** (32 al planificar + HU-55) |
+| Compromiso | **43 puntos** (32 al planificar + HU-55 + HU-14) |
 
 ## Objetivo del sprint
 
@@ -41,6 +41,7 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-6).
 | Fecha | ID | Elemento | Pts | Sale |
 |---|---|---|---|---|
 | 2026-10-31 | HU-55 | Filtro por año (abiertos, cerrados o ambos) en las listas | 3 | — (cabe: compromiso 35) |
+| 2026-10-31 | HU-14 | Cargar información desde JSON o Excel (adelantada del Sprint 7) | 8 | — (cabe: compromiso 43) |
 | 2026-10-31 | — | Tablero: cerrados ocultos con botones; Mi trabajo más compacto; "Proyecto/Mantenimiento/Actividad" en Tareas | — | — |
 
 ## Guion de demostración (en producción)
@@ -88,6 +89,6 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-6).
 
 ## Resultado (se completa al cierre)
 
-- Puntos completados: \_\_ / 35
+- Puntos completados: \_\_ / 43
 - Objetivo cumplido: ☐ Sí ☐ No
 - Notas de la retrospectiva:

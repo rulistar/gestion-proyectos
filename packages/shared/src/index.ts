@@ -22,3 +22,4 @@ export * from './schemas/workspaces.js';
 export * from './schemas/gantt.js';
 export * from './schemas/detail-fields.js';
 export * from './schemas/export.js';
+export * from './schemas/summary.js';
