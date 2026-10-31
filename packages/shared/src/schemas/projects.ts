@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { detailValuesInputSchema, detailValuesSchema } from './detail-fields.js';
 import {
   endAfterStart,
   endAfterStartError,
@@ -68,6 +69,8 @@ export const projectInputSchema = z
         z.array(z.uuid('Tipo de tarea no válido')).max(100),
       )
       .optional(),
+    /** Campos de detalle de su tipo (HU-23b), por ID de campo. Sin enviar = no cambian */
+    details: detailValuesInputSchema.optional(),
   })
   .refine(endAfterStart, endAfterStartError);
 export type ProjectInput = z.infer<typeof projectInputSchema>;
@@ -101,6 +104,8 @@ export const projectSchema = z.object({
   /** Fechas reales (ADR-0004 §2.1): las pone el sistema al cambiar el estado */
   startedAt: z.iso.datetime().nullable(),
   finishedAt: z.iso.datetime().nullable(),
+  /** Valores de los campos de detalle (HU-23b), por ID de campo */
+  details: detailValuesSchema,
   progress: projectProgressSchema,
 });
 export type Project = z.infer<typeof projectSchema>;

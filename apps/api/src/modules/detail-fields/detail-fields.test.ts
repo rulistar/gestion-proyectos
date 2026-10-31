@@ -172,3 +172,104 @@ describe('campos de detalle por tipo (HU-23)', () => {
     ]);
   });
 });
+
+describe('valores de los campos (HU-23b)', () => {
+  async function withFields() {
+    const ctx = await setup();
+    const { ana, ws, incidencia, correctivo } = ctx;
+    await create(ana.cookies, ws.id, severidad(incidencia.id));
+    await create(ana.cookies, ws.id, {
+      projectTypeId: correctivo.id,
+      name: 'Sistema o aplicación',
+      kind: 'SHORT_TEXT',
+      required: true,
+    });
+    const fields = await list(ana.cookies, ws.id);
+    const sev = fields.find((field) => field.name === 'Severidad')!;
+    const sistema = fields.find((field) => field.name === 'Sistema o aplicación')!;
+    const tarea = await db.taskType.findFirstOrThrow({
+      where: { workspaceId: ws.id, name: 'Tarea' },
+    });
+    return { ...ctx, sev, sistema, tarea };
+  }
+
+  const projects = (ws: string) => `/api/v1/workspaces/${ws}/projects`;
+
+  it('un contenedor de tipo Mtto correctivo pide su campo obligatorio', async () => {
+    const { ana, ws, correctivo, sistema } = await withFields();
+    const missing = await app.inject({
+      method: 'POST',
+      url: projects(ws.id),
+      cookies: ana.cookies,
+      payload: { name: 'Soporte ERP', typeId: correctivo.id },
+    });
+    expect(missing.statusCode).toBe(400);
+    expect(missing.json<{ message: string }>().message).toBe(
+      'Detalle: Sistema o aplicación: Obligatorio',
+    );
+    const ok = await app.inject({
+      method: 'POST',
+      url: projects(ws.id),
+      cookies: ana.cookies,
+      payload: { name: 'Soporte ERP', typeId: correctivo.id, details: { [sistema.id]: ' ERP ' } },
+    });
+    expect(ok.statusCode).toBe(201);
+    expect(ok.json<{ details: object }>().details).toEqual({ [sistema.id]: 'ERP' });
+  });
+
+  it('una tarea Incidencia valida Severidad; mover de columna no la pide; cambiar de tipo conserva el valor', async () => {
+    const { ana, ws, incidencia, sev, tarea } = await withFields();
+    const project = await app.inject({
+      method: 'POST',
+      url: projects(ws.id),
+      cookies: ana.cookies,
+      payload: { name: 'Certificación Linux' },
+    });
+    const tasksUrl = `${projects(ws.id)}/${project.json<{ id: string }>().id}/tasks`;
+
+    const missing = await app.inject({
+      method: 'POST',
+      url: tasksUrl,
+      cookies: ana.cookies,
+      payload: { title: 'Falla en facturación', typeId: incidencia.id },
+    });
+    expect(missing.json<{ message: string }>().message).toBe('Detalle: Severidad: Obligatorio');
+    const badOption = await app.inject({
+      method: 'POST',
+      url: tasksUrl,
+      cookies: ana.cookies,
+      payload: { title: 'Falla', typeId: incidencia.id, details: { [sev.id]: 'Urgente' } },
+    });
+    expect(badOption.json<{ message: string }>().message).toBe(
+      'Detalle: Severidad: Elige una opción de la lista',
+    );
+
+    const created = await app.inject({
+      method: 'POST',
+      url: tasksUrl,
+      cookies: ana.cookies,
+      payload: { title: 'Falla', typeId: incidencia.id, details: { [sev.id]: 'Alta' } },
+    });
+    expect(created.statusCode).toBe(201);
+    const task = created.json<{ id: string; details: object }>();
+    expect(task.details).toEqual({ [sev.id]: 'Alta' });
+
+    const moved = await app.inject({
+      method: 'PATCH',
+      url: `${tasksUrl}/${task.id}/status`,
+      cookies: ana.cookies,
+      payload: { status: 'IN_PROGRESS' },
+    });
+    expect(moved.statusCode).toBe(200);
+
+    // A tipo Tarea (sin campos): se guarda y el valor de Severidad se conserva por si vuelve
+    const retyped = await app.inject({
+      method: 'PUT',
+      url: `${tasksUrl}/${task.id}`,
+      cookies: ana.cookies,
+      payload: { title: 'Falla', typeId: tarea.id, status: 'IN_PROGRESS' },
+    });
+    expect(retyped.statusCode).toBe(200);
+    expect(retyped.json<{ details: object }>().details).toEqual({ [sev.id]: 'Alta' });
+  });
+});

@@ -1,5 +1,10 @@
 import {
+  detailErrorsMessage,
+  detailValuesSchema,
+  mergeDetails,
   removedOptions,
+  validateDetails,
+  type DetailValues,
   type CreateDetailFieldData,
   type DetailField,
   type MoveDetailFieldInput,
@@ -172,4 +177,37 @@ export async function moveDetailField(
     }
     return true;
   });
+}
+
+/** Valores que no cumplen los campos del tipo (→ 400, con el detalle por campo) */
+export class InvalidDetailsError extends Error {}
+
+/** La columna `details` (JSONB) como valores; algo inesperado se lee como vacío */
+export function parseDetails(json: unknown): DetailValues {
+  const parsed = detailValuesSchema.safeParse(json);
+  return parsed.success ? parsed.data : {};
+}
+
+/**
+ * Valores a guardar en un contenedor o una tarea (HU-23b): valida los recibidos (o, sin ellos, los
+ * que ya tenía) contra los campos activos de su tipo y conserva los demás. Lanza
+ * InvalidDetailsError con "Severidad: Obligatorio" si algo no cumple.
+ */
+export async function resolveDetails(
+  db: Db | Tx,
+  owner: { projectTypeId: string } | { taskTypeId: string },
+  input: Record<string, unknown> | undefined,
+  previous: DetailValues = {},
+): Promise<DetailValues> {
+  const rows = await db.detailField.findMany({
+    where: { ...owner, archivedAt: null },
+    select: fieldSelect,
+    orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+  });
+  const fields = rows.map(({ archivedAt, ...row }) => ({ ...row, archived: archivedAt !== null }));
+  const { values, errors } = validateDetails(fields, input ?? previous);
+  if (Object.keys(errors).length > 0) {
+    throw new InvalidDetailsError(detailErrorsMessage(fields, errors));
+  }
+  return mergeDetails(previous, fields, values);
 }

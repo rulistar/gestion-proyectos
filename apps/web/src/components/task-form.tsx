@@ -2,6 +2,7 @@ import {
   orderedPhases,
   statusNeedsReason,
   taskInputSchema,
+  validateDetails,
   type Person,
   type Phase,
   type Task,
@@ -10,13 +11,15 @@ import {
   type TaskTypeRef,
 } from '@gestion/shared';
 import { useQuery } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
+import { DetailInputs } from '@/components/detail-inputs';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { QuickAddPerson } from '@/components/quick-add-person';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
+import { detailFieldsQueryOptions, fieldsOfType, readDetails } from '@/lib/detail-fields';
 import { selectablePeople } from '@/lib/people';
 import { taskOriginsQueryOptions } from '@/lib/task-origins';
 import { TASK_STATUSES } from '@/lib/tasks';
@@ -70,7 +73,21 @@ export function TaskForm({
   children,
   onSubmit,
 }: TaskFormProps) {
-  const form = useSchemaForm(taskInputSchema, FIELDS, onSubmit);
+  // Campos de detalle del tipo elegido (HU-23b): cambian al cambiar el tipo
+  const [typeId, setTypeId] = useState(task?.type.id ?? types[0]?.id);
+  const { data: allFields = [] } = useQuery(detailFieldsQueryOptions(workspaceId));
+  const detailFields = fieldsOfType(allFields, { taskTypeId: typeId });
+  const typeName = types.find((type) => type.id === typeId)?.name ?? '';
+  const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
+  const detailIds = useId();
+  const form = useSchemaForm(taskInputSchema, FIELDS, (data, formEl) => {
+    // Las mismas reglas que la API, para marcar cada campo antes de enviar
+    const details = readDetails(formEl, detailFields);
+    const { errors } = validateDetails(detailFields, details);
+    setDetailErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    onSubmit({ ...data, details }, formEl);
+  });
   // El motivo solo se pide (y se muestra) en Pausada y Cancelada (HU-24)
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? 'PENDING');
   // Orígenes activos (HU-47) y, al editar, el que ya tenía aunque esté archivado
@@ -108,7 +125,14 @@ export function TaskForm({
         )}
         <div className="grid gap-2">
           <Label htmlFor={form.idOf('typeId')}>Tipo</Label>
-          <NativeSelect {...form.field('typeId')} defaultValue={task?.type.id ?? types[0]?.id}>
+          <NativeSelect
+            {...form.field('typeId')}
+            value={typeId}
+            onChange={(event) => {
+              setTypeId(event.target.value);
+              setDetailErrors({});
+            }}
+          >
             {types.map((type) => (
               <option key={type.id} value={type.id}>
                 {type.name}
@@ -216,6 +240,15 @@ export function TaskForm({
           />
           <FieldError {...form.errorProps('originDetail')} />
         </div>
+
+        <DetailInputs
+          key={typeId}
+          title={`Detalle de ${typeName}`}
+          fields={detailFields}
+          values={task?.details}
+          errors={detailErrors}
+          idPrefix={detailIds}
+        />
 
         <FormActions submitLabel={submitLabel} isPending={isPending} error={error}>
           {children}

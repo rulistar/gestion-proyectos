@@ -8,6 +8,7 @@ import {
 } from '@gestion/shared';
 import { z } from 'zod';
 import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
+import { InvalidDetailsError } from '../detail-fields/detail-fields.service.js';
 import { requireAuth } from '../auth/session.js';
 import { resolveProjectType } from '../project-types/project-types.service.js';
 import { forbidden, requireMembership } from '../workspaces/access.js';
@@ -46,6 +47,9 @@ function metricsOf(request: FastifyRequest) {
 function invalidType(reply: FastifyReply, error: unknown) {
   if (error instanceof InvalidProjectTypeError) {
     return reply.code(400).send({ message: 'El tipo no existe en este espacio o está archivado' });
+  }
+  if (error instanceof InvalidDetailsError) {
+    return reply.code(400).send({ message: `Detalle: ${error.message}` });
   }
   if (error instanceof InvalidProjectPeopleError) {
     return reply

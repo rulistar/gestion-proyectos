@@ -96,3 +96,101 @@ export function removedOptions(before: readonly string[], after: readonly string
   const kept = new Set(after.map((option) => option.toLowerCase()));
   return before.filter((option) => !kept.has(option.toLowerCase()));
 }
+
+// --- Valores de los campos (HU-23b) ---
+
+/** Un valor guardado: texto, número, fecha (AAAA-MM-DD), opción o Sí/No */
+export const detailValueSchema = z.union([z.string(), z.number(), z.boolean()]);
+
+/** Valores de un contenedor o una tarea, por ID de campo (columna `details`) */
+export const detailValuesSchema = z.record(z.string(), detailValueSchema);
+export type DetailValues = z.infer<typeof detailValuesSchema>;
+
+/** Lo que llega en el cuerpo: también null o "" para vaciar un campo */
+export const detailValuesInputSchema = z
+  .record(z.uuid(), detailValueSchema.nullable())
+  .refine((values) => Object.keys(values).length <= 100, 'Demasiados campos');
+
+const TEXT_MAX: Partial<Record<DetailFieldKind, number>> = { SHORT_TEXT: 200, LONG_TEXT: 5000 };
+
+function isEmpty(raw: unknown): boolean {
+  return raw === undefined || raw === null || (typeof raw === 'string' && raw.trim() === '');
+}
+
+/** Convierte un valor a la clase del campo; un texto como mensaje si no es válido */
+function coerce(field: DetailField, raw: unknown): { value: string | number | boolean } | string {
+  switch (field.kind) {
+    case 'SHORT_TEXT':
+    case 'LONG_TEXT': {
+      if (typeof raw !== 'string') return 'Escribe un texto';
+      const max = TEXT_MAX[field.kind]!;
+      return raw.trim().length > max ? `Máximo ${max} caracteres` : { value: raw.trim() };
+    }
+    case 'NUMBER': {
+      const value = typeof raw === 'string' ? Number(raw.trim()) : raw;
+      return typeof value === 'number' && Number.isFinite(value) ? { value } : 'Escribe un número';
+    }
+    case 'DATE':
+      return typeof raw === 'string' && z.iso.date().safeParse(raw).success
+        ? { value: raw }
+        : 'Escribe una fecha válida';
+    case 'OPTIONS':
+      return typeof raw === 'string' && field.options.includes(raw)
+        ? { value: raw }
+        : 'Elige una opción de la lista';
+    case 'BOOLEAN':
+      if (raw === true || raw === 'true') return { value: true };
+      if (raw === false || raw === 'false') return { value: false };
+      return 'Elige Sí o No';
+  }
+}
+
+/**
+ * Valida los valores contra los campos activos del tipo (HU-23b, ADR-0004 §3). Lo usan la API (la
+ * que decide) y la web (para marcar cada campo). Un obligatorio vacío, un número que no lo es o una
+ * opción que no existe dan error en ese campo. Ej.: Incidencia sin Severidad → "Obligatorio".
+ */
+export function validateDetails(
+  fields: readonly DetailField[],
+  input: Readonly<Record<string, unknown>>,
+): { values: DetailValues; errors: Record<string, string> } {
+  const values: DetailValues = {};
+  const errors: Record<string, string> = {};
+  for (const field of fields) {
+    if (field.archived) continue;
+    const raw = input[field.id];
+    if (isEmpty(raw)) {
+      if (field.required) errors[field.id] = 'Obligatorio';
+      continue;
+    }
+    const result = coerce(field, raw);
+    if (typeof result === 'string') errors[field.id] = result;
+    else values[field.id] = result.value;
+  }
+  return { values, errors };
+}
+
+/**
+ * Valores a guardar: los de los campos del tipo se reemplazan por los validados (los vacíos se
+ * quitan); los demás (archivados o de otro tipo, si se cambió) se conservan.
+ */
+export function mergeDetails(
+  previous: Readonly<DetailValues>,
+  fields: readonly DetailField[],
+  validated: Readonly<DetailValues>,
+): DetailValues {
+  const active = new Set(fields.filter((field) => !field.archived).map((field) => field.id));
+  const kept = Object.entries(previous).filter(([id]) => !active.has(id));
+  return { ...Object.fromEntries(kept), ...validated };
+}
+
+/** "Severidad: Obligatorio · Horas: Escribe un número" para la respuesta 400 de la API */
+export function detailErrorsMessage(
+  fields: readonly DetailField[],
+  errors: Readonly<Record<string, string>>,
+): string {
+  return fields
+    .filter((field) => errors[field.id])
+    .map((field) => `${field.name}: ${errors[field.id]}`)
+    .join(' · ');
+}

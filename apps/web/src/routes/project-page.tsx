@@ -68,6 +68,7 @@ import { projectTypesQueryOptions, SECTIONS, selectableTypes } from '@/lib/proje
 import { allowedTaskTypes, taskTypesQueryOptions } from '@/lib/task-types';
 import { tasksQueryOptions, useCreateTask } from '@/lib/tasks';
 import { barDates, byPlannedStart, containerBars, taskBars } from '@/lib/gantt';
+import { detailFieldsQueryOptions, fieldsOfType, formatDetailValue } from '@/lib/detail-fields';
 import { nextSort } from '@/lib/sort';
 import { useCollapsed } from '@/lib/use-collapsed';
 import { taskOriginsQueryOptions } from '@/lib/task-origins';
@@ -751,6 +752,8 @@ function deviationLabel(endDate: string | null, finishedAt: string | null) {
 function ProjectDetails({ project, showWork }: { project: Project; showWork: boolean }) {
   // En un personal (HU-49), las personas del trabajo vacías dicen "N/A" y se pueden ocultar
   const personal = project.scope === 'PERSONAL';
+  const { data: allFields = [] } = useQuery(detailFieldsQueryOptions(project.workspaceId));
+  const detailFields = fieldsOfType(allFields, { projectTypeId: project.type.id });
   const workPerson = (person: { name: string } | null) =>
     person?.name ?? (personal ? NOT_APPLICABLE : undefined);
   const sections = [
@@ -779,6 +782,18 @@ function ProjectDetails({ project, showWork }: { project: Project; showWork: boo
         ['Prioridad', PROJECT_PRIORITIES[project.priority]],
       ],
     },
+    // Campos de detalle de su tipo (HU-23b), si los pide
+    ...(detailFields.length > 0
+      ? [
+          {
+            title: `Detalle de ${project.type.name}`,
+            rows: detailFields.map((field) => [
+              field.name,
+              formatDetailValue(field, project.details),
+            ]),
+          },
+        ]
+      : []),
     {
       // Planeadas las captura la persona; reales las pone el sistema (ADR-0004 §2.1)
       title: 'Fechas',

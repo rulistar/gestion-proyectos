@@ -115,7 +115,8 @@ apps/
       task-origins/       catálogo de orígenes de tarea (HU-47): GET (miembros), POST/PATCH (catalog.manage);
                           resolveTaskOrigin valida el origen de una tarea; seedTaskOrigins va en seedCatalog
       detail-fields/      campos de detalle por tipo (HU-23, ADR-0004 §3): GET (project.read), POST, PATCH y
-                          POST /:fieldId/move (catalog.manage); clase fija, opciones solo se agregan, archivar
+                          POST /:fieldId/move (catalog.manage); clase fija, opciones solo se agregan, archivar.
+                          resolveDetails valida los valores al crear/editar tareas y contenedores (HU-23b)
       task-types/         catálogo de tipos de tarea (HU-22): GET (project.read), POST/PATCH (catalog.manage);
                           resolveTaskType valida el tipo contra los permitidos del contenedor
       projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05); DELETE = a la papelera.
@@ -156,7 +157,8 @@ packages/
     src/schemas/project-filters.ts  filtros y orden de la lista de contenedores (HU-09), en la URL; con pruebas
     src/schemas/task-filters.ts     vista "Tareas": tareas del espacio, filtros y orden (HU-39); projectSearchSchema = pestaña
                                 y filtros de la Lista de un proyecto en la URL (HU-26); con pruebas
-    src/schemas/detail-fields.ts  campos de detalle por tipo (HU-23): definición y reglas; con pruebas
+    src/schemas/detail-fields.ts  campos de detalle por tipo (HU-23): definición y reglas; validateDetails/mergeDetails =
+                                valores de un contenedor o tarea (columna details, JSONB), los usan API y web; con pruebas
     src/schemas/gantt.ts        Gantt (HU-27): barras planeadas contra reales, hitos, rango y encabezados; URL del Gantt
                                 del espacio (workspaceGanttSearchSchema); con pruebas
     src/schemas/my-work.ts      groupMyWork: agrupa mis tareas por fecha de fin (HU-28b), con pruebas

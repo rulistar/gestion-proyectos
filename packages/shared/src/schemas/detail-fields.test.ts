@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createDetailFieldSchema, removedOptions } from './detail-fields.js';
+import {
+  createDetailFieldSchema,
+  detailErrorsMessage,
+  mergeDetails,
+  removedOptions,
+  validateDetails,
+  type DetailField,
+} from './detail-fields.js';
 
 const TYPE = '01a18cf0-0000-7000-8000-000000000000';
 
@@ -51,5 +58,83 @@ describe('campos de detalle (HU-23)', () => {
       'Media',
     ]);
     expect(removedOptions(['Alta'], ['Alta', 'Baja'])).toEqual([]);
+  });
+});
+
+describe('valores de los campos (HU-23b)', () => {
+  const field = (id: string, kind: DetailField['kind'], extra: Partial<DetailField> = {}) => ({
+    id,
+    projectTypeId: null,
+    taskTypeId: TYPE,
+    name: id,
+    kind,
+    required: false,
+    options: [],
+    position: 0,
+    archived: false,
+    ...extra,
+  });
+  const FIELDS: DetailField[] = [
+    field('severidad', 'OPTIONS', { required: true, options: ['Alta', 'Baja'] }),
+    field('sistema', 'SHORT_TEXT'),
+    field('horas', 'NUMBER'),
+    field('reporte', 'DATE'),
+    field('ventana', 'BOOLEAN'),
+    field('viejo', 'SHORT_TEXT', { archived: true, required: true }),
+  ];
+
+  it('convierte cada clase y quita los vacíos', () => {
+    expect(
+      validateDetails(FIELDS, {
+        severidad: 'Alta',
+        sistema: '  ERP ',
+        horas: '2.5',
+        reporte: '2026-11-03',
+        ventana: 'false',
+      }),
+    ).toEqual({
+      values: {
+        severidad: 'Alta',
+        sistema: 'ERP',
+        horas: 2.5,
+        reporte: '2026-11-03',
+        ventana: false,
+      },
+      errors: {},
+    });
+    expect(validateDetails(FIELDS, { severidad: 'Baja', sistema: '', horas: null }).values).toEqual(
+      {
+        severidad: 'Baja',
+      },
+    );
+  });
+
+  it('obligatorio vacío, opción inexistente, número o fecha inválidos dan error; los archivados no se piden', () => {
+    const { errors } = validateDetails(FIELDS, {
+      horas: 'dos',
+      reporte: '3/11/2026',
+      ventana: 'quizá',
+    });
+    expect(errors).toEqual({
+      severidad: 'Obligatorio',
+      horas: 'Escribe un número',
+      reporte: 'Escribe una fecha válida',
+      ventana: 'Elige Sí o No',
+    });
+    expect(validateDetails(FIELDS, { severidad: 'Media' }).errors).toEqual({
+      severidad: 'Elige una opción de la lista',
+    });
+    expect(
+      detailErrorsMessage(FIELDS, { severidad: 'Obligatorio', horas: 'Escribe un número' }),
+    ).toBe('severidad: Obligatorio · horas: Escribe un número');
+  });
+
+  it('al guardar se reemplazan los del tipo y se conservan los archivados y los de otro tipo', () => {
+    const previous = { severidad: 'Alta', sistema: 'ERP', viejo: 'x', deOtroTipo: 'y' };
+    expect(mergeDetails(previous, FIELDS, { severidad: 'Baja' })).toEqual({
+      severidad: 'Baja',
+      viejo: 'x',
+      deOtroTipo: 'y',
+    });
   });
 });
