@@ -182,7 +182,7 @@ function TypeRow({
           </p>
         </div>
       )}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         {/* HU-07: sus contenedores agrupan las tareas en fases */}
         <label
           className="flex items-center gap-1.5 text-sm"
