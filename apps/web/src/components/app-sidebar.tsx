@@ -28,7 +28,7 @@ import { workspaceQueryOptions } from '@/lib/workspaces';
 import { cn } from '@/lib/utils';
 
 const itemClass =
-  'flex min-h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-[#344054] transition-colors hover:bg-muted hover:text-foreground [&_svg]:size-[18px] [&_svg]:shrink-0';
+  'flex min-h-8 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-[#344054] transition-colors hover:bg-muted hover:text-foreground [&_svg]:size-[18px] [&_svg]:shrink-0';
 
 /** Opción que llega en una historia posterior: se ve, pero aún no se puede usar */
 function SoonItem({
@@ -83,7 +83,7 @@ export function AppSidebar() {
   return (
     <nav
       aria-label="Menú principal"
-      className="flex w-full flex-col gap-5 border-b bg-card px-3.5 py-5 md:sticky md:top-0 md:h-screen md:w-64 md:shrink-0 md:overflow-y-auto md:border-r md:border-b-0"
+      className="flex w-full flex-col gap-5 border-b bg-card px-3.5 py-5 md:sticky md:top-0 md:h-screen md:w-56 md:shrink-0 md:overflow-y-auto md:border-r md:border-b-0"
     >
       <Link to="/" className="px-1.5">
         <AppLogo />
