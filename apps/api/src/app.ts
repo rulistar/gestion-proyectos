@@ -7,6 +7,7 @@ import { detailFieldsRoutes } from './modules/detail-fields/detail-fields.routes
 import { profileRoutes } from './modules/auth/profile.routes.js';
 import { exportsRoutes } from './modules/exports/exports.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { importsRoutes } from './modules/imports/imports.routes.js';
 import { acceptInvitationRoutes } from './modules/invitations/accept.routes.js';
 import { invitationsRoutes } from './modules/invitations/invitations.routes.js';
 import { movesRoutes } from './modules/moves/moves.routes.js';
@@ -88,6 +89,7 @@ export function buildApp({
   void app.register(tasksRoutes, { prefix: '/api/v1' });
   void app.register(trashRoutes, { prefix: '/api/v1' });
   void app.register(exportsRoutes, { prefix: '/api/v1' });
+  void app.register(importsRoutes, { prefix: '/api/v1' });
   void app.register(usersRoutes, { prefix: '/api/v1' });
   void app.register(passwordResetRoutes, { prefix: '/api/v1' });
   void app.register(invitationsRoutes, { prefix: '/api/v1' });

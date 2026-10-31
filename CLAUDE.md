@@ -62,7 +62,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
-                        (/, /perfil, /usuarios, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas, .../gantt, .../exportar,
+                        (/, /perfil, /usuarios, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas, .../gantt, .../exportar, .../cargar,
                         .../miembros, .../personas, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
@@ -135,6 +135,8 @@ apps/
                           sesiones e inicia sesión); resetPasswordByEmail para pnpm reset:password
       exports/            exportar (HU-13): GET /workspaces/:id/export.csv (Excel, BOM) y export.json (respaldo);
                           cualquier miembro, solo lo que ve, sin la papelera; se descargan como archivo
+      imports/            cargar información (HU-14), solo Admin (catalog.manage): POST /workspaces/:id/import/preview
+                          (resumen, no escribe) e /import/apply (una transacción; solo Actualizar, nunca borra)
       trash/              papelera, solo Admin (HU-15): GET /trash, POST /trash/:kind/:id/restore, DELETE /trash/:kind/:id
       invitations/        GET/POST/DELETE /workspaces/:id/invitations, solo Admin (HU-04); el token se devuelve una vez.
                           Una invitación puede incluir otros espacios (InvitationGrant, HU-17c): Admin de cada uno
@@ -164,6 +166,8 @@ packages/
     src/schemas/detail-fields.ts  campos de detalle por tipo (HU-23): definición y reglas; validateDetails/mergeDetails =
                                 valores de un contenedor o tarea (columna details, JSONB), los usan API y web; con pruebas
     src/schemas/export.ts       columnas del CSV (las del prototipo primero), etiquetas en español y toCsv; con pruebas
+    src/schemas/import.ts       leer CSV/JSON para cargar (parseCsv, normalizeDate, csvToImport, jsonToImport): modelo
+                                común, incluidos los respaldos del prototipo; con pruebas
     src/schemas/gantt.ts        Gantt (HU-27): barras planeadas contra reales, hitos, rango y encabezados; URL del Gantt
                                 del espacio (workspaceGanttSearchSchema); con pruebas
     src/schemas/my-work.ts      groupMyWork: agrupa mis tareas por fecha de fin (HU-28b), con pruebas
