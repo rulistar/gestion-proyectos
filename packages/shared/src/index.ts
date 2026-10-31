@@ -20,3 +20,4 @@ export * from './schemas/trash.js';
 export * from './schemas/users.js';
 export * from './schemas/workspaces.js';
 export * from './schemas/gantt.js';
+export * from './schemas/detail-fields.js';

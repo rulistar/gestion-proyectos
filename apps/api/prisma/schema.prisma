@@ -168,6 +168,7 @@ model ProjectType {
 
   projects         Project[]
   allowedTaskTypes ProjectTypeTaskType[]
+  detailFields     DetailField[]
 
   @@unique([workspaceId, name], where: { archivedAt: null })
   @@index([workspaceId])
@@ -223,10 +224,54 @@ model TaskType {
   tasks        Task[]
   projectTypes ProjectTypeTaskType[]
   projects     ProjectTaskType[]
+  detailFields DetailField[]
 
   @@unique([workspaceId, name], where: { archivedAt: null })
   @@index([workspaceId])
   @@map("task_types")
+}
+
+/// Clase de un campo de detalle (ADR-0004 §3). No cambia una vez creado el campo
+enum DetailFieldKind {
+  SHORT_TEXT
+  LONG_TEXT
+  NUMBER
+  DATE
+  OPTIONS
+  BOOLEAN
+
+  @@map("detail_field_kind")
+}
+
+/// Campo de detalle de un tipo de contenedor o de un tipo de tarea (HU-23, ADR-0004 §3): pertenece a
+/// uno de los dos. No va a la papelera: quitarlo lo archiva y sus valores se conservan.
+model DetailField {
+  id            String          @id @default(uuid(7)) @db.Uuid
+  workspaceId   String          @map("workspace_id") @db.Uuid
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projectTypeId String?         @map("project_type_id") @db.Uuid
+  projectType   ProjectType?    @relation(fields: [projectTypeId], references: [id], onDelete: Cascade)
+  taskTypeId    String?         @map("task_type_id") @db.Uuid
+  taskType      TaskType?       @relation(fields: [taskTypeId], references: [id], onDelete: Cascade)
+  name          String
+  kind          DetailFieldKind
+  required      Boolean         @default(false)
+  /// Opciones de una lista (kind OPTIONS); solo se agregan, para que ningún valor quede inválido
+  options       String[]        @default([])
+  position      Int             @default(0)
+  archivedAt    DateTime?       @map("archived_at") @db.Timestamptz(3)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  createdBy   User?    @relation("DetailFieldCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User?    @relation("DetailFieldUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId])
+  @@index([projectTypeId])
+  @@index([taskTypeId])
+  @@map("detail_fields")
 }
 
 /// Origen de una tarea (HU-47): catálogo del espacio (Correo, Teléfono, Junta, Ticket...).
@@ -339,6 +384,8 @@ model User {
   allowedTaskTypesCreated ProjectTypeTaskType[]     @relation("ProjectTypeTaskTypeCreatedBy")
   taskOriginsCreated      TaskOrigin[]              @relation("TaskOriginCreatedBy")
   taskOriginsUpdated      TaskOrigin[]              @relation("TaskOriginUpdatedBy")
+  detailFieldsCreated     DetailField[]             @relation("DetailFieldCreatedBy")
+  detailFieldsUpdated     DetailField[]             @relation("DetailFieldUpdatedBy")
   passwordResets          PasswordReset[]           @relation("PasswordResetUser")
   passwordResetsCreated   PasswordReset[]           @relation("PasswordResetCreatedBy")
   passwordResetsUpdated   PasswordReset[]           @relation("PasswordResetUpdatedBy")
@@ -404,6 +451,7 @@ model Workspace {
   projectTypes     ProjectType[]
   taskTypes        TaskType[]
   taskOrigins      TaskOrigin[]
+  detailFields     DetailField[]
   folioCounters    FolioCounter[]
   people           Person[]
   phases           Phase[]

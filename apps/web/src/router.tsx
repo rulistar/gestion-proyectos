@@ -19,6 +19,7 @@ import { weekStartIso } from '@/lib/dates';
 import { myTasksQueryOptions } from '@/lib/my-work';
 import { projectTypesQueryOptions } from '@/lib/project-types';
 import { projectQueryOptions, projectsQueryOptions } from '@/lib/projects';
+import { detailFieldsQueryOptions } from '@/lib/detail-fields';
 import { taskTypesQueryOptions } from '@/lib/task-types';
 import { tasksQueryOptions, workspaceTasksQueryOptions } from '@/lib/tasks';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
@@ -194,6 +195,7 @@ const catalogRoute = createRoute({
       context.queryClient.ensureQueryData(workspaceQueryOptions(params.workspaceId)),
       context.queryClient.ensureQueryData(projectTypesQueryOptions(params.workspaceId)),
       context.queryClient.ensureQueryData(taskTypesQueryOptions(params.workspaceId)),
+      context.queryClient.ensureQueryData(detailFieldsQueryOptions(params.workspaceId)),
     ]),
   component: CatalogPage,
 });

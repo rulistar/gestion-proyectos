@@ -1,7 +1,13 @@
-import { createTaskTypeSchema, type ProjectType, type TaskType } from '@gestion/shared';
+import {
+  createTaskTypeSchema,
+  type DetailField,
+  type ProjectType,
+  type TaskType,
+} from '@gestion/shared';
 import { Archive, ArchiveRestore, Check, ListChecks, Pencil, X, Zap } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { DetailFieldsDialog } from '@/components/detail-fields-dialog';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { Button } from '@/components/ui/button';
@@ -108,9 +114,12 @@ export function AllowedTaskTypesDialog({
 export function TaskTypesCard({
   workspaceId,
   taskTypes,
+  fields,
 }: {
   workspaceId: string;
   taskTypes: TaskType[];
+  /** Campos de detalle del espacio (HU-23) */
+  fields: DetailField[];
 }) {
   const create = useCreateTaskType(workspaceId);
   const [expedited, setExpedited] = useState(false);
@@ -139,7 +148,12 @@ export function TaskTypesCard({
       <CardContent className="grid gap-4">
         <ul className="divide-y rounded-md border">
           {taskTypes.map((taskType) => (
-            <TaskTypeRow key={taskType.id} workspaceId={workspaceId} taskType={taskType} />
+            <TaskTypeRow
+              key={taskType.id}
+              workspaceId={workspaceId}
+              taskType={taskType}
+              fields={fields}
+            />
           ))}
         </ul>
         <form onSubmit={form.onSubmit} noValidate>
@@ -175,7 +189,15 @@ export function TaskTypesCard({
   );
 }
 
-function TaskTypeRow({ workspaceId, taskType }: { workspaceId: string; taskType: TaskType }) {
+function TaskTypeRow({
+  workspaceId,
+  taskType,
+  fields,
+}: {
+  workspaceId: string;
+  taskType: TaskType;
+  fields: DetailField[];
+}) {
   const update = useUpdateTaskType(workspaceId);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(taskType.name);
@@ -262,6 +284,12 @@ function TaskTypeRow({ workspaceId, taskType }: { workspaceId: string; taskType:
           />
           Atención inmediata
         </label>
+        <DetailFieldsDialog
+          workspaceId={workspaceId}
+          owner={{ taskTypeId: taskType.id }}
+          ownerName={taskType.name}
+          fields={fields}
+        />
         {!editing && (
           <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
             <Pencil aria-hidden />

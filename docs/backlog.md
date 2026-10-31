@@ -681,11 +681,13 @@ _Como usuario que olvidó su contraseña, quiero recuperar el acceso sin perder 
 
 _Como Admin, quiero que cada tipo de contenedor y de tarea pida su propio detalle, para capturar lo que cada trabajo necesita sin cambiar el código._ Diseño en [ADR-0004 §3](adr/ADR-0004-tipos-de-trabajo.md).
 
-- [ ] En Configuración, cada tipo define sus campos: texto corto, texto largo, número, fecha, lista de opciones o Sí/No; obligatorio u opcional, con orden.
-- [ ] Los formularios de contenedor y de tarea muestran solos los campos del tipo elegido. Ej.: una tarea Incidencia pide Severidad (obligatoria); una Tarea no pide nada extra.
-- [ ] La API valida los valores con un esquema Zod armado a partir de la definición: tipo equivocado, opción inexistente u obligatorio vacío → 400.
-- [ ] Se puede renombrar un campo y agregar opciones; no se cambia la clase de un campo con datos. Quitar un campo lo archiva y conserva sus valores.
-- [ ] Valores iniciales del ADR-0004 §5 para los espacios nuevos y, por migración, para los existentes (el PO los ajusta).
+Confirmado por el PO (2026-10-30) con el ejemplo Incidencia → "Severidad" (lista, obligatoria): botón **Campos** en cada tipo de Configuración; los tipos **empiezan sin campos** (no se cargan los propuestos del ADR-0004 §5); los valores se ven en el formulario (sección Detalle) y en Datos del proyecto. Se entrega en dos PR: HU-23a (definir los campos) y HU-23b (capturar y validar los valores).
+
+- [x] En Configuración, cada tipo define sus campos: texto corto, texto largo, número, fecha, lista de opciones o Sí/No; obligatorio u opcional, con orden (HU-23a).
+- [ ] Los formularios de contenedor y de tarea muestran solos los campos del tipo elegido. Ej.: una tarea Incidencia pide Severidad (obligatoria); una Tarea no pide nada extra (HU-23b).
+- [ ] La API valida los valores con un esquema Zod armado a partir de la definición: tipo equivocado, opción inexistente u obligatorio vacío → 400 (HU-23b).
+- [x] Se puede renombrar un campo y agregar opciones; no se cambia la clase de un campo ni se quitan opciones (409). Quitar un campo lo archiva y conserva sus valores (HU-23a).
+- [x] ~~Valores iniciales del ADR-0004 §5~~: el PO decidió que los tipos empiecen sin campos.
 
 #### HU-10 · Tablero Kanban de proyectos (5 pts)
 
