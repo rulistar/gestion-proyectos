@@ -22,6 +22,7 @@ import { ProgressBar } from '@/components/progress-bar';
 import { ProjectFiltersBar } from '@/components/project-filters-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
+import { ProjectsBoard } from '@/components/projects-board';
 import { SortTh } from '@/components/sort-th';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,6 +42,7 @@ import { PROJECT_PRIORITIES, projectsQueryOptions, useCreateProject } from '@/li
 import { peopleQueryOptions } from '@/lib/people';
 import { taskTypesQueryOptions } from '@/lib/task-types';
 import { useAccess } from '@/lib/access';
+import { cn } from '@/lib/utils';
 import { roleLabel, workspaceQueryOptions } from '@/lib/workspaces';
 
 // Son los id de las rutas (no la URL): cuelgan de la ruta sin URL "app", de ahí el /app
@@ -119,7 +121,13 @@ function ContainersPage({
   // Con varios tipos (Mtto correctivo y evolutivo) se muestra la columna Tipo
   const sectionTypes = allTypes.filter((t) => t.behavior === behavior);
   const showType = sectionTypes.length > 1;
-  const visible = sortProjects(filterProjects(projects, filters), filters.sort, filters.dir);
+  // En el tablero se ven también terminados y cancelados: sus columnas empiezan plegadas (HU-10)
+  const board = filters.view === 'board';
+  const visible = sortProjects(
+    filterProjects(projects, board ? { ...filters, showClosed: true } : filters),
+    filters.sort,
+    filters.dir,
+  );
   const hidden = projects.length - visible.length;
 
   function sortBy(key: ProjectSortKey) {
@@ -136,7 +144,7 @@ function ContainersPage({
         <span className="text-sm text-muted-foreground">
           {projects.length === 0
             ? section.empty
-            : `${visible.length} de ${projects.length}${hidden > 0 && !hasActiveFilters(filters) ? ' (terminados y cancelados ocultos)' : ''}`}
+            : `${visible.length} de ${projects.length}${hidden > 0 && !board && !hasActiveFilters(filters) ? ' (terminados y cancelados ocultos)' : ''}`}
         </span>
         {canCreate && (
           <CreateProjectDialog
@@ -152,6 +160,35 @@ function ContainersPage({
       {projects.length > 0 && (
         <Card>
           <CardContent className="grid gap-3">
+            <div
+              role="group"
+              aria-label="Vista"
+              className="inline-flex w-fit rounded-md border p-0.5"
+            >
+              {(
+                [
+                  ['table', 'Tabla'],
+                  ['board', 'Tablero'],
+                ] as const
+              ).map(([view, label]) => (
+                <button
+                  key={view}
+                  type="button"
+                  aria-pressed={(filters.view ?? 'table') === view}
+                  onClick={() =>
+                    onFilters({ ...filters, view: view === 'table' ? undefined : view })
+                  }
+                  className={cn(
+                    'rounded px-3 py-1 text-sm',
+                    (filters.view ?? 'table') === view
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <ProjectFiltersBar
               projects={projects}
               types={sectionTypes}
@@ -164,11 +201,15 @@ function ContainersPage({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onFilters({ sort: filters.sort, dir: filters.dir })}
+                  onClick={() =>
+                    onFilters({ sort: filters.sort, dir: filters.dir, view: filters.view })
+                  }
                 >
                   Limpiar filtros
                 </Button>
               </div>
+            ) : board ? (
+              <ProjectsBoard workspaceId={workspaceId} projects={visible} behavior={behavior} />
             ) : (
               <div className="overflow-x-auto">
                 <ContainersTable

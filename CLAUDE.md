@@ -119,7 +119,8 @@ apps/
                           resolveDetails valida los valores al crear/editar tareas y contenedores (HU-23b)
       task-types/         catálogo de tipos de tarea (HU-22): GET (project.read), POST/PATCH (catalog.manage);
                           resolveTaskType valida el tipo contra los permitidos del contenedor
-      projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05); DELETE = a la papelera.
+      projects/           CRUD de proyectos bajo /workspaces/:workspaceId/projects (HU-05); DELETE = a la papelera;
+                          PATCH /:projectId/status = solo el estado, desde el tablero (HU-10).
                           GET acepta ?today=&monthStart= (fecha local) para las métricas por comportamiento
       phases/             fases de un proyecto (HU-07): GET/POST .../projects/:projectId/phases, PATCH /:phaseId (nombre),
                           POST /:phaseId/move (subir/bajar), DELETE (a la papelera con subfases y tareas, mismo deletedAt);

@@ -93,6 +93,20 @@ export function useUpdateProject(workspaceId: string, projectId: string) {
   });
 }
 
+/** Pasarlo de columna en el tablero (HU-10): solo el estado */
+export function useUpdateProjectStatus(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, status }: { projectId: string; status: ProjectStatus }) =>
+      apiFetch(`/workspaces/${workspaceId}/projects/${projectId}/status`, {
+        method: 'PATCH',
+        body: { status },
+        schema: projectSchema,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectsKey(workspaceId) }),
+  });
+}
+
 /** Dar de baja: el proyecto va a la papelera (HU-15) */
 export function useDeleteProject(workspaceId: string, projectId: string) {
   const queryClient = useQueryClient();

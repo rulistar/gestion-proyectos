@@ -41,14 +41,19 @@ export const projectFiltersSchema = z.object({
   endBy: z.iso.date().optional().catch(undefined),
   /** Terminados y cancelados se ocultan salvo que se pida verlos */
   showClosed: z.boolean().optional().catch(undefined),
+  /** Tabla (por omisión) o tablero por estado (HU-10) */
+  view: z.enum(['table', 'board']).optional().catch(undefined),
   sort: projectSortKeySchema.optional().catch(undefined),
   dir: z.enum(['asc', 'desc']).optional().catch(undefined),
 });
 export type ProjectFilters = z.infer<typeof projectFiltersSchema>;
 
-/** ¿Hay algún filtro puesto? (para el botón "Limpiar filtros"); sirve también para las tareas (HU-39) */
+/**
+ * ¿Hay algún filtro puesto? (para el botón "Limpiar filtros"); sirve también para las tareas
+ * (HU-39). El orden y la vista (tabla o tablero, HU-10) no son filtros.
+ */
 export function hasActiveFilters(filters: Record<string, unknown>): boolean {
-  const { sort: _sort, dir: _dir, ...rest } = filters;
+  const { sort: _sort, dir: _dir, view: _view, ...rest } = filters;
   return Object.values(rest).some((value) => value !== undefined && value !== '');
 }
 

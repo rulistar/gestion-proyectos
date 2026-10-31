@@ -169,7 +169,7 @@ export function ProjectFiltersBar({
           size="sm"
           className="ml-auto"
           // Se conserva el orden elegido; solo se quitan los filtros
-          onClick={() => onChange({ sort: filters.sort, dir: filters.dir })}
+          onClick={() => onChange({ sort: filters.sort, dir: filters.dir, view: filters.view })}
         >
           <X aria-hidden />
           Limpiar filtros

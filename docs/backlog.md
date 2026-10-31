@@ -691,11 +691,11 @@ Confirmado por el PO (2026-10-30) con el ejemplo Incidencia → "Severidad" (lis
 
 #### HU-10 · Tablero Kanban de proyectos (5 pts)
 
-_Como responsable, quiero ver mis contenedores en un tablero por estado, para saber de un vistazo qué está en curso._
+_Como responsable, quiero ver mis contenedores en un tablero por estado, para saber de un vistazo qué está en curso._ Confirmado por el PO (2026-10-31) con el ejemplo de su lista de Proyectos: también en Mantenimientos y Actividades; el estado se cambia con un combo en la tarjeta (sin arrastrar).
 
-- [ ] En Proyectos y Mantenimientos se alterna entre **Tabla** y **Tablero**; el tablero tiene una columna por estado y respeta los filtros de la lista (HU-09) y el filtro por tipo.
-- [ ] Cada tarjeta muestra folio, nombre, prioridad, avance y fin; clic abre el contenedor.
-- [ ] Se cambia el estado desde la tarjeta, como en el tablero de tareas, solo si la matriz permite modificarlo (ADR-0006). Arrastrar las tarjetas se decide con el PO al empezar, sin librería nueva.
+- [x] En Proyectos, Mantenimientos y Actividades se alterna entre **Tabla** y **Tablero** (en la URL); el tablero tiene una columna por estado y respeta los filtros de la lista. Terminado y Cancelado empiezan plegados y se ven aunque "Mostrar terminados" esté apagado.
+- [x] Cada tarjeta muestra folio, nombre, prioridad, sprint, avance (o abiertas y vencidas) y fin; clic en el nombre abre el contenedor.
+- [x] El combo de Estado de la tarjeta lo pasa de columna (PATCH .../status, registra las fechas reales), solo si la matriz permite modificarlo (ADR-0006).
 
 #### HU-13 · Exportar (3 pts)
 

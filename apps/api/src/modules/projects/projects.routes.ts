@@ -4,6 +4,7 @@ import {
   canUpdateContainer,
   projectInputSchema,
   projectMetricsQuerySchema,
+  projectStatusUpdateSchema,
   type ProjectBehavior,
 } from '@gestion/shared';
 import { z } from 'zod';
@@ -24,6 +25,7 @@ import {
   InvalidTaskTypeSelectionError,
   listProjects,
   softDeleteProject,
+  updateProjectStatus,
   updateProject,
 } from './projects.service.js';
 import { DuplicateFolioError } from './folios.js';
@@ -190,6 +192,33 @@ export const projectsRoutes: FastifyPluginCallback = (app, _options, done) => {
       } catch (error) {
         return invalidType(reply, error);
       }
+    },
+  );
+
+  // Pasarlo de columna en el tablero (HU-10): mismo permiso que editarlo
+  app.patch(
+    '/workspaces/:workspaceId/projects/:projectId/status',
+    { preHandler: requireMembership },
+    async (request, reply) => {
+      const access = request.membership!;
+      const params = projectParamsSchema.safeParse(request.params);
+      if (!params.success) return projectNotFound(reply);
+      const container = await visibleContainer(app.db, access, params.data.projectId);
+      if (!container) return projectNotFound(reply);
+      if (!canUpdateContainer(access, container)) return forbidden(reply);
+      const parsed = projectStatusUpdateSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ message: z.prettifyError(parsed.error) });
+      }
+      const project = await updateProjectStatus(
+        app.db,
+        request.auth!.userId,
+        access.workspaceId,
+        params.data.projectId,
+        parsed.data.status,
+        metricsOf(request),
+      );
+      return project ?? projectNotFound(reply);
     },
   );
 
