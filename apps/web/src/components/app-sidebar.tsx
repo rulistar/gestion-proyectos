@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import {
   ChartGantt,
   Download,
+  Upload,
   ClipboardList,
   Contact,
   FolderKanban,
@@ -271,6 +272,21 @@ export function AppSidebar() {
             >
               <Settings aria-hidden />
               Configuración
+            </Link>
+          )}
+          {/* Cargar información (HU-14): solo el Admin del espacio */}
+          {roleHasPermission(current.role, 'catalog.manage') && (
+            <Link
+              to="/w/$workspaceId/cargar"
+              params={{ workspaceId: current.id }}
+              className={itemClass}
+              activeProps={{
+                className: 'bg-accent text-accent-foreground',
+                'aria-current': 'page',
+              }}
+            >
+              <Upload aria-hidden />
+              Cargar información
             </Link>
           )}
         </div>

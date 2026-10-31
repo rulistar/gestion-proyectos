@@ -724,11 +724,12 @@ _Como responsable, quiero una vista de resumen del proyecto, para ver su estado 
 
 _Como Admin, quiero cargar proyectos y tareas desde un respaldo JSON o un Excel, para no capturarlos a mano y para restaurar respaldos._ Pedido del PO (2026-10-31) para el Sprint 6; diseño confirmado con el ejemplo "Certificación Linux" (ya existe, con una tarea nueva "Lab 3") y "Portal clientes" (nuevo).
 
-- [ ] Acepta el **JSON** de Exportar (HU-13), el **CSV** de Exportar y los respaldos del prototipo (columnas viejas: Curso, Plataforma, Unidad, Actividad…). Fechas normalizadas a AAAA-MM-DD (las ambiguas, día/mes/año).
-- [ ] Solo modo **Actualizar**: lo que coincide (por folio o, sin folio, por nombre sin distinguir mayúsculas) se actualiza; lo demás se crea. Nunca borra.
-- [ ] Antes de guardar, un **resumen**: contenedores y tareas nuevos y actualizados, y lo que se creará en los catálogos ("tipo Ticket, persona Luis Pérez"); se confirma o se cancela.
-- [ ] Lo que falta en los catálogos (tipos, orígenes, fases, personas sin cuenta) **se crea** y se avisa en el resumen.
-- [ ] Solo el **Admin del espacio**; validado con Zod; sin dependencias nuevas.
+- [x] Acepta el **JSON** de Exportar (HU-13), el **CSV** de Exportar y los respaldos del prototipo (columnas viejas: Curso, Plataforma, Unidad, Actividad…). Fechas normalizadas a AAAA-MM-DD (las ambiguas, día/mes/año).
+- [x] Solo modo **Actualizar**: lo que coincide (por folio o, sin folio, por nombre sin distinguir mayúsculas) se actualiza; lo demás se crea. Nunca borra.
+- [x] Antes de guardar, un **resumen**: contenedores y tareas nuevos y actualizados, y lo que se creará en los catálogos ("tipo Ticket, persona Luis Pérez"); se confirma o se cancela.
+- [x] Lo que falta en los catálogos (tipos, orígenes, fases, personas sin cuenta) **se crea** y se avisa en el resumen.
+- [x] Solo el **Admin del espacio**; validado con Zod; sin dependencias nuevas.
+- [x] Menú Administración → **Cargar información**. Una celda vacía no borra lo que ya hay; las tareas pausadas o canceladas sin motivo reciben "Cargada desde archivo"; los tipos de tarea nuevos quedan admitidos en el contenedor. Límites: 5 MB, 1000 contenedores y 10 000 tareas por archivo.
 
 ### Sprints siguientes (criterios por detallar en su planificación)
 
