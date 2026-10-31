@@ -4,6 +4,7 @@ import {
   type ProjectBehavior,
   type ProjectType,
   type TaskType,
+  type DetailField,
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
@@ -14,6 +15,7 @@ import { PageHeader } from '@/components/page-header';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { TaskOriginsCard } from '@/components/task-origin-catalog';
+import { DetailFieldsDialog } from '@/components/detail-fields-dialog';
 import { AllowedTaskTypesDialog, TaskTypesCard } from '@/components/task-type-catalog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +29,7 @@ import {
   useCreateProjectType,
   useUpdateProjectType,
 } from '@/lib/project-types';
+import { detailFieldsQueryOptions } from '@/lib/detail-fields';
 import { taskTypesQueryOptions } from '@/lib/task-types';
 import { useSchemaForm } from '@/lib/use-schema-form';
 import { workspaceQueryOptions } from '@/lib/workspaces';
@@ -42,6 +45,7 @@ export function CatalogPage() {
   const { data: workspace } = useSuspenseQuery(workspaceQueryOptions(workspaceId));
   const { data: types } = useSuspenseQuery(projectTypesQueryOptions(workspaceId));
   const { data: taskTypes } = useSuspenseQuery(taskTypesQueryOptions(workspaceId));
+  const { data: fields } = useSuspenseQuery(detailFieldsQueryOptions(workspaceId));
 
   if (!roleHasPermission(workspace.role, 'catalog.manage')) {
     return (
@@ -87,6 +91,7 @@ export function CatalogPage() {
                       workspaceId={workspaceId}
                       type={type}
                       taskTypes={taskTypes}
+                      fields={fields}
                     />
                   ))}
                 </ul>
@@ -97,7 +102,7 @@ export function CatalogPage() {
       })}
 
       <NewTypeCard workspaceId={workspaceId} />
-      <TaskTypesCard workspaceId={workspaceId} taskTypes={taskTypes} />
+      <TaskTypesCard workspaceId={workspaceId} taskTypes={taskTypes} fields={fields} />
       <TaskOriginsCard workspaceId={workspaceId} />
     </div>
   );
@@ -107,10 +112,12 @@ function TypeRow({
   workspaceId,
   type,
   taskTypes,
+  fields,
 }: {
   workspaceId: string;
   type: ProjectType;
   taskTypes: TaskType[];
+  fields: DetailField[];
 }) {
   const update = useUpdateProjectType(workspaceId);
   const [editing, setEditing] = useState(false);
@@ -216,6 +223,12 @@ function TypeRow({
           ))}
         </NativeSelect>
         <AllowedTaskTypesDialog workspaceId={workspaceId} type={type} taskTypes={taskTypes} />
+        <DetailFieldsDialog
+          workspaceId={workspaceId}
+          owner={{ projectTypeId: type.id }}
+          ownerName={type.name}
+          fields={fields}
+        />
         {!editing && (
           <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
             <Pencil aria-hidden />
