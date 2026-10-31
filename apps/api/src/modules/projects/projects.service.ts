@@ -149,6 +149,7 @@ const projectSelect = {
   allowedTaskTypes: { select: { taskTypeId: true } },
   startedAt: true,
   finishedAt: true,
+  createdAt: true,
   details: true,
   // Para medir el avance (HU-06, ADR-0004 §2); las tareas en la papelera no cuentan (RNF-05)
   tasks: {
@@ -166,11 +167,13 @@ type ProjectRow = Omit<
   | 'progress'
   | 'allowedTaskTypeIds'
   | 'details'
+  | 'createdAt'
   | PersonKey
 > &
   Record<PersonKey, PersonRow> & {
     allowedTaskTypes: { taskTypeId: string }[];
     details: unknown;
+    createdAt: Date;
     startDate: Date | null;
     endDate: Date | null;
     startedAt: Date | null;
@@ -208,6 +211,7 @@ function toProject(
     startedAt: row.startedAt?.toISOString() ?? null,
     finishedAt: row.finishedAt?.toISOString() ?? null,
     details: parseDetails(row.details),
+    createdAt: row.createdAt.toISOString(),
     allowedTaskTypeIds: allowedTaskTypes.map((allowed) => allowed.taskTypeId),
     requester: toPersonRef(requester, row.workspaceId),
     assignedTo: toPersonRef(assignedTo, row.workspaceId),

@@ -114,6 +114,7 @@ describe('POST /workspaces/:workspaceId/projects (HU-05)', () => {
       details: {},
       startedAt: null,
       finishedAt: null,
+      createdAt: project.createdAt,
       progress: {
         totalTasks: 0,
         doneTasks: 0,

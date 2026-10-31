@@ -39,8 +39,10 @@ export const projectFiltersSchema = z.object({
   priority: projectPrioritySchema.optional().catch(undefined),
   /** "Fecha de fin hasta" (AAAA-MM-DD) */
   endBy: z.iso.date().optional().catch(undefined),
-  /** Terminados y cancelados se ocultan salvo que se pida verlos */
-  showClosed: z.boolean().optional().catch(undefined),
+  /** Año (HU-55); sin él, el año en curso */
+  year: z.coerce.number().int().min(2000).max(2100).optional().catch(undefined),
+  /** Abiertos (por omisión), cerrados (terminados o cancelados) o ambos (HU-55) */
+  state: z.enum(['open', 'closed', 'all']).optional().catch(undefined),
   /** Tabla (por omisión) o tablero por estado (HU-10) */
   view: z.enum(['table', 'board']).optional().catch(undefined),
   sort: projectSortKeySchema.optional().catch(undefined),
@@ -64,14 +66,61 @@ export function normalize(text: string): string {
 
 const CLOSED = new Set(['DONE', 'CANCELLED']);
 
+type YearFacts = Pick<Project, 'status' | 'createdAt' | 'finishedAt' | 'endDate'>;
+
+/**
+ * Año en que se cerró: el del fin real; si no lo tiene (cerrado antes de que existiera, ADR-0004
+ * §2.1), el del fin planeado o, al final, el del alta
+ */
+function closedYear(project: YearFacts): number {
+  return Number((project.finishedAt ?? project.endDate ?? project.createdAt).slice(0, 4));
+}
+
+/**
+ * Filtro por año (HU-55, decisión del PO 2026-10-31). Abiertos en un año: creados a más tardar
+ * ese año y sin cerrar. Cerrados: terminados o cancelados ese año. Ej.: en 2026, "Portal
+ * clientes" (abierto) y "Migración ERP" (terminado en marzo de 2026) sí; "Curso Linux"
+ * (terminado en 2025), no.
+ */
+export function inYear(
+  project: YearFacts,
+  year: number,
+  state: 'open' | 'closed' | 'all',
+): boolean {
+  const closed = CLOSED.has(project.status);
+  if (closed) return state !== 'open' && closedYear(project) === year;
+  return state !== 'closed' && Number(project.createdAt.slice(0, 4)) <= year;
+}
+
+/** Años que ofrece el combo: del primero con datos al en curso, el más reciente primero */
+export function projectYears(projects: readonly YearFacts[], currentYear: number): number[] {
+  const first = projects.reduce(
+    (min, project) =>
+      Math.min(
+        min,
+        Number(project.createdAt.slice(0, 4)),
+        CLOSED.has(project.status) ? closedYear(project) : min,
+      ),
+    currentYear,
+  );
+  return Array.from({ length: currentYear - first + 1 }, (_, i) => currentYear - i);
+}
+
 /**
  * Aplica los filtros (HU-09). El texto busca en nombre, folio, sprint y en las personas del
- * proyecto. Terminados y cancelados se ocultan, salvo con `showClosed` o si se filtra por esos estados.
+ * proyecto. Por año (HU-55): sin año, el en curso (`currentYear`); sin estado, los abiertos. Si se
+ * filtra por un estado concreto (p. ej. Terminado), ese estado manda sobre Abiertos/Cerrados.
  */
-export function filterProjects(projects: readonly Project[], filters: ProjectFilters): Project[] {
+export function filterProjects(
+  projects: readonly Project[],
+  filters: ProjectFilters,
+  currentYear: number,
+): Project[] {
   const words = filters.q ? normalize(filters.q).split(/\s+/).filter(Boolean) : [];
+  const year = filters.year ?? currentYear;
+  const state = filters.status ? 'all' : (filters.state ?? 'open');
   return projects.filter((project) => {
-    if (!filters.showClosed && !filters.status && CLOSED.has(project.status)) return false;
+    if (!inYear(project, year, state)) return false;
     if (filters.typeId && project.type.id !== filters.typeId) return false;
     if (filters.scope && project.scope !== filters.scope) return false;
     if (filters.status && project.status !== filters.status) return false;

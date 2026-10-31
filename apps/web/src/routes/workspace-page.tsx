@@ -2,7 +2,6 @@ import {
   canCreateContainer,
   daysRemainingLabel,
   filterProjects,
-  hasActiveFilters,
   sortProjects,
   type Project,
   type ProjectFilters,
@@ -121,14 +120,14 @@ function ContainersPage({
   // Con varios tipos (Mtto correctivo y evolutivo) se muestra la columna Tipo
   const sectionTypes = allTypes.filter((t) => t.behavior === behavior);
   const showType = sectionTypes.length > 1;
-  // En el tablero se ven también terminados y cancelados: sus columnas empiezan plegadas (HU-10)
+  // En el tablero se cuentan también los cerrados del año: se muestran con sus botones (HU-10)
   const board = filters.view === 'board';
+  const currentYear = Number(todayIso().slice(0, 4));
   const visible = sortProjects(
-    filterProjects(projects, board ? { ...filters, showClosed: true } : filters),
+    filterProjects(projects, board ? { ...filters, state: 'all' } : filters, currentYear),
     filters.sort,
     filters.dir,
   );
-  const hidden = projects.length - visible.length;
 
   function sortBy(key: ProjectSortKey) {
     onFilters({ ...filters, ...nextSort(filters, key) });
@@ -142,9 +141,7 @@ function ContainersPage({
         description={`${workspace.name} · tu rol: ${roleLabel(workspace.role, access.permissions)}`}
       >
         <span className="text-sm text-muted-foreground">
-          {projects.length === 0
-            ? section.empty
-            : `${visible.length} de ${projects.length}${hidden > 0 && !board && !hasActiveFilters(filters) ? ' (terminados y cancelados ocultos)' : ''}`}
+          {projects.length === 0 ? section.empty : `${visible.length} de ${projects.length}`}
         </span>
         {canCreate && (
           <CreateProjectDialog
@@ -193,6 +190,8 @@ function ContainersPage({
                 </div>
               }
               projects={projects}
+              currentYear={currentYear}
+              hideState={board}
               types={sectionTypes}
               filters={filters}
               onChange={onFilters}
