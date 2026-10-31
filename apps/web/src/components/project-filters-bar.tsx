@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   hasActiveFilters,
   type Project,
@@ -26,7 +27,10 @@ export function ProjectFiltersBar({
   types,
   filters,
   onChange,
+  leading,
 }: {
+  /** Al inicio del renglón, antes del buscador: el selector Tabla · Tablero (HU-10) */
+  leading?: ReactNode;
   /** Todos los contenedores de la sección (sin filtrar), para armar las opciones */
   projects: Project[];
   /** Tipos de la sección: el filtro por tipo solo aparece si hay más de uno */
@@ -44,6 +48,7 @@ export function ProjectFiltersBar({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {leading}
       <div className="relative min-w-56 flex-1">
         <Search
           aria-hidden

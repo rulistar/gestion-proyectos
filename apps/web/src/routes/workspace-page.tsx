@@ -160,36 +160,38 @@ function ContainersPage({
       {projects.length > 0 && (
         <Card>
           <CardContent className="grid gap-3">
-            <div
-              role="group"
-              aria-label="Vista"
-              className="inline-flex w-fit rounded-md border p-0.5"
-            >
-              {(
-                [
-                  ['table', 'Tabla'],
-                  ['board', 'Tablero'],
-                ] as const
-              ).map(([view, label]) => (
-                <button
-                  key={view}
-                  type="button"
-                  aria-pressed={(filters.view ?? 'table') === view}
-                  onClick={() =>
-                    onFilters({ ...filters, view: view === 'table' ? undefined : view })
-                  }
-                  className={cn(
-                    'rounded px-3 py-1 text-sm',
-                    (filters.view ?? 'table') === view
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted',
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
             <ProjectFiltersBar
+              leading={
+                <div
+                  role="group"
+                  aria-label="Vista"
+                  className="inline-flex w-fit shrink-0 rounded-md border p-0.5"
+                >
+                  {(
+                    [
+                      ['table', 'Tabla'],
+                      ['board', 'Tablero'],
+                    ] as const
+                  ).map(([view, label]) => (
+                    <button
+                      key={view}
+                      type="button"
+                      aria-pressed={(filters.view ?? 'table') === view}
+                      onClick={() =>
+                        onFilters({ ...filters, view: view === 'table' ? undefined : view })
+                      }
+                      className={cn(
+                        'rounded px-3 py-1 text-sm',
+                        (filters.view ?? 'table') === view
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-muted',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              }
               projects={projects}
               types={sectionTypes}
               filters={filters}
