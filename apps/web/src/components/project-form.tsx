@@ -11,9 +11,12 @@ import {
   type Person,
   type ProjectType,
   type TaskType,
+  validateDetails,
 } from '@gestion/shared';
 import { Zap } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useId, useState, type ReactNode } from 'react';
+import { DetailInputs } from '@/components/detail-inputs';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { QuickAddPerson } from '@/components/quick-add-person';
@@ -23,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { todayIso } from '@/lib/dates';
+import { detailFieldsQueryOptions, fieldsOfType, readDetails } from '@/lib/detail-fields';
 import { selectablePeople } from '@/lib/people';
 import {
   PROJECT_PRIORITIES,
@@ -172,9 +176,21 @@ export function ProjectForm({
   status,
   onSubmit,
 }: ProjectFormProps) {
-  const form = useSchemaForm(projectInputSchema, FIELDS, onSubmit);
-  // El tipo elegido decide qué tipos de tarea se pueden marcar (HU-37)
+  // El tipo elegido decide qué tipos de tarea se pueden marcar (HU-37) y qué detalle pide (HU-23b)
   const [typeId, setTypeId] = useState(project?.type.id ?? types[0]?.id);
+  const { data: allFields = [] } = useQuery(detailFieldsQueryOptions(workspaceId));
+  const detailFields = typeId ? fieldsOfType(allFields, { projectTypeId: typeId }) : [];
+  const typeName = types.find((type) => type.id === typeId)?.name ?? '';
+  const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
+  const detailIds = useId();
+  const form = useSchemaForm(projectInputSchema, FIELDS, (data, formEl) => {
+    // Las mismas reglas que la API, para marcar cada campo antes de enviar
+    const details = readDetails(formEl, detailFields);
+    const { errors } = validateDetails(detailFields, details);
+    setDetailErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    onSubmit({ ...data, details }, formEl);
+  });
   // Ejemplo del folio que recibirá si se deja vacío (HU-38): prefijo de la sección y mes actual
   const behavior = types[0]?.behavior ?? 'WITH_END';
   const folioExample = formatFolio(FOLIO_PREFIXES[behavior], folioPeriod(todayIso()), 1);
@@ -197,7 +213,10 @@ export function ProjectForm({
             <NativeSelect
               {...form.field('typeId')}
               value={typeId}
-              onChange={(event) => setTypeId(event.target.value)}
+              onChange={(event) => {
+                setTypeId(event.target.value);
+                setDetailErrors({});
+              }}
             >
               {types.map((type) => (
                 <option key={type.id} value={type.id}>
@@ -296,6 +315,16 @@ export function ProjectForm({
           taskTypes={taskTypes}
           initial={project && typeId === project.type.id ? project.allowedTaskTypeIds : []}
           error={form.errorProps('taskTypeIds')}
+        />
+
+        <DetailInputs
+          key={`detail-${typeId}`}
+          title={`Detalle de ${typeName}`}
+          fields={detailFields}
+          values={project?.details}
+          errors={detailErrors}
+          idPrefix={detailIds}
+          className="sm:col-span-2 sm:grid-cols-2"
         />
 
         <div className={cn('contents', hideWork && 'hidden')}>

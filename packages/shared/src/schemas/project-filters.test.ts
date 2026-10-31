@@ -50,6 +50,7 @@ function project(overrides: Partial<Project>): Project {
     sprint: null,
     sprintActivities: null,
     allowedTaskTypeIds: [],
+    details: {},
     startedAt: null,
     finishedAt: null,
     progress,

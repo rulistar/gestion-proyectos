@@ -17,6 +17,7 @@ import {
   toPersonRef,
   type PersonRow,
 } from '../people/people.service.js';
+import { parseDetails, resolveDetails } from '../detail-fields/detail-fields.service.js';
 import { resolveProjectType } from '../project-types/project-types.service.js';
 import { resolveFolio } from './folios.js';
 
@@ -148,6 +149,7 @@ const projectSelect = {
   allowedTaskTypes: { select: { taskTypeId: true } },
   startedAt: true,
   finishedAt: true,
+  details: true,
   // Para medir el avance (HU-06, ADR-0004 §2); las tareas en la papelera no cuentan (RNF-05)
   tasks: {
     where: notDeleted,
@@ -163,10 +165,12 @@ type ProjectRow = Omit<
   | 'finishedAt'
   | 'progress'
   | 'allowedTaskTypeIds'
+  | 'details'
   | PersonKey
 > &
   Record<PersonKey, PersonRow> & {
     allowedTaskTypes: { taskTypeId: string }[];
+    details: unknown;
     startDate: Date | null;
     endDate: Date | null;
     startedAt: Date | null;
@@ -203,6 +207,7 @@ function toProject(
     endDate: toIsoDate(row.endDate),
     startedAt: row.startedAt?.toISOString() ?? null,
     finishedAt: row.finishedAt?.toISOString() ?? null,
+    details: parseDetails(row.details),
     allowedTaskTypeIds: allowedTaskTypes.map((allowed) => allowed.taskTypeId),
     requester: toPersonRef(requester, row.workspaceId),
     assignedTo: toPersonRef(assignedTo, row.workspaceId),
@@ -242,7 +247,10 @@ async function behaviorOf(tx: Tx, typeId: string) {
 }
 
 /** Los tipos de tarea propios van en su propia tabla: no son columnas del proyecto */
-function toData({ taskTypeIds: _ownTypes, ...input }: ProjectInput, typeId: string) {
+function toData(
+  { taskTypeIds: _ownTypes, details: _details, ...input }: ProjectInput,
+  typeId: string,
+) {
   return {
     ...input,
     typeId,
@@ -298,6 +306,8 @@ export async function createProject(
     await typeAllowedTaskTypes(db, typeId),
     input.taskTypeIds,
   );
+  // Los campos obligatorios de su tipo se piden también al crear (HU-23b)
+  const details = await resolveDetails(db, { projectTypeId: typeId }, input.details);
   const row = await db.$transaction(async (tx) => {
     // Vacío o solo el formato → automático; uno de otro sistema se respeta si no está repetido (HU-38)
     const folio = await resolveFolio(tx, workspaceId, input.folio, {
@@ -309,6 +319,7 @@ export async function createProject(
         workspaceId,
         // Un personal se da de alta con "N/A" en el sprint (HU-49)
         ...toData({ ...withPersonalDefaults(input), folio }, typeId),
+        details,
         ...realDatesFor(input.status, null),
         ...auditCreate(actorId),
         allowedTaskTypes: {
@@ -344,6 +355,7 @@ export async function updateProject(
       projectManagerId: true,
       consultingManagerId: true,
       businessPartnerId: true,
+      details: true,
     },
   });
   if (!previous) return null;
@@ -371,6 +383,16 @@ export async function updateProject(
     ownTypes.length > 0 ? ownTypes : typeAllowed,
   );
   if (conflicts.length > 0) throw new DisallowedTaskTypesError(conflicts);
+  // Sin enviar y sin cambiar de tipo, el detalle no se toca; si no, se valida contra su tipo
+  const details =
+    input.details === undefined && typeId === previous.typeId
+      ? undefined
+      : await resolveDetails(
+          db,
+          { projectTypeId: typeId },
+          input.details,
+          parseDetails(previous.details),
+        );
 
   await db.$transaction(async (tx) => {
     const folio = await resolveFolio(tx, workspaceId, input.folio, {
@@ -382,6 +404,7 @@ export async function updateProject(
       where: { id: projectId },
       data: {
         ...toData({ ...input, folio }, typeId),
+        ...(details !== undefined && { details }),
         ...realDatesFor(input.status, previous),
         ...auditUpdate(actorId),
       },

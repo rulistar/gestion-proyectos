@@ -8,6 +8,7 @@ import {
   optionalInt,
   optionalText,
 } from './common.js';
+import { detailValuesInputSchema, detailValuesSchema } from './detail-fields.js';
 import { personRefSchema } from './people.js';
 import { taskOriginRefSchema } from './task-origins.js';
 import { taskTypeRefSchema } from './task-types.js';
@@ -53,6 +54,8 @@ export const taskInputSchema = z
     originDetail: optionalText(300),
     /** Fase (HU-07); null o "" = suelta. Sin el campo se conserva la que tenía (al crear, suelta) */
     phaseId: z.preprocess(emptyToNull, z.uuid('Valor no válido').nullish()),
+    /** Campos de detalle de su tipo (HU-23b), por ID de campo. Sin enviar = no cambian */
+    details: detailValuesInputSchema.optional(),
   })
   .refine(endAfterStart, endAfterStartError)
   .refine(reasonWhenRequired, reasonRequiredError);
@@ -88,6 +91,8 @@ export const taskSchema = z.object({
   startedAt: z.iso.datetime().nullable(),
   /** Cuándo pasó a Hecha; null si no está Hecha */
   completedAt: z.iso.datetime().nullable(),
+  /** Valores de los campos de detalle (HU-23b), por ID de campo */
+  details: detailValuesSchema,
 });
 export type Task = z.infer<typeof taskSchema>;
 

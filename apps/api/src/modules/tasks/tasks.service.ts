@@ -11,6 +11,7 @@ import type { Prisma } from '../../generated/prisma/client.js';
 import type { Db } from '../../db/client.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
 import { fromIsoDate, toIsoDate } from '../../db/dates.js';
+import { parseDetails, resolveDetails } from '../detail-fields/detail-fields.service.js';
 import { personSelect, toPersonRef, type PersonRow } from '../people/people.service.js';
 import { resolvePhase } from '../phases/phases.service.js';
 import { resolveTaskOrigin } from '../task-origins/task-origins.service.js';
@@ -36,12 +37,17 @@ const taskSelect = {
   createdById: true,
   origin: { select: { id: true, name: true } },
   originDetail: true,
+  details: true,
   workspaceId: true,
   // Responsable (HU-35): persona del catálogo, con su acceso al espacio
   responsiblePerson: personSelect,
 } as const;
 
-type TaskRow = Omit<Task, 'startDate' | 'endDate' | 'completedAt' | 'startedAt' | 'responsible'> & {
+type TaskRow = Omit<
+  Task,
+  'startDate' | 'endDate' | 'completedAt' | 'startedAt' | 'responsible' | 'details'
+> & {
+  details: unknown;
   startDate: Date | null;
   endDate: Date | null;
   completedAt: Date | null;
@@ -58,6 +64,7 @@ function toTask({ workspaceId, responsiblePerson, ...row }: TaskRow): Task {
     endDate: toIsoDate(row.endDate),
     completedAt: row.completedAt?.toISOString() ?? null,
     startedAt: row.startedAt?.toISOString() ?? null,
+    details: parseDetails(row.details),
   };
 }
 
@@ -207,11 +214,14 @@ export async function createTask(
     typeId: requestedType,
     originId: requestedOrigin,
     phaseId: requestedPhase,
+    details: requestedDetails,
     ...input
   }: TaskInput,
 ): Promise<Task> {
   const typeId = await resolveTaskType(db, workspaceId, projectId, requestedType);
   if (!typeId) throw new InvalidTaskTypeError();
+  // Los campos obligatorios de su tipo se piden también al crear (HU-23b)
+  const details = await resolveDetails(db, { taskTypeId: typeId }, requestedDetails);
   const originId = await resolveTaskOrigin(db, workspaceId, requestedOrigin);
   const phaseId = await resolvePhase(db, workspaceId, projectId, requestedPhase);
   const row = await db.task.create({
@@ -222,6 +232,7 @@ export async function createTask(
       typeId,
       originId,
       phaseId,
+      details,
       startDate: fromIsoDate(input.startDate),
       endDate: fromIsoDate(input.endDate),
       completedAt: completedAtFor(input.status, null),
@@ -246,6 +257,7 @@ async function applyUpdate(
     typeId: requestedType,
     originId: requestedOrigin,
     phaseId: requestedPhase,
+    details: requestedDetails,
     ...changes
   }: Partial<TaskInput> & { status: TaskStatus },
 ): Promise<Task | null> {
@@ -258,6 +270,7 @@ async function applyUpdate(
       typeId: true,
       originId: true,
       phaseId: true,
+      details: true,
     },
   });
   if (!previous) return null;
@@ -287,6 +300,17 @@ async function applyUpdate(
     previous.phaseId,
   );
 
+  // Mover de columna no toca el detalle; editar (o cambiar de tipo) lo valida contra su tipo
+  const details =
+    requestedDetails === undefined && typeId === previous.typeId
+      ? undefined
+      : await resolveDetails(
+          db,
+          { taskTypeId: typeId },
+          requestedDetails,
+          parseDetails(previous.details),
+        );
+
   const row = await db.task.update({
     where: { id: where.taskId },
     data: {
@@ -294,6 +318,7 @@ async function applyUpdate(
       typeId,
       originId,
       phaseId,
+      ...(details !== undefined && { details }),
       startedAt: startedAtFor(changes.status, previous.startedAt),
       ...(changes.startDate !== undefined && { startDate: fromIsoDate(changes.startDate) }),
       ...(changes.endDate !== undefined && { endDate: fromIsoDate(changes.endDate) }),

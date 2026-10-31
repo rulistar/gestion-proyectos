@@ -534,6 +534,9 @@ model Project {
   startedAt           DateTime?       @map("started_at") @db.Timestamptz(3)
   finishedAt          DateTime?       @map("finished_at") @db.Timestamptz(3)
 
+  /// Valores de los campos de detalle de su tipo, por ID de campo (HU-23, ADR-0004 §3)
+  details Json @default("{}")
+
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
@@ -624,6 +627,9 @@ model Task {
   origin              TaskOrigin? @relation(fields: [originId], references: [id], onDelete: Restrict)
   /// Detalle del origen: "Ticket #4521 de mesa de ayuda"
   originDetail        String?     @map("origin_detail")
+
+  /// Valores de los campos de detalle de su tipo, por ID de campo (HU-23, ADR-0004 §3)
+  details Json @default("{}")
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
