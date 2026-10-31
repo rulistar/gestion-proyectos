@@ -108,6 +108,8 @@ export const projectSchema = z.object({
   /** Fechas reales (ADR-0004 §2.1): las pone el sistema al cambiar el estado */
   startedAt: z.iso.datetime().nullable(),
   finishedAt: z.iso.datetime().nullable(),
+  /** Alta del contenedor: desde ese año cuenta como abierto en el filtro por año (HU-55) */
+  createdAt: z.iso.datetime(),
   /** Valores de los campos de detalle (HU-23b), por ID de campo */
   details: detailValuesSchema,
   progress: projectProgressSchema,

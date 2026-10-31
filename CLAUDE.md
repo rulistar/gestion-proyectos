@@ -157,7 +157,8 @@ packages/
     src/schemas/progress.ts     reglas de avance (summarizeTasks, daysRemainingLabel; HU-06), con pruebas
     src/schemas/phases.ts       fases (HU-07): esquema con sangría (orderedPhases) y avance y fechas calculados
                                 (summarizePhase); groupTasksByPhase = Lista agrupada por fase (HU-26); con pruebas
-    src/schemas/project-filters.ts  filtros y orden de la lista de contenedores (HU-09), en la URL; con pruebas
+    src/schemas/project-filters.ts  filtros y orden de la lista de contenedores (HU-09), en la URL; filtro por año con
+                                Abiertos / Cerrados / Ambos (inYear, projectYears; HU-55); con pruebas
     src/schemas/task-filters.ts     vista "Tareas": tareas del espacio, filtros y orden (HU-39); projectSearchSchema = pestaña
                                 y filtros de la Lista de un proyecto en la URL (HU-26); con pruebas
     src/schemas/detail-fields.ts  campos de detalle por tipo (HU-23): definición y reglas; validateDetails/mergeDetails =

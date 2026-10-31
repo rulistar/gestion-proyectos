@@ -703,9 +703,9 @@ _Como responsable, quiero ver mis contenedores en un tablero por estado, para sa
 
 _Como responsable, quiero ver mis contenedores por año, separando abiertos y cerrados, para revisar lo de cada año sin mezclarlo con lo anterior._ Pedido del PO (2026-10-31), confirmado con el ejemplo "Portal clientes" (En curso), "Migración ERP" (Terminado en marzo de 2026) y "Curso Linux" (Terminado en 2025).
 
-- [ ] En Proyectos, Mantenimientos y Actividades (tabla y tablero), un combo **Año** con los años que tienen datos (el en curso por omisión) y un selector **Abiertos / Cerrados / Ambos** que reemplaza la casilla "Mostrar terminados"; en la URL como los demás filtros.
-- [ ] **Abiertos** en un año: creados a más tardar ese año y sin cerrar. **Cerrados**: terminados o cancelados ese año (fecha de fin real). Ej.: 2026 con "Ambos" muestra Portal clientes y Migración ERP; Curso Linux, no.
-- [ ] Al llegar 2027 aparecen 2026 y 2027 en el combo; 2026 sigue mostrando lo que estuvo vivo y lo que se cerró ese año.
+- [x] En Proyectos, Mantenimientos y Actividades (tabla y tablero), un combo **Año** con los años que tienen datos (el en curso por omisión) y un selector **Abiertos / Cerrados / Ambos** que reemplaza la casilla "Mostrar terminados"; en la URL como los demás filtros.
+- [x] **Abiertos** en un año: creados a más tardar ese año y sin cerrar. **Cerrados**: terminados o cancelados ese año (fecha de fin real). Ej.: 2026 con "Ambos" muestra Portal clientes y Migración ERP; Curso Linux, no.
+- [x] Al llegar 2027 aparecen 2026 y 2027 en el combo; 2026 sigue mostrando lo que estuvo vivo y lo que se cerró ese año.
 
 #### HU-13 · Exportar (3 pts)
 

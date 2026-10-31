@@ -4,11 +4,13 @@ import {
   type Project,
   type ProjectFilters,
   type ProjectType,
+  projectYears,
 } from '@gestion/shared';
 import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
+import { cn } from '@/lib/utils';
 import { PROJECT_PRIORITIES, PROJECT_SCOPES, PROJECT_STATUSES } from '@/lib/projects';
 
 /** Valores distintos de un campo de texto, para ofrecerlos en su filtro (HU-09) */
@@ -17,6 +19,12 @@ function distinct(projects: Project[], pick: (project: Project) => string | null
     (a, b) => a.localeCompare(b, 'es'),
   );
 }
+
+const STATES = [
+  ['open', 'Abiertos'],
+  ['closed', 'Cerrados'],
+  ['all', 'Ambos'],
+] as const;
 
 /**
  * Filtros de la lista de contenedores (HU-09). Cada cambio va a la URL: un enlace compartido
@@ -28,7 +36,13 @@ export function ProjectFiltersBar({
   filters,
   onChange,
   leading,
+  currentYear,
+  hideState = false,
 }: {
+  /** Año en curso del usuario: el de omisión del filtro por año (HU-55) */
+  currentYear: number;
+  /** Sin el selector Abiertos / Cerrados / Ambos (en el tablero) */
+  hideState?: boolean;
   /** Al inicio del renglón, antes del buscador: el selector Tabla · Tablero (HU-10) */
   leading?: ReactNode;
   /** Todos los contenedores de la sección (sin filtrar), para armar las opciones */
@@ -38,12 +52,13 @@ export function ProjectFiltersBar({
   filters: ProjectFilters;
   onChange: (next: ProjectFilters) => void;
 }) {
+  const years = projectYears(projects, currentYear);
   const areas = distinct(projects, (p) => p.area);
   const classifications = distinct(projects, (p) => p.classification);
 
   /** Cambia un filtro; vacío lo quita de la URL */
   function set<K extends keyof ProjectFilters>(key: K, value: ProjectFilters[K] | '') {
-    onChange({ ...filters, [key]: value === '' || value === false ? undefined : value });
+    onChange({ ...filters, [key]: value === '' ? undefined : value });
   }
 
   return (
@@ -158,15 +173,47 @@ export function ProjectFiltersBar({
           onChange={(event) => set('endBy', event.target.value)}
         />
       </label>
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          className="size-4 accent-primary"
-          checked={filters.showClosed ?? false}
-          onChange={(event) => set('showClosed', event.target.checked)}
-        />
-        Mostrar terminados y cancelados
-      </label>
+      {/* Año (HU-55): los años con datos, el en curso por omisión */}
+      <NativeSelect
+        aria-label="Año"
+        className="h-9 w-24"
+        value={String(filters.year ?? currentYear)}
+        onChange={(event) => {
+          const year = Number(event.target.value);
+          set('year', year === currentYear ? '' : year);
+        }}
+      >
+        {years.map((year) => (
+          <option key={year} value={year}>
+            {year}
+          </option>
+        ))}
+      </NativeSelect>
+      {/* En el tablero, los cerrados se muestran con sus botones (HU-10) */}
+      {!hideState && (
+        <div
+          role="group"
+          aria-label="Abiertos o cerrados"
+          className="inline-flex rounded-md border p-0.5"
+        >
+          {STATES.map(([state, label]) => (
+            <button
+              key={state}
+              type="button"
+              aria-pressed={(filters.state ?? 'open') === state}
+              onClick={() => set('state', state === 'open' ? '' : state)}
+              className={cn(
+                'rounded px-2.5 py-1 text-sm',
+                (filters.state ?? 'open') === state
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-muted',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       {hasActiveFilters(filters) && (
         <Button
           type="button"
