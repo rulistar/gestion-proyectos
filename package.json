@@ -13,6 +13,7 @@
     "build": "pnpm --recursive build",
     "typecheck": "pnpm --recursive typecheck",
     "test": "pnpm --recursive test",
+    "test:e2e": "pnpm --filter @gestion/web build && pnpm --filter @gestion/e2e test:e2e",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
