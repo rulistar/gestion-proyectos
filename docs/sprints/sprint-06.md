@@ -85,11 +85,75 @@ Detalle y criterios de aceptación: [backlog.md](../backlog.md#sprint-6).
 |---|---|---|
 | Planificación | 2026-10-30 | Este documento ✅ |
 | Seguimiento | En cada sesión de trabajo | Revisar el avance y los bloqueos |
-| Revisión | Al terminar las 7 historias | El guion de arriba, en producción; recorrido del MVP del acta |
-| Retrospectiva | Junto con la revisión | Qué salió bien, qué mejorar |
+| Revisión | Al terminar las 7 historias | El guion de arriba, en producción; recorrido del MVP del acta ✅ 2026-10-31 |
+| Retrospectiva | Junto con la revisión | Qué salió bien, qué mejorar ✅ 2026-10-31 |
 
-## Resultado (se completa al cierre)
+## Resultado (cierre: 2026-10-31)
 
-- Puntos completados: \_\_ / 48
-- Objetivo cumplido: ☐ Sí ☐ No
-- Notas de la retrospectiva:
+- Puntos completados: **48 / 48 comprometidos** (32 al planificar, más HU-55, HU-14 y HU-56, que el PO pidió durante el sprint y cupieron sin sacar nada).
+- Objetivo cumplido: ☑ Sí. El PO probó cada historia en local antes de fusionarla y revisó en producción el 2026-10-31 ("por ahorita bien"), sin observaciones pendientes.
+- Se cerró antes de la fecha planeada (2026-11-13). El Sprint 7 empieza el 2026-11-01.
+
+### Revisión
+
+| ID | Historia | Pts | PR |
+|---|---|---|---|
+| HU-54 | Restablecer una contraseña olvidada (enlace del Admin del sistema y `pnpm reset:password`) | 3 | #78 |
+| HU-26 | Pestaña Lista del proyecto, agrupada por fase | 2 | #79 |
+| HU-27 | Gantt del proyecto (27a) y del espacio (27b), planeado contra real | 8 | #80, #81 |
+| HU-23 | Campos de detalle por tipo: definición (23a) y valores (23b) | 8 | #82, #83, #84 |
+| HU-10 | Tablero Kanban de contenedores; cerrados ocultos con botones; vista junto a los filtros | 5 | #85, #86 |
+| HU-13 | Exportar en CSV para Excel y respaldo JSON | 3 | #87 |
+| HU-11 | Pestaña Resumen del proyecto | 3 | #88 |
+| — | Menú lateral más angosto | — | #89 |
+| HU-55 | Filtro por año con Abiertos / Cerrados / Ambos | 3 | #90 |
+| HU-14 | Cargar información desde JSON o Excel, incluidos los respaldos del prototipo | 8 | #91 |
+| HU-56 | Ver como un miembro (solo lectura) | 5 | #92 |
+
+- 413 pruebas en verde: 305 de la API y 108 de shared.
+- Sin dependencias nuevas en todo el sprint: el Gantt es una cuadrícula de CSS y el CSV se arma y se lee sin librería.
+- Cada fusión se confirmó en producción (acuerdo del Sprint 5).
+
+**Recorrido del MVP del acta** (objetivo 1):
+
+| Alcance del acta (§3) | Estado |
+|---|---|
+| Usuarios con invitación y roles; espacios → proyectos → fases → tareas | ✅ |
+| Tabla con filtros, tablero Kanban y vista de detalle | ✅ |
+| Fechas, % de avance y días restantes | ✅ |
+| Respaldo e importación JSON/Excel | ✅ solo "actualizar"; "reemplazar" quedó fuera por decisión del PO |
+| Gráficas por mes de término y por estado | ❌ falta: **HU-12**, primera del Sprint 7 |
+| Gantt (era backlog futuro) | ✅ adelantado |
+
+Objetivo 4 del acta (API documentada con OpenAPI antes del Sprint 6): **no se cumplió**; TEC-05 va en el Sprint 7.
+
+**Comentarios del PO durante el sprint:**
+
+| Comentario | Respuesta |
+|---|---|
+| "¿Cómo se va a cargar 2027, en automático?" | Sí: el combo Año sale de los datos y del reloj del navegador; no hay que dar de alta años |
+| ¿Cómo sincronizar local, web y app? | Una sola fuente de verdad (producción). Local es banco de pruebas; la app usa la misma API; la app de estudio, por API y webhooks (ADR-0002 §7) |
+| App para Android, en tablet y celular | Una sola app adaptable; recomendada como PWA. Pasa a la **versión 2** |
+| Terminar la versión 1 y pedir un análisis profesional para la versión 2 | Decisión: la v1 termina con el Sprint 7. Plan en [sprint-07.md](sprint-07.md#después-del-sprint-7-cierre-de-la-versión-1) |
+
+### Retrospectiva
+
+Borrador de Claude Code; el PO lo ajusta.
+
+**Salió bien**
+
+- Se entregaron los 48 puntos, incluidas tres historias pedidas durante el sprint; cada una se anotó el mismo día y se dijo que cabía (acuerdo del Sprint 5).
+- Se confirmó el despliegue después de cada fusión, y las dos migraciones del sprint se crearon una sola vez y se revisaron antes de aplicarlas.
+- Los diseños se confirmaron con un ejemplo antes de tocar el modelo: Gantt, campos de detalle, Kanban, filtro por año, Cargar información y Ver como. No hubo retrabajo de fondo.
+
+**A mejorar**
+
+- El CI falló en HU-26 porque se revisaron los tipos solo de la web. Desde entonces se corre `pnpm typecheck` completo antes de cada commit.
+- Hubo confusión con "Campos" entre HU-23a y HU-23b: el PR de la primera parte no decía qué todavía no se vería.
+- La prueba "limita los intentos" de `profile.test.ts` falla al azar cuando cambia el minuto del reloj, y en HU-55 se subió un commit con esa falla sin notarla.
+
+**Acuerdos para el Sprint 7**
+
+1. Cuando una historia se entrega en partes, el PR dice **qué todavía no se ve**.
+2. Se corrige la prueba que falla al azar (**TEC-11**, 1 pt).
+3. Siguen los acuerdos de los Sprints 4 y 5.
