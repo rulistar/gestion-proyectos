@@ -11,6 +11,7 @@ Aplicación web para gestionar proyectos personales y de un equipo pequeño (wor
 - El usuario está aprendiendo el stack: explicar el porqué de cada cambio, de forma breve.
 - Presupuesto de infraestructura: $0 (capas gratuitas).
 - Backlog priorizado: [docs/backlog.md](docs/backlog.md) · Sprint actual: [docs/sprints/](docs/sprints/).
+- **Versión 1.0 cerrada (2026-11-01)**: [docs/cierre-v1.md](docs/cierre-v1.md). Periodo de uso real y preparación de la v2: observaciones del PO en [docs/v2/observaciones-uso.md](docs/v2/observaciones-uso.md) y descripción para una revisión externa en [docs/v2/descripcion-para-revision.md](docs/v2/descripcion-para-revision.md).
 - Flujo: el usuario es el Product Owner; se trabaja una rama + un PR por elemento del backlog. `main` está protegida por un ruleset (PR + 4 checks de CI en verde).
 
 ## Decisiones de producto (PO, 2026-10-23)
