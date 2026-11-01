@@ -42,7 +42,8 @@ async function setup() {
   });
   const severidadId = field.json<{ id: string; name: string }[]>()[0]!.id;
 
-  const linux = await post(ana.cookies, `${base}/projects`, {
+  // Con ?today= el folio automático no depende del reloj (PY2610-001)
+  const linux = await post(ana.cookies, `${base}/projects?today=2026-10-31`, {
     name: 'Certificación Linux',
     area: 'TI',
     priority: 'HIGH',
