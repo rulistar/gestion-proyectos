@@ -123,16 +123,19 @@ describe('POST /auth/login', () => {
     expect((await me(second)).statusCode).toBe(200);
   });
 
-  it('limita los intentos por IP y correo: el 6.º seguido responde 429', async () => {
-    const wrong = { ...credentials, password: 'no-es-la-clave' };
-    for (let i = 0; i < 5; i++) {
-      expect((await login(wrong)).statusCode).toBe(401);
-    }
-
-    expect((await login(wrong)).statusCode).toBe(429);
-    // Otro correo desde la misma IP tiene su propio contador
-    expect((await login({ ...wrong, email: 'luis@example.com' })).statusCode).toBe(401);
-  });
+  // Argon2 es lento a propósito: más tiempo que los 5 s por omisión, y la secuencia completa si falla (TEC-11)
+  it(
+    'limita los intentos por IP y correo: el 6.º seguido responde 429',
+    { timeout: 20_000 },
+    async () => {
+      const wrong = { ...credentials, password: 'no-es-la-clave' };
+      const statuses: number[] = [];
+      for (let i = 0; i < 6; i++) statuses.push((await login(wrong)).statusCode);
+      expect(statuses).toEqual([401, 401, 401, 401, 401, 429]);
+      // Otro correo desde la misma IP tiene su propio contador
+      expect((await login({ ...wrong, email: 'luis@example.com' })).statusCode).toBe(401);
+    },
+  );
 });
 
 describe('GET /auth/me', () => {

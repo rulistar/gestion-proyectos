@@ -159,16 +159,23 @@ describe('mi perfil (HU-29)', () => {
     expect(response.statusCode).toBe(401);
   });
 
-  it('limita los intentos con la contraseña actual, como el login', async () => {
-    const cookies = await login();
-    const attempt = () =>
-      app.inject({
-        method: 'PUT',
-        url: '/api/v1/auth/me/email',
-        cookies,
-        payload: { email: 'nuevo@example.com', currentPassword: 'no-es-la-clave' },
-      });
-    for (let i = 0; i < 5; i++) expect((await attempt()).statusCode).toBe(400);
-    expect((await attempt()).statusCode).toBe(429);
-  });
+  // Cada intento verifica la contraseña con Argon2, lento a propósito: con la máquina ocupada puede
+  // pasar de los 5 s por omisión. Se juntan los códigos para que, si falla, se vea la secuencia (TEC-11)
+  it(
+    'limita los intentos con la contraseña actual, como el login',
+    { timeout: 20_000 },
+    async () => {
+      const cookies = await login();
+      const attempt = () =>
+        app.inject({
+          method: 'PUT',
+          url: '/api/v1/auth/me/email',
+          cookies,
+          payload: { email: 'nuevo@example.com', currentPassword: 'no-es-la-clave' },
+        });
+      const statuses: number[] = [];
+      for (let i = 0; i < 6; i++) statuses.push((await attempt()).statusCode);
+      expect(statuses).toEqual([400, 400, 400, 400, 400, 429]);
+    },
+  );
 });
