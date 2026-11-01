@@ -54,6 +54,7 @@ function task(overrides: Partial<WorkspaceTask>): WorkspaceTask {
     statusReason: null,
     startedAt: null,
     completedAt: null,
+    createdAt: '2026-10-01T15:00:00.000Z',
     project: linux,
     ...overrides,
   };

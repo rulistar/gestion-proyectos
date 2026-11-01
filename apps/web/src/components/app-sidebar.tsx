@@ -2,6 +2,7 @@ import { canUseTrash, roleHasPermission } from '@gestion/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import {
+  ChartColumn,
   ChartGantt,
   Download,
   Upload,
@@ -212,6 +213,17 @@ export function AppSidebar() {
           >
             <ChartGantt aria-hidden />
             Gantt
+          </Link>
+        )}
+        {current && (
+          <Link
+            to="/w/$workspaceId/indicadores"
+            params={{ workspaceId: current.id }}
+            className={itemClass}
+            activeProps={{ className: 'bg-accent text-accent-foreground', 'aria-current': 'page' }}
+          >
+            <ChartColumn aria-hidden />
+            Indicadores
           </Link>
         )}
         {/* Papelera: para quien puede dar de baja algo (ADR-0006 §3), no solo el Admin */}

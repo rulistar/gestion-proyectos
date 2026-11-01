@@ -91,6 +91,8 @@ export const taskSchema = z.object({
   startedAt: z.iso.datetime().nullable(),
   /** Cuándo pasó a Hecha; null si no está Hecha */
   completedAt: z.iso.datetime().nullable(),
+  /** Alta de la tarea: desde ahí se miden la espera y la atención (HU-12, ADR-0004 §2.1) */
+  createdAt: z.iso.datetime(),
   /** Valores de los campos de detalle (HU-23b), por ID de campo */
   details: detailValuesSchema,
 });

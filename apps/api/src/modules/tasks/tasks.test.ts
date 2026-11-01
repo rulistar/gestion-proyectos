@@ -204,10 +204,13 @@ describe('POST .../tasks (HU-08)', () => {
       endDate: '2026-11-20',
       completedAt: null,
       startedAt: null,
+      createdAt: task.createdAt,
       statusReason: null,
     });
     const row = await db.task.findUniqueOrThrow({ where: { id: task.id } });
     expect(row).toMatchObject({ workspaceId: ws.id, createdById: ana.user.id });
+    // El alta viaja en la respuesta: la usan los indicadores de espera y atención (HU-12)
+    expect(task.createdAt).toBe(row.createdAt.toISOString());
   });
 
   it('el responsable es una persona del catálogo, con o sin cuenta (HU-35)', async () => {
