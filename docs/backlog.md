@@ -752,7 +752,9 @@ _Como Admin del espacio, quiero ver lo que ve un miembro sin entrar con su cuent
 
 _Como equipo, queremos que el CI falle solo por errores reales, para confiar en sus resultados._ Acuerdo de la retrospectiva del Sprint 6.
 
-- [ ] La prueba "limita los intentos" de `profile.test.ts` no depende del minuto del reloj (pasa aunque la ventana del límite se reinicie a la mitad).
+- [x] Causa revisada: la ventana del límite empieza con el primer intento (no con el minuto del reloj) y cada prueba usa un contador nuevo, así que esa no era la causa. No se reprodujo en 12 corridas con la CPU saturada, y el registro de la falla no guardó el mensaje.
+- [x] Las dos pruebas de límite con contraseña (login y Mi perfil) hacen 6 verificaciones de Argon2, lento a propósito: ahora tienen 20 s de margen en lugar de 5, y comparan la secuencia completa de códigos (`[400, 400, 400, 400, 400, 429]`) para que, si vuelve a fallar, se vea qué pasó.
+- [x] Revisión de pruebas que dependen de la fecha real: la de Exportar se corrigió en #94; las de folios fijan `?today=`; las demás usan tiempos relativos (`Date.now() ± 1 min`). La de folio sin `?today=` en `projects.test.ts` prueba a propósito el mes en UTC y solo fallaría en el milisegundo del cambio de mes.
 
 ### Versión 2 (criterios por detallar en su planificación)
 
