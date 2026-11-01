@@ -11,7 +11,7 @@ Aplicación web para gestionar proyectos personales y de un equipo pequeño (wor
 - El usuario está aprendiendo el stack: explicar el porqué de cada cambio, de forma breve.
 - Presupuesto de infraestructura: $0 (capas gratuitas).
 - Backlog priorizado: [docs/backlog.md](docs/backlog.md) · Sprint actual: [docs/sprints/](docs/sprints/).
-- Flujo: el usuario es el Product Owner; se trabaja una rama + un PR por elemento del backlog. `main` está protegida (PR + 3 checks de CI en verde).
+- Flujo: el usuario es el Product Owner; se trabaja una rama + un PR por elemento del backlog. `main` está protegida por un ruleset (PR + 4 checks de CI en verde).
 
 ## Decisiones de producto (PO, 2026-10-23)
 
@@ -243,7 +243,7 @@ Antes de dar una tarea por terminada: `pnpm format:check && pnpm lint && pnpm ty
 5. **Autenticación**: sesiones en cookie `HttpOnly` + `Secure` + `SameSite`; contraseñas con Argon2. Nunca tokens en `localStorage`.
 6. Al exponer la API: helmet, CORS restringido a orígenes conocidos, rate limiting.
 7. No registrar en logs contraseñas, tokens, cookies ni datos personales.
-8. `main` está protegida: todo cambio entra por Pull Request con CI en verde (lint, tipos, pruebas, `pnpm audit` sin altas/críticas, gitleaks sin hallazgos).
+8. `main` está protegida: todo cambio entra por Pull Request con CI en verde (lint, tipos, pruebas, `pnpm audit` sin altas/críticas, gitleaks sin hallazgos y el recorrido de Playwright).
 9. No desactivar hooks (`--no-verify`) ni reglas de lint/TS para "hacer pasar" algo; corregir la causa.
 10. Revisar qué hace una dependencia nueva antes de proponerla; preferir paquetes mantenidos y populares.
 
