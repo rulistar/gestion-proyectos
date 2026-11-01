@@ -69,6 +69,8 @@ describe('catálogo de personas (HU-34)', () => {
         archived: false,
         taskCount: 0,
         projectCount: 0,
+        sharedFrom: null,
+        sharedWith: [],
       },
     ]);
   });

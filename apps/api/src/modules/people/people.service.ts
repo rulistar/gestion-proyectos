@@ -23,8 +23,22 @@ export class PersonNotDeletableError extends Error {}
 export class InvalidMergeTargetError extends Error {}
 /** Fusionar (HU-51): las dos tienen cuenta, son usuarios distintos (→ 409) */
 export class BothLinkedError extends Error {}
+/** Compartir (HU-50): su cuenta ya tiene su propia persona en ese espacio (→ 409) */
+export class AlreadyInWorkspaceError extends Error {}
+/** Está compartida con otros espacios: primero se deja de compartir (HU-50, → 409) */
+export class PersonSharedError extends Error {}
+/** Dejar de compartir (HU-50): aquí es Responsable de tareas o tiene un rol en proyectos (→ 409) */
+export class PersonInUseError extends Error {}
 
 const activePerson = { archivedAt: null } as const;
+
+/**
+ * Personas que se pueden usar en un espacio (HU-50): las suyas y las que otros espacios le
+ * compartieron. Editar, archivar, fusionar y borrar siguen siendo solo del espacio dueño.
+ */
+export function availableIn(workspaceId: string) {
+  return { OR: [{ workspaceId }, { shares: { some: { workspaceId } } }] };
+}
 
 /** Lo que se lee de una persona asignada (tarea o proyecto): si su cuenta sigue con acceso */
 export const personSelect = {
@@ -61,10 +75,11 @@ export function toPersonRef(person: PersonRow, workspaceId: string): PersonRef |
   };
 }
 
+/** ¿Otra persona activa usable en el espacio (suya o compartida) ya tiene ese nombre? */
 async function nameTaken(db: Db | Tx, workspaceId: string, name: string, exceptId?: string) {
   const found = await db.person.findFirst({
     where: {
-      workspaceId,
+      ...availableIn(workspaceId),
       ...activePerson,
       name: { equals: name, mode: 'insensitive' },
       ...(exceptId && { id: { not: exceptId } }),
@@ -156,16 +171,25 @@ async function projectCounts(db: Db | Tx, workspaceId: string): Promise<Map<stri
   return counts;
 }
 
-/** Catálogo del espacio, archivadas incluidas, por nombre */
+/**
+ * Catálogo del espacio, archivadas incluidas, por nombre: las suyas y las compartidas con él
+ * (HU-50). Las cuentas de tareas y proyectos son de este espacio
+ */
 export async function listPeople(db: Db, workspaceId: string): Promise<Person[]> {
   const projects = await projectCounts(db, workspaceId);
   const rows = await db.person.findMany({
-    where: { workspaceId },
+    where: availableIn(workspaceId),
     select: {
       id: true,
       name: true,
       userId: true,
       archivedAt: true,
+      workspaceId: true,
+      workspace: { select: { name: true } },
+      shares: {
+        select: { workspaceId: true, workspace: { select: { name: true } } },
+        orderBy: { workspace: { name: 'asc' } },
+      },
       user: {
         select: {
           name: true,
@@ -173,20 +197,28 @@ export async function listPeople(db: Db, workspaceId: string): Promise<Person[]>
           memberships: { where: { workspaceId, ...notDeleted }, select: { id: true } },
         },
       },
-      // Todas las filas, papelera incluida: la BD no deja borrar a alguien que una tarea cita
-      _count: { select: { tasksResponsible: true } },
+      // Las de este espacio, papelera incluida: la BD no deja borrar a alguien que una tarea cita.
+      // Una compartida no se borra (se deja de compartir antes), así que no hay tareas en otros
+      _count: { select: { tasksResponsible: { where: { workspaceId } } } },
     },
     orderBy: { name: 'asc' },
   });
-  return rows.map(({ archivedAt, user, _count, ...row }) => ({
-    ...row,
-    userName: user?.name ?? null,
-    // Sin cuenta no hay acceso que perder; con cuenta, debe seguir siendo miembro activo
-    hasAccess: user !== null && user.status === 'ACTIVE' && user.memberships.length > 0,
-    archived: archivedAt !== null,
-    taskCount: _count.tasksResponsible,
-    projectCount: projects.get(row.id) ?? 0,
-  }));
+  return rows.map(
+    ({ archivedAt, user, _count, workspace, shares, workspaceId: ownerId, ...row }) => ({
+      ...row,
+      sharedFrom: ownerId === workspaceId ? null : { workspaceId: ownerId, name: workspace.name },
+      sharedWith:
+        ownerId === workspaceId
+          ? shares.map((share) => ({ workspaceId: share.workspaceId, name: share.workspace.name }))
+          : [],
+      userName: user?.name ?? null,
+      // Sin cuenta no hay acceso que perder; con cuenta, debe seguir siendo miembro activo
+      hasAccess: user !== null && user.status === 'ACTIVE' && user.memberships.length > 0,
+      archived: archivedAt !== null,
+      taskCount: _count.tasksResponsible,
+      projectCount: projects.get(row.id) ?? 0,
+    }),
+  );
 }
 
 export async function createPerson(
@@ -214,19 +246,23 @@ export async function updatePerson(
   return db.$transaction(async (tx) => {
     const person = await tx.person.findFirst({
       where: { id: personId, workspaceId },
-      select: { name: true, archivedAt: true },
+      select: { name: true, archivedAt: true, shares: { select: { workspaceId: true } } },
     });
     if (!person) return false;
+    // Se edita en su espacio, pero el nombre debe estar libre donde se comparte (HU-50)
+    const usedIn = [workspaceId, ...person.shares.map((share) => share.workspaceId)];
 
     const willBeActive = archived === undefined ? person.archivedAt === null : !archived;
-    if (willBeActive && (await nameTaken(tx, workspaceId, name ?? person.name, personId))) {
-      throw new DuplicatePersonNameError();
+    for (const ws of willBeActive ? usedIn : []) {
+      if (await nameTaken(tx, ws, name ?? person.name, personId)) {
+        throw new DuplicatePersonNameError();
+      }
     }
     if (userId) {
       const member = await tx.membership.count({ where: { workspaceId, userId, ...notDeleted } });
       if (member === 0) throw new NotAMemberError();
       const linked = await tx.person.findFirst({
-        where: { workspaceId, userId, id: { not: personId } },
+        where: { workspaceId: { in: usedIn }, userId, id: { not: personId } },
         select: { id: true },
       });
       if (linked) throw new UserAlreadyLinkedError();
@@ -257,7 +293,7 @@ export async function personUsage(
   personId: string,
 ): Promise<PersonUsage | null> {
   const person = await db.person.findFirst({
-    where: { id: personId, workspaceId },
+    where: { id: personId, ...availableIn(workspaceId) },
     select: { id: true },
   });
   if (!person) return null;
@@ -336,7 +372,9 @@ export async function assignablePeople(
     ...new Set(requested.filter((id): id is string => id !== null && !kept.includes(id))),
   ];
   if (ids.length === 0) return true;
-  const found = await db.person.count({ where: { id: { in: ids }, workspaceId, ...activePerson } });
+  const found = await db.person.count({
+    where: { id: { in: ids }, ...availableIn(workspaceId), ...activePerson },
+  });
   return found === ids.length;
 }
 
@@ -372,12 +410,14 @@ export async function mergePerson(
   return db.$transaction(async (tx) => {
     const people = await tx.person.findMany({
       where: { id: { in: [personId, intoId] }, workspaceId },
-      select: { id: true, userId: true, archivedAt: true },
+      select: { id: true, userId: true, archivedAt: true, _count: { select: { shares: true } } },
     });
     const from = people.find((person) => person.id === personId);
     const into = people.find((person) => person.id === intoId);
     if (!from || !into) return null;
     if (into.archivedAt) throw new InvalidMergeTargetError();
+    // Sus tareas en otros espacios no se moverían: primero se deja de compartir (HU-50)
+    if (from._count.shares > 0) throw new PersonSharedError();
     if (from.userId && into.userId) throw new BothLinkedError();
 
     const tasks = await tx.task.updateMany({
@@ -423,5 +463,74 @@ export async function mergePerson(
 
     await tx.person.delete({ where: { id: personId } });
     return { tasks: tasks.count, projects };
+  });
+}
+
+/**
+ * Comparte una persona de este espacio con otro (HU-50). null si no es de este espacio o está
+ * archivada (→ 404). El nombre debe estar libre allá, y si tiene cuenta, esa cuenta no debe tener
+ * ya su propia persona allá (sería la misma persona dos veces). Compartir de nuevo no hace nada.
+ */
+export async function sharePerson(
+  db: Db,
+  actorId: string,
+  workspaceId: string,
+  personId: string,
+  targetWorkspaceId: string,
+): Promise<boolean | null> {
+  return db.$transaction(async (tx) => {
+    const person = await tx.person.findFirst({
+      where: { id: personId, workspaceId, ...activePerson },
+      select: { name: true, userId: true },
+    });
+    if (!person) return null;
+    const already = await tx.personShare.findUnique({
+      where: { personId_workspaceId: { personId, workspaceId: targetWorkspaceId } },
+    });
+    if (already) return true;
+    if (await nameTaken(tx, targetWorkspaceId, person.name)) throw new DuplicatePersonNameError();
+    if (person.userId) {
+      const own = await tx.person.findFirst({
+        where: { workspaceId: targetWorkspaceId, userId: person.userId },
+        select: { id: true },
+      });
+      if (own) throw new AlreadyInWorkspaceError();
+    }
+    await tx.personShare.create({
+      data: { personId, workspaceId: targetWorkspaceId, createdById: actorId },
+    });
+    return true;
+  });
+}
+
+/**
+ * Deja de compartir aquí una persona de otro espacio (HU-50). null si no está compartida con este
+ * espacio (→ 404); PersonInUseError si aquí es Responsable o tiene un rol en un proyecto (papelera
+ * incluida). Quien seguía su trabajo aquí (HU-52) deja de hacerlo.
+ */
+export async function unsharePerson(
+  db: Db,
+  workspaceId: string,
+  personId: string,
+): Promise<boolean | null> {
+  return db.$transaction(async (tx) => {
+    const share = await tx.personShare.findUnique({
+      where: { personId_workspaceId: { personId, workspaceId } },
+    });
+    if (!share) return null;
+    const [tasks, projects] = await Promise.all([
+      tx.task.count({ where: { workspaceId, responsiblePersonId: personId } }),
+      tx.project.count({
+        where: { workspaceId, OR: PROJECT_ROLES.map((role) => ({ [role]: personId })) },
+      }),
+    ]);
+    if (tasks + projects > 0) throw new PersonInUseError();
+    await tx.membershipPersonAccess.deleteMany({
+      where: { personId, membership: { workspaceId } },
+    });
+    await tx.personShare.delete({
+      where: { personId_workspaceId: { personId, workspaceId } },
+    });
+    return true;
   });
 }

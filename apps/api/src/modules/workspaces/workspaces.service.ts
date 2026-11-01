@@ -11,7 +11,7 @@ import {
 import type { Db, Tx } from '../../db/client.js';
 import { parsePermissions } from './access.js';
 import { auditCreate, auditSoftDelete, auditUpdate, notDeleted } from '../../db/audit.js';
-import { displayNames, ensureMemberPerson } from '../people/people.service.js';
+import { availableIn, displayNames, ensureMemberPerson } from '../people/people.service.js';
 import { seedCatalog } from '../project-types/project-types.service.js';
 
 /**
@@ -180,7 +180,7 @@ async function watchedInWorkspace(
 ): Promise<string[]> {
   const requested = [...new Set(ids)];
   const people = await tx.person.findMany({
-    where: { id: { in: requested }, workspaceId },
+    where: { id: { in: requested }, ...availableIn(workspaceId) },
     select: { id: true, userId: true },
   });
   if (people.length !== requested.length) throw new InvalidWatchedPeopleError();

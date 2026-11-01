@@ -1,6 +1,7 @@
 import type { MoveProjectInput, MoveTaskInput } from '@gestion/shared';
 import type { Db, Tx } from '../../db/client.js';
 import { auditCreate, auditUpdate, notDeleted } from '../../db/audit.js';
+import { availableIn } from '../people/people.service.js';
 
 /** El tipo de contenedor elegido no existe (activo) en el espacio de destino (→ 400) */
 export class InvalidTargetTypeError extends Error {}
@@ -44,11 +45,20 @@ class CatalogMapper {
     const cached = this.people.get(personId);
     if (cached) return cached;
 
+    const ws = this.targetWorkspaceId;
+    // Compartida con el destino (o de él): es la misma persona (HU-50)
+    const shared = await this.tx.person.findFirst({
+      where: { id: personId, ...availableIn(ws) },
+      select: { id: true },
+    });
+    if (shared) {
+      this.people.set(personId, personId);
+      return personId;
+    }
     const source = await this.tx.person.findUniqueOrThrow({
       where: { id: personId },
       select: { name: true, userId: true, user: { select: { email: true } } },
     });
-    const ws = this.targetWorkspaceId;
     const existing = source.userId
       ? await this.tx.person.findFirst({ where: { workspaceId: ws, userId: source.userId } })
       : await this.tx.person.findFirst({

@@ -77,3 +77,38 @@ export function useMergePerson(workspaceId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] }),
   });
 }
+
+/**
+ * Compartir con otro espacio (HU-50): cambian los catálogos de los dos espacios, así que se
+ * refrescan ambos
+ */
+export function useSharePerson(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ personId, targetId }: { personId: string; targetId: string }) =>
+      apiFetch(`${peoplePath(workspaceId)}/${personId}/shares`, {
+        method: 'POST',
+        body: { workspaceId: targetId },
+        schema: personListSchema,
+      }),
+    onSuccess: (_data, { targetId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] }),
+        queryClient.invalidateQueries({ queryKey: ['workspaces', targetId] }),
+      ]),
+  });
+}
+
+/** Dejar de compartir aquí una persona de otro espacio (HU-50); allá sigue igual */
+export function useUnsharePerson(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ personId }: { personId: string; ownerId: string }) =>
+      apiFetch(`${peoplePath(workspaceId)}/${personId}/share`, { method: 'DELETE' }),
+    onSuccess: (_data, { ownerId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] }),
+        queryClient.invalidateQueries({ queryKey: ['workspaces', ownerId] }),
+      ]),
+  });
+}

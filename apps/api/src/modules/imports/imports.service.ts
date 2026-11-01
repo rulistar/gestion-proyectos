@@ -20,6 +20,7 @@ import { listDetailFields, parseDetails } from '../detail-fields/detail-fields.s
 import { resolveFolio } from '../projects/folios.js';
 import { realDatesFor } from '../projects/projects.service.js';
 import { completedAtFor, startedAtFor } from '../tasks/tasks.service.js';
+import { availableIn } from '../people/people.service.js';
 
 /** Límites para que una carga no tumbe el servicio gratuito */
 const MAX_CONTAINERS = 1000;
@@ -104,8 +105,9 @@ async function loadWorkspace(db: Db | Tx, workspaceId: string) {
       where: { workspaceId },
       select: { id: true, name: true, archivedAt: true },
     }),
+    // Las del espacio y las compartidas con él (HU-50)
     db.person.findMany({
-      where: { workspaceId },
+      where: availableIn(workspaceId),
       select: { id: true, name: true, archivedAt: true },
     }),
     listDetailFields(db as Db, workspaceId),

@@ -18,17 +18,38 @@ export const personSchema = z.object({
   taskCount: z.number().int(),
   /** Proyectos donde tiene un rol (Solicitante, PM…), papelera incluida */
   projectCount: z.number().int(),
+  /**
+   * Compartida desde otro espacio (HU-50): ahí se edita; aquí solo se asigna. null = es de este
+   * espacio. Solo lo recibe el Admin; para los demás, null
+   */
+  sharedFrom: z.object({ workspaceId: z.uuid(), name: z.string() }).nullable(),
+  /** Espacios con los que este la compartió (HU-50); solo lo recibe el Admin */
+  sharedWith: z.array(z.object({ workspaceId: z.uuid(), name: z.string() })),
 });
 export type Person = z.infer<typeof personSchema>;
 
 /**
  * ¿Se puede borrar definitivamente? (HU-44) Solo archivada y sin uso: nadie la cita en tareas ni
- * proyectos, y su cuenta (si tiene) ya no es miembro del espacio
+ * proyectos, y su cuenta (si tiene) ya no es miembro del espacio. Además, es de este espacio y no
+ * está compartida con otros (HU-50)
  */
 export function canDeletePerson(person: Person): boolean {
   return (
-    person.archived && person.taskCount === 0 && person.projectCount === 0 && !person.hasAccess
+    person.archived &&
+    person.taskCount === 0 &&
+    person.projectCount === 0 &&
+    !person.hasAccess &&
+    person.sharedFrom === null &&
+    person.sharedWith.length === 0
   );
+}
+
+/**
+ * ¿Se puede dejar de compartir aquí? (HU-50) Solo una persona compartida desde otro espacio que en
+ * este no es Responsable de ninguna tarea ni tiene un rol en un proyecto (papelera incluida)
+ */
+export function canUnsharePerson(person: Person): boolean {
+  return person.sharedFrom !== null && person.taskCount === 0 && person.projectCount === 0;
 }
 
 export const personListSchema = z.array(personSchema);
@@ -94,6 +115,10 @@ export const personUsageSchema = z.object({
   ),
 });
 export type PersonUsage = z.infer<typeof personUsageSchema>;
+
+/** Cuerpo de POST .../people/:personId/shares (HU-50): el espacio con el que se comparte */
+export const sharePersonSchema = z.object({ workspaceId: z.uuid() });
+export type SharePersonInput = z.infer<typeof sharePersonSchema>;
 
 /** Cuerpo de POST .../people/:personId/merge (HU-51): la persona que se queda */
 export const mergePersonSchema = z.object({ intoId: z.uuid() });
