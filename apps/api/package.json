@@ -20,6 +20,7 @@
     "db:generate": "prisma generate",
     "setup:admin": "tsx --env-file-if-exists=../../.env --conditions=@gestion/source src/cli/setup-admin.ts",
     "reset:password": "tsx --env-file-if-exists=../../.env --conditions=@gestion/source src/cli/reset-password.ts",
+    "e2e:serve": "tsx --env-file-if-exists=../../.env --conditions=@gestion/source src/test/e2e-server.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

@@ -29,24 +29,24 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 
 ## Stack (ADR-0001)
 
-| Capa          | Tecnología                                                                           | Estado                                  |
-| ------------- | ------------------------------------------------------------------------------------ | --------------------------------------- |
-| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                                   | ✅ instalado                            |
-| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                                      | ✅ instalado                            |
-| Backend       | Fastify 5 + TypeScript                                                               | ✅ instalado                            |
-| Validación    | Zod 4 (compartido en `packages/shared`)                                              | ✅ instalado                            |
-| Base de datos | PostgreSQL 17 (Docker Compose) + Prisma 7.10 (`@prisma/adapter-pg` + `pg`)           | ✅ instalado                            |
-| Pruebas       | Vitest (unitarias + integración contra PostgreSQL real)                              | ✅ instalado                            |
-| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged                         | ✅ instalado                            |
-| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                                  | ✅ configurado                          |
-| Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)                   | ✅ instalado                            |
-| Contraseñas   | `argon2` 0.45 (Argon2id, binario nativo; TEC-07)                                     | ✅ instalado                            |
-| Sesiones      | `@fastify/cookie` (cookie HttpOnly + sesión en BD; HU-02)                            | ✅ instalado                            |
-| Web (TEC-03)  | TanStack Router (ADR-0003), TanStack Query, shadcn/ui (copiado a mano)               | ✅ instalado                            |
-| Interfaz      | `lucide-react` (iconos), Radix Dialog y Dropdown Menu, `sonner` (avisos); HU-28      | ✅ instalado                            |
-| Despliegue    | Render Free (app) + Neon Free (BD); `@fastify/static` sirve la web (ADR-0007)        | ✅ configurado (`render.yaml`)          |
-| Documentación | `@fastify/swagger` 9.9 + `@fastify/swagger-ui` 6.1: OpenAPI en /api/v1/docs (TEC-05) | ✅ instalado                            |
-| Pendientes    | Playwright                                                                           | ⏳ se instala en la historia que lo use |
+| Capa          | Tecnología                                                                           | Estado                         |
+| ------------- | ------------------------------------------------------------------------------------ | ------------------------------ |
+| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                                   | ✅ instalado                   |
+| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                                      | ✅ instalado                   |
+| Backend       | Fastify 5 + TypeScript                                                               | ✅ instalado                   |
+| Validación    | Zod 4 (compartido en `packages/shared`)                                              | ✅ instalado                   |
+| Base de datos | PostgreSQL 17 (Docker Compose) + Prisma 7.10 (`@prisma/adapter-pg` + `pg`)           | ✅ instalado                   |
+| Pruebas       | Vitest (unitarias + integración contra PostgreSQL real)                              | ✅ instalado                   |
+| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged                         | ✅ instalado                   |
+| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                                  | ✅ configurado                 |
+| Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)                   | ✅ instalado                   |
+| Contraseñas   | `argon2` 0.45 (Argon2id, binario nativo; TEC-07)                                     | ✅ instalado                   |
+| Sesiones      | `@fastify/cookie` (cookie HttpOnly + sesión en BD; HU-02)                            | ✅ instalado                   |
+| Web (TEC-03)  | TanStack Router (ADR-0003), TanStack Query, shadcn/ui (copiado a mano)               | ✅ instalado                   |
+| Interfaz      | `lucide-react` (iconos), Radix Dialog y Dropdown Menu, `sonner` (avisos); HU-28      | ✅ instalado                   |
+| Despliegue    | Render Free (app) + Neon Free (BD); `@fastify/static` sirve la web (ADR-0007)        | ✅ configurado (`render.yaml`) |
+| Documentación | `@fastify/swagger` 9.9 + `@fastify/swagger-ui` 6.1: OpenAPI en /api/v1/docs (TEC-05) | ✅ instalado                   |
+| Pruebas e2e   | `@playwright/test` 1.64 (TEC-06): Edge instalado en local, Chromium en el CI         | ✅ instalado                   |
 
 **No agregar dependencias fuera del ADR sin preguntar al usuario.**
 
@@ -159,9 +159,13 @@ apps/
     src/db/client.ts    createDb(): PrismaClient con el adaptador pg; se inyecta en buildApp({ db }) → app.db
     src/db/audit.ts     auditCreate/auditUpdate/auditSoftDelete/auditRestore + filtro notDeleted (RNF-01, RNF-05)
     src/generated/      cliente de Prisma generado (ignorado por Git; se regenera en pnpm install)
-    src/test/           BD de pruebas: global-setup (crea + migra), test-db (createTestDb, resetDb)
+    src/test/           BD de pruebas: global-setup (crea + migra; prepareDatabase), test-db (createTestDb, resetDb).
+                        e2e-server.ts = servidor de Playwright (pnpm e2e:serve): BD <DATABASE_URL>_e2e vacía en cada
+                        corrida, primer Admin con contraseña de un solo uso, sirve la web compilada en :3100
     prisma/             schema.prisma + migrations/ (versionadas en Git)
     prisma.config.ts    configuración de Prisma 7 (carga el .env de la raíz)
+  e2e/                Playwright (TEC-06): playwright.config.ts (arranca e2e-server; en local channel msedge
+                        porque Smart App Control bloquea navegadores descargados) y tests/*.spec.ts
 packages/
   shared/             esquemas Zod + tipos (z.infer) usados por web y api
     src/schemas/permissions.ts  catálogo de permisos por rol (roleHasPermission)
@@ -219,6 +223,7 @@ pnpm setup:admin       # crea el primer Admin (interactivo; solo si no hay usuar
 pnpm reset:password    # restablece la contraseña de una cuenta por su correo (interactivo; HU-54)
 pnpm dev               # api (:3000) + web (:5173) en paralelo
 pnpm test              # Vitest en todos los paquetes (requiere pnpm db:up)
+pnpm test:e2e          # compila la web y recorre la app en Edge con Playwright (requiere pnpm db:up)
 pnpm lint              # ESLint   | pnpm lint:fix
 pnpm format            # Prettier | pnpm format:check
 pnpm typecheck         # tsc --noEmit en todos los paquetes

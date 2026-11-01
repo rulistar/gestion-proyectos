@@ -760,6 +760,15 @@ _Como responsable, quiero ver gráficas de mis contenedores e indicadores de tie
 - [x] Menú → **Indicadores**: por tipo de tarea y por tipo de contenedor, de lo terminado en el año elegido: cantidad, espera (alta → inicio real), trabajo (inicio → fin real), atención (alta → fin real), % a tiempo y desviación promedio (ADR-0004 §2.1). Solo lo que la persona ve.
 - [x] Las tareas ahora traen su fecha de alta (`createdAt`) en la API. Barras con CSS, sin librería ni migración.
 
+#### TEC-06 · Pruebas de punta a punta con Playwright (3 pts)
+
+_Como PO, quiero que una prueba recorra la app en un navegador real en cada PR, para saber que web, API y BD siguen funcionando juntas antes de fusionar._ Decisiones del PO (2026-11-01): en su PC, el Edge instalado (Smart App Control bloquea navegadores descargados); en el CI, como 4.º check.
+
+- [x] `pnpm test:e2e`: compila la web y Playwright arranca un servidor de pruebas con su propia BD (`<DATABASE_URL>_e2e`, vacía en cada corrida) y el primer Admin con una contraseña generada en cada corrida (sin secretos en el código).
+- [x] Recorrido: iniciar sesión → crear un proyecto → agregarle una tarea → pasarla a Hecha → el avance sube de 0 % a 100 % y dice "1 de 1 tareas".
+- [x] CI: trabajo «Pruebas en el navegador (Playwright)» con PostgreSQL efímero y el Chromium de Playwright. Hacerlo obligatorio en la protección de `main` lo decide el PO.
+- [x] Paquete `@playwright/test` 1.64.1 (oficial de Microsoft), versión fija con más de dos semanas de publicada. En `apps/e2e`.
+
 #### TEC-05 · Documentación OpenAPI (3 pts)
 
 _Como responsable de una app que se integrará, quiero la API documentada, para saber qué pide y qué devuelve cada ruta sin leer el código._ Objetivo 4 del acta. Decisiones del PO (2026-11-01): `@fastify/swagger` y `@fastify/swagger-ui`; en producción solo con sesión iniciada.

@@ -3,9 +3,8 @@ import { createDb } from '../db/client.js';
 import { testDatabaseUrl } from './test-db.js';
 
 /**
- * Se ejecuta una vez antes de todas las pruebas:
- * 1. crea la BD de pruebas si no existe;
- * 2. le aplica todas las migraciones (igual que en producción, con `migrate deploy`).
+ * Se ejecuta una vez antes de todas las pruebas: crea la BD de pruebas si no existe y le aplica
+ * todas las migraciones (igual que en producción, con `migrate deploy`).
  */
 export default async function globalSetup(): Promise<void> {
   try {
@@ -14,7 +13,15 @@ export default async function globalSetup(): Promise<void> {
     // Sin .env (por ejemplo en CI): se usan las variables de entorno del sistema
   }
 
-  const url = new URL(testDatabaseUrl());
+  await prepareDatabase(testDatabaseUrl());
+}
+
+/**
+ * Crea la BD si no existe y le aplica las migraciones. También la usa el servidor de las pruebas
+ * de punta a punta (e2e-server.ts) con su propia BD.
+ */
+export async function prepareDatabase(databaseUrl: string): Promise<void> {
+  const url = new URL(databaseUrl);
   const dbName = url.pathname.slice(1);
   // CREATE DATABASE no admite parámetros: se valida el nombre antes de usarlo en el SQL
   if (!/^[a-z0-9_]+$/.test(dbName)) {
