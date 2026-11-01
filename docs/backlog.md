@@ -567,13 +567,15 @@ _Como Admin, quiero que un Lector vea solo lo de trabajo y que un Miembro vea to
 - [x] La plantilla Miembro ve **todas las tareas de los contenedores que ve**, también donde solo tiene una tarea asignada. Ej.: prueba4 ve todas las tareas de «Certificación Linux», pero solo modifica las que creó o donde es Responsable (las suyas).
 - [x] La migración actualiza a los Lectores y Miembros que tenían la plantilla sin ajustes (también en invitaciones pendientes); los «(ajustado)» se quedan igual.
 
-#### HU-50 · Catálogo de personas compartido entre espacios (5 pts) — pasa al Sprint 7
+#### HU-50 · Catálogo de personas compartido entre espacios (5 pts) — Sprint 7
 
 _Como Admin, quiero que una persona dada de alta en un espacio aparezca en otros, para no darla de alta dos veces._ Pedido del PO (2026-10-28). **Diseño confirmado por el PO (2026-10-30)** con el ejemplo de Luis.
 
-- [ ] En Personas, «Compartir con…» ofrece los espacios donde soy Admin. Ej.: Luis, de workpers, compartido con Monex, aparece en Personas de Monex («compartida desde workpers») y en sus combos de Responsable, PM, etc.
-- [ ] Solo se edita, archiva o borra desde su espacio dueño; en los otros, «Dejar de compartir» si no está asignada a nada ahí.
-- [ ] Compartir exige ser Admin en ambos espacios.
+- [x] En Personas, «Compartir con…» ofrece los espacios donde soy Admin. Ej.: Luis, de workpers, compartido con Monex, aparece en Personas de Monex («compartida desde workpers») y en sus combos de Responsable, PM, etc.
+- [x] Solo se edita, archiva o borra desde su espacio dueño; en los otros, «Dejar de compartir» si no está asignada a nada ahí.
+- [x] Compartir exige ser Admin en ambos espacios.
+- [x] Reglas para no duplicar: no se comparte si en el otro espacio ya hay una persona activa con ese nombre, ni una persona con cuenta cuya cuenta ya tiene su propia persona allá (es miembro). Renombrarla exige que el nombre esté libre también donde se comparte. Fusionarla o borrarla exige dejar de compartirla antes.
+- [x] Mover un contenedor o una tarea (HU-32) a un espacio donde la persona está compartida conserva la misma persona; Cargar información (HU-14) la reconoce por nombre. Quién la ve en Personas «compartida desde…» es solo el Admin. Tabla `person_shares` (migración `person_shares_hu50`).
 
 #### HU-51 · Fusionar personas duplicadas (3 pts)
 

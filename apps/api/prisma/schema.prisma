@@ -72,6 +72,22 @@ model MembershipProjectAccess {
 
 /// Personas cuyo trabajo puede ver un miembro, en solo lectura (HU-52): las tareas donde son
 /// Responsables y, por ellas, sus contenedores
+/// Persona compartida con otro espacio (HU-50): se asigna ahí, pero se edita solo en su espacio dueño
+model PersonShare {
+  personId    String    @map("person_id") @db.Uuid
+  person      Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  workspaceId String    @map("workspace_id") @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdBy   User?    @relation("PersonShareCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@id([personId, workspaceId])
+  @@index([workspaceId])
+  @@map("person_shares")
+}
+
 model MembershipPersonAccess {
   membershipId String     @map("membership_id") @db.Uuid
   membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
@@ -114,6 +130,8 @@ model Person {
   projectsPartnered Project[]                @relation("ProjectBusinessPartner")
   /// Miembros que pueden ver su trabajo (HU-52)
   watchers          MembershipPersonAccess[]
+  /// Otros espacios donde también se puede asignar (HU-50); su dueño sigue siendo workspaceId
+  shares            PersonShare[]
 
   @@unique([workspaceId, name], where: { archivedAt: null })
   @@unique([workspaceId, userId])
@@ -377,6 +395,7 @@ model User {
   people                  Person[]                  @relation("PersonUser")
   peopleCreated           Person[]                  @relation("PersonCreatedBy")
   peopleUpdated           Person[]                  @relation("PersonUpdatedBy")
+  personSharesCreated     PersonShare[]             @relation("PersonShareCreatedBy")
   projectTypesCreated     ProjectType[]             @relation("ProjectTypeCreatedBy")
   projectTypesUpdated     ProjectType[]             @relation("ProjectTypeUpdatedBy")
   taskTypesCreated        TaskType[]                @relation("TaskTypeCreatedBy")
@@ -454,6 +473,8 @@ model Workspace {
   detailFields     DetailField[]
   folioCounters    FolioCounter[]
   people           Person[]
+  /// Personas de otros espacios compartidas con este (HU-50)
+  sharedPeople     PersonShare[]
   phases           Phase[]
   tasks            Task[]
   invitations      Invitation[]

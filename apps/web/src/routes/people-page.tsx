@@ -1,5 +1,6 @@
 import {
   canDeletePerson,
+  canUnsharePerson,
   createPersonSchema,
   roleHasPermission,
   type Member,
@@ -8,7 +9,17 @@ import {
 } from '@gestion/shared';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import { Archive, ArchiveRestore, Check, Merge, Pencil, Trash2, X } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  Check,
+  Merge,
+  Pencil,
+  Share2,
+  Trash2,
+  Unlink,
+  X,
+} from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
@@ -35,8 +46,11 @@ import {
   useCreatePerson,
   useDeletePerson,
   useMergePerson,
+  useSharePerson,
+  useUnsharePerson,
   useUpdatePerson,
 } from '@/lib/people';
+import { useCurrentUser } from '@/lib/auth';
 import { useSchemaForm } from '@/lib/use-schema-form';
 import { membersQueryOptions, workspaceQueryOptions } from '@/lib/workspaces';
 
@@ -107,7 +121,8 @@ export function PeoplePage() {
                 key={person.id}
                 workspaceId={workspaceId}
                 person={person}
-                people={active}
+                // Fusionar solo con las de este espacio: las compartidas se editan en su espacio (HU-50)
+                people={active.filter((p) => p.sharedFrom === null)}
                 members={members.filter(
                   (m) => m.userId === person.userId || !linkedUsers.has(m.userId),
                 )}
@@ -156,6 +171,11 @@ function PersonRow({
     save({ personId: person.id, name: trimmed }, `Ahora se llama "${trimmed}"`);
   }
 
+  // Compartida desde otro espacio (HU-50): aquí solo se asigna; se edita en su espacio
+  if (person.sharedFrom) {
+    return <SharedPersonRow workspaceId={workspaceId} person={person} />;
+  }
+
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
@@ -202,6 +222,11 @@ function PersonRow({
                 </span>
               )}
             </p>
+            {person.sharedWith.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Compartida con {person.sharedWith.map((w) => w.name).join(', ')}
+              </p>
+            )}
             {/* En las archivadas, a la vista: por qué no se puede borrar (o que sí se puede) */}
             {person.archived &&
               (person.taskCount > 0 || person.projectCount > 0 ? (
@@ -265,10 +290,149 @@ function PersonRow({
           {person.archived ? <ArchiveRestore aria-hidden /> : <Archive aria-hidden />}
           {person.archived ? 'Reactivar' : 'Archivar'}
         </Button>
+        {!person.archived && <SharePersonDialog workspaceId={workspaceId} person={person} />}
         <MergePersonDialog workspaceId={workspaceId} person={person} people={people} />
         {person.archived && <DeletePersonButton workspaceId={workspaceId} person={person} />}
       </div>
     </li>
+  );
+}
+
+/**
+ * Persona compartida desde otro espacio (HU-50). Ej.: Luis, de workpers, en Personas de Monex:
+ * se asigna aquí, pero se renombra, archiva o fusiona en workpers. Aquí solo se deja de compartir,
+ * si no es Responsable de nada ni tiene un rol en un proyecto de este espacio
+ */
+function SharedPersonRow({ workspaceId, person }: { workspaceId: string; person: Person }) {
+  const unshare = useUnsharePerson(workspaceId);
+  const from = person.sharedFrom!;
+  const canUnshare = canUnsharePerson(person);
+
+  function handleUnshare() {
+    unshare.mutate(
+      { personId: person.id, ownerId: from.workspaceId },
+      {
+        onSuccess: () => toast.success(`"${person.name}" ya no se ofrece en este espacio`),
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  }
+
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          aria-hidden
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground"
+        >
+          {initials(person.name)}
+        </span>
+        <div className="min-w-0">
+          <p className="font-medium">
+            {person.name}
+            <span className="ml-2 rounded bg-accent px-1.5 py-0.5 text-xs font-semibold text-accent-foreground">
+              Compartida desde {from.name}
+            </span>
+            {person.archived && (
+              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold">
+                Archivada
+              </span>
+            )}
+          </p>
+          {person.taskCount > 0 || person.projectCount > 0 ? (
+            <PersonUsageDialog workspaceId={workspaceId} person={person} />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Se renombra, archiva o fusiona en {from.name}
+            </p>
+          )}
+        </div>
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!canUnshare || unshare.isPending}
+        onClick={handleUnshare}
+        title={
+          canUnshare
+            ? 'Deja de ofrecerse en este espacio; en su espacio sigue igual'
+            : 'Aquí es Responsable de tareas o tiene un rol en proyectos: reasígnalos primero'
+        }
+      >
+        <Unlink aria-hidden />
+        Dejar de compartir
+      </Button>
+    </li>
+  );
+}
+
+/** Compartir con otros espacios donde soy Admin (HU-50): ahí aparece en Personas y en los combos */
+function SharePersonDialog({ workspaceId, person }: { workspaceId: string; person: Person }) {
+  const user = useCurrentUser();
+  const share = useSharePerson(workspaceId);
+  const [open, setOpen] = useState(false);
+  const [targetId, setTargetId] = useState('');
+  const sharedIds = new Set(person.sharedWith.map((w) => w.workspaceId));
+  // Compartir exige ser Admin en los dos espacios; la API lo vuelve a revisar
+  const targets = user.workspaces.filter(
+    (w) => w.role === 'ADMIN' && w.id !== workspaceId && !sharedIds.has(w.id),
+  );
+  if (targets.length === 0) return null;
+  const target = targets.find((w) => w.id === targetId);
+
+  function handleShare() {
+    if (!target) return;
+    share.mutate(
+      { personId: person.id, targetId: target.id },
+      {
+        onSuccess: () => {
+          toast.success(`"${person.name}" ahora también está en ${target.name}`);
+          setOpen(false);
+          setTargetId('');
+        },
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" title="Usarla también en otro espacio">
+          <Share2 aria-hidden />
+          Compartir con…
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Compartir a {person.name} con…</DialogTitle>
+          <DialogDescription>
+            Aparecerá en Personas de ese espacio y en sus combos (Responsable, PM…). Se sigue
+            editando aquí; allá solo se puede dejar de compartir.
+          </DialogDescription>
+        </DialogHeader>
+        <NativeSelect
+          aria-label="Espacio"
+          value={targetId}
+          onChange={(event) => setTargetId(event.target.value)}
+        >
+          <option value="">Elige un espacio…</option>
+          {targets.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
+        </NativeSelect>
+        <div className="flex justify-end gap-2">
+          <DialogClose asChild>
+            <Button variant="ghost">Cancelar</Button>
+          </DialogClose>
+          <Button disabled={!target || share.isPending} onClick={handleShare}>
+            Compartir
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -375,6 +539,9 @@ function MergePersonDialog({
 function whyNotDeletable(person: Person): string | null {
   if (canDeletePerson(person)) return null;
   if (person.hasAccess) return 'Su cuenta sigue siendo miembro del espacio: quítala en Miembros';
+  if (person.sharedWith.length > 0) {
+    return `Está compartida con ${person.sharedWith.map((w) => w.name).join(', ')}: deja de compartirla allá`;
+  }
   const uses = [
     person.taskCount > 0 && `${person.taskCount} tarea(s)`,
     person.projectCount > 0 && `${person.projectCount} proyecto(s)`,

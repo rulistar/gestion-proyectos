@@ -113,7 +113,10 @@ apps/
                           Admin en origen y destino (permissionIn de access.ts); traduce catálogos al destino
       people/             catálogo de personas (HU-34, ADR-0005): GET (project.read), POST (task.create), PATCH, DELETE y
                           POST /:personId/merge = fusionar duplicadas (member.manage, HU-51);
-                          ensureMemberPerson al entrar un miembro; displayNames = alias que se muestra
+                          ensureMemberPerson al entrar un miembro; displayNames = alias que se muestra.
+                          Compartidas (HU-50, tabla person_shares): availableIn(espacio) = las suyas + las compartidas;
+                          POST /:personId/shares (Admin en los dos) y DELETE /:personId/share (desde el otro espacio);
+                          editar, fusionar y borrar solo en su espacio dueño
       project-types/      catálogo de tipos de contenedor (HU-21, ADR-0004): GET (project.read), POST/PATCH (catalog.manage);
                           seedCatalog carga tipos de contenedor, de tarea y permitidos al crear un espacio
       task-origins/       catálogo de orígenes de tarea (HU-47): GET (miembros), POST/PATCH (catalog.manage);
