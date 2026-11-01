@@ -29,23 +29,24 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 
 ## Stack (ADR-0001)
 
-| Capa          | Tecnología                                                                      | Estado                                    |
-| ------------- | ------------------------------------------------------------------------------- | ----------------------------------------- |
-| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                              | ✅ instalado                              |
-| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                                 | ✅ instalado                              |
-| Backend       | Fastify 5 + TypeScript                                                          | ✅ instalado                              |
-| Validación    | Zod 4 (compartido en `packages/shared`)                                         | ✅ instalado                              |
-| Base de datos | PostgreSQL 17 (Docker Compose) + Prisma 7.10 (`@prisma/adapter-pg` + `pg`)      | ✅ instalado                              |
-| Pruebas       | Vitest (unitarias + integración contra PostgreSQL real)                         | ✅ instalado                              |
-| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged                    | ✅ instalado                              |
-| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                             | ✅ configurado                            |
-| Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)              | ✅ instalado                              |
-| Contraseñas   | `argon2` 0.45 (Argon2id, binario nativo; TEC-07)                                | ✅ instalado                              |
-| Sesiones      | `@fastify/cookie` (cookie HttpOnly + sesión en BD; HU-02)                       | ✅ instalado                              |
-| Web (TEC-03)  | TanStack Router (ADR-0003), TanStack Query, shadcn/ui (copiado a mano)          | ✅ instalado                              |
-| Interfaz      | `lucide-react` (iconos), Radix Dialog y Dropdown Menu, `sonner` (avisos); HU-28 | ✅ instalado                              |
-| Despliegue    | Render Free (app) + Neon Free (BD); `@fastify/static` sirve la web (ADR-0007)   | ✅ configurado (`render.yaml`)            |
-| Pendientes    | Swagger/OpenAPI, Playwright                                                     | ⏳ se instalan en la historia que los use |
+| Capa          | Tecnología                                                                           | Estado                                  |
+| ------------- | ------------------------------------------------------------------------------------ | --------------------------------------- |
+| Monorepo      | pnpm workspaces (pnpm 12, Node 24)                                                   | ✅ instalado                            |
+| Frontend      | React 19 + Vite 7 + TypeScript + Tailwind CSS 4                                      | ✅ instalado                            |
+| Backend       | Fastify 5 + TypeScript                                                               | ✅ instalado                            |
+| Validación    | Zod 4 (compartido en `packages/shared`)                                              | ✅ instalado                            |
+| Base de datos | PostgreSQL 17 (Docker Compose) + Prisma 7.10 (`@prisma/adapter-pg` + `pg`)           | ✅ instalado                            |
+| Pruebas       | Vitest (unitarias + integración contra PostgreSQL real)                              | ✅ instalado                            |
+| Calidad       | ESLint 10 + typescript-eslint, Prettier, Husky + lint-staged                         | ✅ instalado                            |
+| CI            | GitHub Actions + gitleaks + pnpm audit + Dependabot                                  | ✅ configurado                          |
+| Seguridad     | `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` (TEC-02)                   | ✅ instalado                            |
+| Contraseñas   | `argon2` 0.45 (Argon2id, binario nativo; TEC-07)                                     | ✅ instalado                            |
+| Sesiones      | `@fastify/cookie` (cookie HttpOnly + sesión en BD; HU-02)                            | ✅ instalado                            |
+| Web (TEC-03)  | TanStack Router (ADR-0003), TanStack Query, shadcn/ui (copiado a mano)               | ✅ instalado                            |
+| Interfaz      | `lucide-react` (iconos), Radix Dialog y Dropdown Menu, `sonner` (avisos); HU-28      | ✅ instalado                            |
+| Despliegue    | Render Free (app) + Neon Free (BD); `@fastify/static` sirve la web (ADR-0007)        | ✅ configurado (`render.yaml`)          |
+| Documentación | `@fastify/swagger` 9.9 + `@fastify/swagger-ui` 6.1: OpenAPI en /api/v1/docs (TEC-05) | ✅ instalado                            |
+| Pendientes    | Playwright                                                                           | ⏳ se instala en la historia que lo use |
 
 **No agregar dependencias fuera del ADR sin preguntar al usuario.**
 
@@ -89,6 +90,9 @@ apps/
     src/config/env.ts   variables de entorno validadas con Zod (falla al inicio si son inválidas)
     src/web/web-app.ts  en producción la API también sirve la web compilada (TEC-04, ADR-0007): misma URL;
                         las rutas de la web devuelven index.html y /api inexistente sigue en 404 JSON
+    src/openapi.ts      documentación OpenAPI (TEC-05): /api/v1/docs y /api/v1/docs/json (en producción, con sesión).
+                        Solo documenta (las rutas no declaran schema de Fastify; validan con Zod). Todas las rutas
+                        aparecen solas por grupo; DOCS agrega resumen, cuerpo y respuesta desde los esquemas de shared
     src/security.ts     helmet, CORS (CORS_ORIGINS), rate limit y HTTPS/HSTS en producción (TEC-02).
                         Rutas sensibles (login): `config: { rateLimit: authRateLimit }`
     src/modules/<mod>/  un módulo por funcionalidad: <mod>.routes.ts, <mod>.test.ts, ...

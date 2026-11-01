@@ -760,6 +760,15 @@ _Como responsable, quiero ver gráficas de mis contenedores e indicadores de tie
 - [x] Menú → **Indicadores**: por tipo de tarea y por tipo de contenedor, de lo terminado en el año elegido: cantidad, espera (alta → inicio real), trabajo (inicio → fin real), atención (alta → fin real), % a tiempo y desviación promedio (ADR-0004 §2.1). Solo lo que la persona ve.
 - [x] Las tareas ahora traen su fecha de alta (`createdAt`) en la API. Barras con CSS, sin librería ni migración.
 
+#### TEC-05 · Documentación OpenAPI (3 pts)
+
+_Como responsable de una app que se integrará, quiero la API documentada, para saber qué pide y qué devuelve cada ruta sin leer el código._ Objetivo 4 del acta. Decisiones del PO (2026-11-01): `@fastify/swagger` y `@fastify/swagger-ui`; en producción solo con sesión iniciada.
+
+- [x] **/api/v1/docs**: página interactiva (Swagger UI, servida por la propia API, sin CDN) y **/api/v1/docs/json** (OpenAPI 3.0). En local, abierta; en producción, pide haber iniciado sesión.
+- [x] Todas las rutas de /api/v1 aparecen solas, agrupadas por módulo (Proyectos, Fases, Tareas, Personas…) y con sus parámetros de URL.
+- [x] Resumen, cuerpo y respuesta de las rutas que usará una integración (sesión, espacios, proyectos, fases, tareas), generados de los esquemas Zod de `packages/shared` (`z.toJSONSchema`): el contrato no se escribe dos veces.
+- [x] Solo documenta: la validación sigue siendo la de Zod en cada ruta y las respuestas no cambian. Versiones fijas (9.9.2 y 6.1.2) con más de dos semanas de publicadas.
+
 #### TEC-11 · Prueba que falla al azar (1 pt)
 
 _Como equipo, queremos que el CI falle solo por errores reales, para confiar en sus resultados._ Acuerdo de la retrospectiva del Sprint 6.

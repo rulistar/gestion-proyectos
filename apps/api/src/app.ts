@@ -22,6 +22,7 @@ import { passwordResetRoutes } from './modules/users/password-reset.routes.js';
 import { usersRoutes } from './modules/users/users.routes.js';
 import { trashRoutes } from './modules/trash/trash.routes.js';
 import { workspacesRoutes } from './modules/workspaces/workspaces.routes.js';
+import { registerOpenApi } from './openapi.js';
 import { registerSecurity, type SecurityOptions } from './security.js';
 import { registerWebApp } from './web/web-app.js';
 
@@ -72,6 +73,8 @@ export function buildApp({
 
   registerSecurity(app, security);
   void app.register(cookie);
+  // Antes de las rutas: la documentación las recoge al registrarse (TEC-05)
+  registerOpenApi(app, { production: security.production ?? false });
 
   // Cada módulo registra sus rutas bajo el prefijo versionado de la API
   void app.register(healthRoutes, { prefix: '/api/v1' });
