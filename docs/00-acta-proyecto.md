@@ -60,3 +60,6 @@ Una historia está terminada solo si: el código está en `main` vía Pull Reque
 
 ## 8. Aprobación
 Aprobado por el Product Owner: ____________ Fecha: ________
+
+## 9. Cierre de la versión 1
+La versión 1.0 se cerró el **2026-11-01**, al terminar el Sprint 7: se cumplió todo el alcance del MVP (§3), con "reemplazar" fuera de la importación por decisión del PO, y se adelantó el Gantt. Objetivos (§2): el 2 se cumplió; el 1 y el 4, con retraso; el 3 (cobertura) no se midió. Las integraciones pasan a la versión 2. Detalle, indicadores y lecciones aprendidas: [cierre-v1.md](cierre-v1.md). Esta acta rige hasta que se apruebe la de la versión 2.
