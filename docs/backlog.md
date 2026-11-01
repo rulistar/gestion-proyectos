@@ -116,15 +116,18 @@
 | 57 | TEC-06 | Pruebas extremo a extremo con Playwright | Plataforma | 3 | 🟡 | 7 |
 | 58 | HU-50 | Catálogo de personas compartido entre espacios | Personas | 5 | 🟡 | 7 |
 | 59 | HU-12 | Gráficas por mes de término y por estado, e indicadores de tiempos (ADR-0004 §2.1) | Reportes | 5 | 🟢 | 7 |
-| 60 | HU-14 | Cargar información desde JSON o Excel (solo actualizar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 6 |
-| 61 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | 7 |
-| 62 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | 8 |
-| 63 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | 8 |
-| 64 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | 8 |
-| 65 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | 9 |
-| 66 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | 9 |
+| 60 | TEC-11 | Corregir la prueba que falla al azar (límite de intentos de Mi perfil) | Plataforma | 1 | 🟡 | 7 |
+| 61 | HU-14 | Cargar información desde JSON o Excel (solo actualizar), incluidos los respaldos del prototipo | Respaldo | 8 | 🟢 | 6 |
+| 62 | TEC-08 | Apps externas: `ApiClient`, usuario de servicio y tokens de API | Integraciones | 5 | 🟡 | v2 |
+| 63 | HU-18 | Vincular un proyecto, fase o tarea con un recurso de otra app (curso, unidad, actividad) | Integraciones | 3 | 🟡 | v2 |
+| 64 | TEC-09 | Avisos salientes: Outbox + webhooks firmados con reintentos | Integraciones | 8 | 🟡 | v2 |
+| 65 | TEC-10 | Avisos entrantes: webhook firmado e idempotente | Integraciones | 5 | 🟡 | v2 |
+| 66 | HU-19 | Que el avance en la app de estudio complete automáticamente las tareas vinculadas | Integraciones | 3 | 🟡 | v2 |
+| 67 | HU-20 | Crear fases y tareas de un proyecto a partir de las unidades y actividades de un curso | Integraciones | 5 | 🟢 | v2 |
 
 **MVP (objetivo 1 del acta):** usuarios con invitación, workspaces, proyectos, tareas, tabla, Kanban, visibilidad y despliegue. Se recorre al **cierre del Sprint 6** por las decisiones del PO en la revisión del Sprint 2 (2026-10-25): estados de tarea, papelera y gestión de miembros primero; luego tipos de trabajo (ADR-0004), Gantt y permisos por usuario.
+
+**Versión 1 y versión 2 (decisión del PO, 2026-10-31):** la v1 termina con el Sprint 7. Después vienen el cierre formal, de 2 a 4 semanas de uso real y tres opiniones para la v2 (análisis de Claude Code en una sesión nueva, observaciones del PO y revisión de otra IA). Plan en [sprint-07.md](sprints/sprint-07.md#después-del-sprint-7-cierre-de-la-versión-1). La **v2** incluye la app en Android para tablet y celular (recomendada como PWA, en línea primero) y las integraciones (TEC-08 a HU-20, marcadas "v2").
 
 **Backlog futuro (acta):** Gantt, registro de riesgos, interesados, bitácora de auditoría, notificaciones. (Tokens de API, webhooks e integración con la app de estudio ya están en la épica Integraciones, del 25 al 30.)
 
@@ -741,6 +744,18 @@ _Como Admin del espacio, quiero ver lo que ve un miembro sin entrar con su cuent
 - [x] Se entra con **Ver como** en cada renglón de Miembros (abre su Mi trabajo) o con el combo **Ver como** de la barra superior, que cambia rápido de persona. Un aviso fijo arriba dice a quién se ve, con **Salir**.
 - [x] Exportar, viendo como otra persona, descarga lo que ella ve. Sin migración ni dependencias nuevas.
 
-### Sprints siguientes (criterios por detallar en su planificación)
+### Sprint 7
 
+Último sprint de la versión 1. HU-50 está detallada arriba (Sprint 5); HU-12, TEC-05 y TEC-06 se detallan al empezar cada una.
+
+#### TEC-11 · Prueba que falla al azar (1 pt)
+
+_Como equipo, queremos que el CI falle solo por errores reales, para confiar en sus resultados._ Acuerdo de la retrospectiva del Sprint 6.
+
+- [ ] La prueba "limita los intentos" de `profile.test.ts` no depende del minuto del reloj (pasa aunque la ventana del límite se reinicie a la mitad).
+
+### Versión 2 (criterios por detallar en su planificación)
+
+- **App en Android (tablet y celular):** recomendada como PWA, adaptada a pantallas chicas, en línea primero.
 - **Integraciones (TEC-08 a HU-20):** diseño en ADR-0002 §7.
+- Las mejoras que salgan del análisis de la v1.
