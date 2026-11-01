@@ -33,6 +33,7 @@ const taskSelect = {
   endDate: true,
   completedAt: true,
   startedAt: true,
+  createdAt: true,
   statusReason: true,
   createdById: true,
   origin: { select: { id: true, name: true } },
@@ -45,13 +46,14 @@ const taskSelect = {
 
 type TaskRow = Omit<
   Task,
-  'startDate' | 'endDate' | 'completedAt' | 'startedAt' | 'responsible' | 'details'
+  'startDate' | 'endDate' | 'completedAt' | 'startedAt' | 'createdAt' | 'responsible' | 'details'
 > & {
   details: unknown;
   startDate: Date | null;
   endDate: Date | null;
   completedAt: Date | null;
   startedAt: Date | null;
+  createdAt: Date;
   workspaceId: string;
   responsiblePerson: PersonRow;
 };
@@ -64,6 +66,7 @@ function toTask({ workspaceId, responsiblePerson, ...row }: TaskRow): Task {
     endDate: toIsoDate(row.endDate),
     completedAt: row.completedAt?.toISOString() ?? null,
     startedAt: row.startedAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
     details: parseDetails(row.details),
   };
 }

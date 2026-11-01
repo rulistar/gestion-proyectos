@@ -24,3 +24,4 @@ export * from './schemas/detail-fields.js';
 export * from './schemas/export.js';
 export * from './schemas/summary.js';
 export * from './schemas/import.js';
+export * from './schemas/charts.js';

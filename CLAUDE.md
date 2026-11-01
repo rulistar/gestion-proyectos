@@ -62,7 +62,7 @@ Afectan al modelo de datos y a cada endpoint. Detalle en [docs/backlog.md](docs/
 apps/
   web/                React + Vite. Proxy de /api → http://127.0.0.1:3000 en desarrollo
     src/router.tsx      rutas en código (TanStack Router): /login pública; ruta "app" protege a sus hijas
-                        (/, /perfil, /usuarios, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas, .../gantt, .../exportar, .../cargar,
+                        (/, /perfil, /usuarios, /w/$workspaceId, /w/$workspaceId/p/$projectId, .../mantenimientos, .../actividades, .../mi-trabajo, .../tareas, .../gantt, .../indicadores, .../exportar, .../cargar,
                         .../miembros, .../personas, .../papelera, .../configuracion). getRouteApi usa el id: "/app/w/..."
     src/lib/api.ts      apiFetch(): llamadas a /api/v1 validadas con esquemas de shared; errores → ApiError
     src/lib/auth.ts     meQueryOptions (GET /auth/me), useCurrentUser, useLogin, useLogout
@@ -172,6 +172,8 @@ packages/
     src/schemas/export.ts       columnas del CSV (las del prototipo primero), etiquetas en español y toCsv; con pruebas
     src/schemas/import.ts       leer CSV/JSON para cargar (parseCsv, normalizeDate, csvToImport, jsonToImport): modelo
                                 común, incluidos los respaldos del prototipo; con pruebas
+    src/schemas/charts.ts       gráficas e indicadores (HU-12): por mes de término y por estado; tiempos por tipo
+                                (espera, trabajo, atención, a tiempo, desviación; ADR-0004 §2.1); con pruebas
     src/schemas/gantt.ts        Gantt (HU-27): barras planeadas contra reales, hitos, rango y encabezados; URL del Gantt
                                 del espacio (workspaceGanttSearchSchema); con pruebas
     src/schemas/my-work.ts      groupMyWork: agrupa mis tareas por fecha de fin (HU-28b), con pruebas

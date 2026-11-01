@@ -13,11 +13,12 @@ import {
 } from '@gestion/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { ChartColumn, Plus } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '@/components/progress-bar';
+import { ProjectCharts } from '@/components/project-charts';
 import { ProjectFiltersBar } from '@/components/project-filters-bar';
 import { ProjectForm } from '@/components/project-form';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
@@ -34,7 +35,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { nextSort } from '@/lib/sort';
-import { useIsMenuOpen } from '@/lib/use-menu-open';
+import { useIsMenuOpen, useSavedToggle } from '@/lib/use-menu-open';
 import { formatDate, formatMinutes, todayIso } from '@/lib/dates';
 import { projectTypesQueryOptions, SECTIONS } from '@/lib/project-types';
 import { PROJECT_PRIORITIES, projectsQueryOptions, useCreateProject } from '@/lib/projects';
@@ -129,6 +130,9 @@ function ContainersPage({
     filters.dir,
   );
 
+  // Gráficas del acta (HU-12): se muestran u ocultan y el navegador lo recuerda; empiezan ocultas
+  const charts = useSavedToggle('graficas-visibles', false);
+
   function sortBy(key: ProjectSortKey) {
     onFilters({ ...filters, ...nextSort(filters, key) });
   }
@@ -187,6 +191,18 @@ function ContainersPage({
                       {label}
                     </button>
                   ))}
+                  <Button
+                    type="button"
+                    variant={charts.open ? 'default' : 'ghost'}
+                    size="sm"
+                    className="ml-1 h-7"
+                    aria-pressed={charts.open}
+                    onClick={charts.toggle}
+                    title={charts.open ? 'Ocultar gráficas' : 'Mostrar gráficas'}
+                  >
+                    <ChartColumn aria-hidden />
+                    Gráficas
+                  </Button>
                 </div>
               }
               projects={projects}
@@ -196,6 +212,9 @@ function ContainersPage({
               filters={filters}
               onChange={onFilters}
             />
+            {charts.open && visible.length > 0 && (
+              <ProjectCharts projects={visible} year={filters.year ?? currentYear} />
+            )}
             {visible.length === 0 ? (
               <div className="grid justify-items-center gap-2 py-8 text-center">
                 <p className="font-medium">Ningún proyecto coincide con los filtros</p>

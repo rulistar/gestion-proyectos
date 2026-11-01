@@ -1,20 +1,21 @@
 import { createContext, useCallback, useContext, useState } from 'react';
 
-/** Lee la preferencia guardada; si el navegador bloquea el almacenamiento, se muestra */
-function readSaved(key: string): boolean {
+/** Lee la preferencia guardada; sin preferencia (o sin almacenamiento), la inicial */
+function readSaved(key: string, initial: boolean): boolean {
   try {
-    return localStorage.getItem(key) !== 'false';
+    const saved = localStorage.getItem(key);
+    return saved === null ? initial : saved !== 'false';
   } catch {
-    return true;
+    return initial;
   }
 }
 
 /**
  * Algo que se muestra u oculta y que cada navegador recuerda (localStorage): es una comodidad,
- * no un dato de la aplicación ni algo sensible. Empieza visible.
+ * no un dato de la aplicación ni algo sensible. Empieza visible, salvo que se pida lo contrario.
  */
-export function useSavedToggle(key: string) {
-  const [open, setOpen] = useState(() => readSaved(key));
+export function useSavedToggle(key: string, initial = true) {
+  const [open, setOpen] = useState(() => readSaved(key, initial));
   const toggle = useCallback(() => {
     setOpen((current) => {
       const next = !current;

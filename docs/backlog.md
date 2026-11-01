@@ -746,7 +746,17 @@ _Como Admin del espacio, quiero ver lo que ve un miembro sin entrar con su cuent
 
 ### Sprint 7
 
-Último sprint de la versión 1. HU-50 está detallada arriba (Sprint 5); HU-12, TEC-05 y TEC-06 se detallan al empezar cada una.
+Último sprint de la versión 1. HU-50 está detallada arriba (Sprint 5); TEC-05 y TEC-06 se detallan al empezar cada una.
+
+#### HU-12 · Gráficas e indicadores de tiempos (5 pts)
+
+_Como responsable, quiero ver gráficas de mis contenedores e indicadores de tiempos, para saber cuánto se cumple y dónde se planea mal._ Diseño confirmado por el PO (2026-11-01).
+
+- [x] En Proyectos, Mantenimientos y Actividades, botón **Gráficas** junto a Tabla · Tablero: las muestra u oculta (empiezan ocultas; el navegador lo recuerda). Grafican lo que muestra la lista con sus filtros, incluido el año.
+- [x] **Por mes de término**: mes del fin planeado en el año elegido; cada barra dividida en terminados a tiempo (fin real ≤ fin planeado), terminados tarde y abiertos. Aparte: sin fecha fin y con fin en otro año. Los cancelados solo cuentan por estado. Ej.: "Portal" (fin 31/03, terminado el 28/03) → marzo, a tiempo; "ERP" (fin 15/03, terminado el 2/04) → marzo, tarde.
+- [x] **Por estado**: barras con el total de cada estado.
+- [x] Menú → **Indicadores**: por tipo de tarea y por tipo de contenedor, de lo terminado en el año elegido: cantidad, espera (alta → inicio real), trabajo (inicio → fin real), atención (alta → fin real), % a tiempo y desviación promedio (ADR-0004 §2.1). Solo lo que la persona ve.
+- [x] Las tareas ahora traen su fecha de alta (`createdAt`) en la API. Barras con CSS, sin librería ni migración.
 
 #### TEC-11 · Prueba que falla al azar (1 pt)
 
