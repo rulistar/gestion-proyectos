@@ -6,17 +6,18 @@ import {
 } from '@gestion/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { FieldError } from '@/components/field-error';
 import { FormActions } from '@/components/form-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { meQueryOptions, useLogin, useLogout } from '@/lib/auth';
+import { meQueryOptions, useLogout } from '@/lib/auth';
 import {
   invitationPreviewQueryOptions,
   useAcceptInvitation,
+  useLoginAndAccept,
   useRegisterFromInvitation,
 } from '@/lib/invitations';
 import { useSchemaForm } from '@/lib/use-schema-form';
@@ -24,10 +25,16 @@ import { ROLE_LABELS } from '@/lib/workspaces';
 
 /**
  * Aceptar una invitación (HU-01). El token viene después de "#" en el enlace: esa parte de la URL
- * no llega al servidor web. Se lee una vez al abrir la página.
+ * no llega al servidor web. Se lee al abrir la página y otra vez si en la misma pestaña se abre
+ * otro enlace (solo cambia lo que va tras "#", así que la página no se recarga).
  */
 export function InvitationPage() {
-  const [token] = useState(() => window.location.hash.slice(1));
+  const [token, setToken] = useState(() => window.location.hash.slice(1));
+  useEffect(() => {
+    const onHashChange = () => setToken(window.location.hash.slice(1));
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
   const preview = useQuery({ ...invitationPreviewQueryOptions(token), enabled: token !== '' });
   const me = useQuery(meQueryOptions);
   const navigate = useNavigate();
@@ -211,12 +218,13 @@ function AcceptButton({ token, onAccepted }: AcceptProps) {
 
 /** Ya tiene cuenta pero no ha iniciado sesión: inicia sesión aquí mismo y acepta */
 function LoginAndAccept({ token, email, onAccepted }: AcceptProps & { email: string }) {
-  const login = useLogin();
-  const accept = useAcceptInvitation();
-  const form = useSchemaForm(loginRequestSchema, ['email', 'password'], (data) =>
-    login.mutate(data, { onSuccess: () => accept.mutate(token, { onSuccess: onAccepted }) }),
-  );
-  const isPending = login.isPending || accept.isPending;
+  const loginAndAccept = useLoginAndAccept(token);
+  // mutateAsync y no mutate: al aceptar, la página puede cambiar de vista y desmontar esta; la
+  // promesa se cumple de todos modos (los callbacks de mutate no) y así siempre lleva al espacio
+  const form = useSchemaForm(loginRequestSchema, ['email', 'password'], (data) => {
+    void loginAndAccept.mutateAsync(data).then(onAccepted, () => {}); // el error se muestra abajo
+  });
+  const isPending = loginAndAccept.isPending;
 
   return (
     <form onSubmit={form.onSubmit} noValidate>
@@ -241,7 +249,7 @@ function LoginAndAccept({ token, email, onAccepted }: AcceptProps & { email: str
         <FormActions
           submitLabel="Iniciar sesión y aceptar"
           isPending={isPending}
-          error={login.error?.message ?? accept.error?.message}
+          error={loginAndAccept.error?.message}
         />
       </fieldset>
     </form>

@@ -5,6 +5,7 @@ import {
   invitationPreviewSchema,
   type AcceptInvitationResponse,
   type CreateInvitationRequest,
+  type LoginRequest,
   type RegisterFromInvitationRequest,
 } from '@gestion/shared';
 import { queryOptions, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
@@ -69,7 +70,7 @@ export const invitationPreviewQueryOptions = (token: string) =>
 /** Al aceptar ya hay sesión: se guarda el usuario y se refrescan sus workspaces */
 function onAccepted(queryClient: QueryClient, { user }: AcceptInvitationResponse) {
   queryClient.setQueryData(meQueryKey, user);
-  return queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+  void queryClient.invalidateQueries({ queryKey: ['workspaces'] });
 }
 
 export function useRegisterFromInvitation() {
@@ -94,6 +95,27 @@ export function useAcceptInvitation() {
         body: { token },
         schema: acceptInvitationResponseSchema,
       }),
+    onSuccess: (response) => onAccepted(queryClient, response),
+  });
+}
+
+/**
+ * Ya tiene cuenta pero no sesión: inicia sesión y acepta en un solo paso. No usa useLogin a
+ * propósito: guardar el usuario a la mitad hace que la página cambie de vista (a «Aceptar
+ * invitación»), la vista que llamó se desmonta y su callback de éxito ya no corre. El usuario
+ * se guarda solo al final, ya aceptada la invitación.
+ */
+export function useLoginAndAccept(token: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (credentials: LoginRequest) => {
+      await apiFetch('/auth/login', { method: 'POST', body: credentials });
+      return apiFetch('/invitations/accept', {
+        method: 'POST',
+        body: { token },
+        schema: acceptInvitationResponseSchema,
+      });
+    },
     onSuccess: (response) => onAccepted(queryClient, response),
   });
 }
